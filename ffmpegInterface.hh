@@ -15,9 +15,6 @@ protected:
   AVFormatContext* m_pFormatCtx;
   AVCodecContext*  m_pCodecCtx;
   AVFrame*         m_pFrameYUV;
-  AVFrame*         m_pFrameRGB;
-  uint8_t*         m_bufferRGB;
-  int              m_bufferRGBSize;
   uint8_t*         m_bufferYUV;
   int              m_bufferYUVSize;
   int              m_videoStream;

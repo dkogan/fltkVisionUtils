@@ -1,6 +1,7 @@
 #include "ffmpegInterface.hh"
 
 #define OUTPUT_PIX_FMT PIX_FMT_YUV420P
+#define LOCAL_PIX_FMT  PIX_FMT_GRAY8
 
 FFmpegTalker::FFmpegTalker()
 {
@@ -12,17 +13,14 @@ void FFmpegTalker::initVars(void)
   m_bOpen         = false;
   m_bOK           = true;
 
-  m_pOutputFormat = NULL;
-  m_pStream       = NULL;
-  m_pFormatCtx    = NULL;
-  m_pCodecCtx     = NULL;
-  m_pFrameYUV     = NULL;
-  m_bufferYUV     = NULL;
-  m_bufferYUVSize = -1;
-  m_pFrameRGB     = NULL;
-  m_bufferRGB     = NULL;
-  m_bufferRGBSize = -1;
-  m_pSWSCtx       = NULL;
+  m_pOutputFormat   = NULL;
+  m_pStream         = NULL;
+  m_pFormatCtx      = NULL;
+  m_pCodecCtx       = NULL;
+  m_pFrameYUV       = NULL;
+  m_bufferYUV       = NULL;
+  m_bufferYUVSize   = -1;
+  m_pSWSCtx         = NULL;
 
   m_videoStream   = -1;
 }
@@ -34,12 +32,10 @@ FFmpegTalker::~FFmpegTalker()
 void FFmpegTalker::free(void)
 {
   cerr << "FFmpegTalker::free(void)" << endl;
-  if(m_bufferRGB)  av_free(m_bufferRGB);
-  if(m_pFrameRGB)  av_free(m_pFrameRGB);
-  if(m_bufferYUV)  av_free(m_bufferYUV);
-  if(m_pFrameYUV)  av_free(m_pFrameYUV);
+  if(m_bufferYUV)    av_free(m_bufferYUV);
+  if(m_pFrameYUV)    av_free(m_pFrameYUV);
 
-  if(m_pSWSCtx)    sws_freeContext(m_pSWSCtx);
+  if(m_pSWSCtx)      sws_freeContext(m_pSWSCtx);
 
   if(m_pCodecCtx)
   {
@@ -153,22 +149,6 @@ bool FFmpegDecoder::open(const char* filename)
 
   m_pFrameYUV = avcodec_alloc_frame();
 
-  m_pFrameRGB = avcodec_alloc_frame();
-  if(m_pFrameRGB == NULL)
-  {
-    cerr << "ffmpeg: couldn't alloc rgb frame" << endl;
-    return false;
-  }  
-  // Determine required buffer size and allocate buffer
-  int m_bufferRGBSize = avpicture_get_size(PIX_FMT_RGB24, m_pCodecCtx->width, m_pCodecCtx->height);
-  m_bufferRGB         = (uint8_t*)av_malloc(m_bufferRGBSize * sizeof(uint8_t));
-
-  // Assign appropriate parts of buffer to image planes in pFrameRGB
-  // Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-  // of AVPicture
-  avpicture_fill((AVPicture *)m_pFrameRGB, m_bufferRGB, PIX_FMT_RGB24,
-                 m_pCodecCtx->width, m_pCodecCtx->height);
-
   m_bOpen = m_bOK = true;
   return true;
 }
@@ -192,7 +172,7 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
         if(m_pSWSCtx == NULL)
         {
           m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
-                                     m_pCodecCtx->width, m_pCodecCtx->height, PIX_FMT_RGB24,
+                                     m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
                                      0, NULL, NULL, NULL);
           if(m_pSWSCtx == NULL)
           {
@@ -202,18 +182,9 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
         }
 
         sws_scale(m_pSWSCtx,
-                  m_pFrameYUV->data, m_pFrameYUV->linesize, 0, 0,
-                  m_pFrameRGB->data, m_pFrameRGB->linesize);
+                  m_pFrameYUV->data,   m_pFrameYUV->linesize, 0, 0,
+                  &pBuffer, &m_pCodecCtx->width);
 
-        for(int y=0; y<m_pCodecCtx->height; y++)
-        {
-          unsigned char* pDat = m_pFrameRGB->data[0] + y*m_pFrameRGB->linesize[0];
-          for(int x=0; x<m_pCodecCtx->width; x++)
-          {
-            *pBuffer = (unsigned char)(((int)pDat[3*x] + (int)pDat[3*x + 1] + (int)pDat[3*x + 2]) / 3);
-            pBuffer++;
-          }
-        }
         av_free_packet(&packet);
         return true;
       }
@@ -305,17 +276,6 @@ bool FFmpegEncoder::open(const char* filename)
   avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, m_pCodecCtx->pix_fmt,
                  m_pCodecCtx->width, m_pCodecCtx->height);
 
-  m_pFrameRGB = avcodec_alloc_frame();
-  if(m_pFrameRGB == NULL)
-  {
-    cerr << "ffmpeg: couldn't alloc rgb frame" << endl;
-    return false;
-  }  
-  m_bufferRGBSize = avpicture_get_size(PIX_FMT_RGB24, m_pCodecCtx->width, m_pCodecCtx->height);
-  m_bufferRGB     = (uint8_t*)av_malloc(m_bufferRGBSize * sizeof(uint8_t));
-  avpicture_fill((AVPicture *)m_pFrameRGB, m_bufferRGB, PIX_FMT_RGB24,
-                 m_pCodecCtx->width, m_pCodecCtx->height);
-
   // open the file
   if(url_fopen(&m_pFormatCtx->pb, filename, URL_WRONLY) < 0)
   {
@@ -325,7 +285,7 @@ bool FFmpegEncoder::open(const char* filename)
 
   av_write_header(m_pFormatCtx);
 
-  m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, PIX_FMT_RGB24,
+  m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
                              m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
                              0, NULL, NULL, NULL);
   if(m_pSWSCtx == NULL)
@@ -343,11 +303,7 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
   if(!m_bOpen || !m_bOK)
     return false;
 
-
-
-
 #if 0
-
   for(int y=0; y<m_pCodecCtx->height; y++)
   {
     unsigned char* pDat = m_pFrameYUV->data[0] + y*m_pFrameYUV->linesize[0];
@@ -359,21 +315,11 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
     }
   }
 #else
-  for(int y=0; y<m_pCodecCtx->height; y++)
-  {
-    unsigned char* pDat = m_pFrameRGB->data[0] + y*m_pFrameRGB->linesize[0];
-    for(int x=0; x<m_pCodecCtx->width; x++)
-    {
-      pDat[3*x] = pDat[3*x + 1] = pDat[3*x + 2] = *pBuffer;
-      pBuffer++;
-    }
-  }
 
   sws_scale(m_pSWSCtx,
-            m_pFrameRGB->data, m_pFrameRGB->linesize, 0, 0,
+            &pBuffer, &m_pCodecCtx->width, 0, 0,
             m_pFrameYUV->data, m_pFrameYUV->linesize);
 #endif
-
 
   int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferYUV, m_bufferYUVSize, m_pFrameYUV);
   if(outsize <= 0)
