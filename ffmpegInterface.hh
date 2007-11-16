@@ -3,7 +3,7 @@
 
 #include <ffmpeg/avcodec.h>
 #include <ffmpeg/avformat.h>
-
+#include <ffmpeg/swscale.h>
 #include <iostream>
 using namespace std;
 
@@ -21,6 +21,7 @@ protected:
   uint8_t*         m_bufferYUV;
   int              m_bufferYUVSize;
   int              m_videoStream;
+  SwsContext*      m_pSWSCtx;
 
   bool             m_bOpen;
   bool             m_bOK;

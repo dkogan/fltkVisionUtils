@@ -1,5 +1,7 @@
 #include "ffmpegInterface.hh"
 
+#define OUTPUT_PIX_FMT PIX_FMT_YUV420P
+
 FFmpegTalker::FFmpegTalker()
 {
   av_register_all();
@@ -20,6 +22,7 @@ void FFmpegTalker::initVars(void)
   m_pFrameRGB     = NULL;
   m_bufferRGB     = NULL;
   m_bufferRGBSize = -1;
+  m_pSWSCtx       = NULL;
 
   m_videoStream   = -1;
 }
@@ -35,6 +38,8 @@ void FFmpegTalker::free(void)
   if(m_pFrameRGB)  av_free(m_pFrameRGB);
   if(m_bufferYUV)  av_free(m_bufferYUV);
   if(m_pFrameYUV)  av_free(m_pFrameYUV);
+
+  if(m_pSWSCtx)    sws_freeContext(m_pSWSCtx);
 
   if(m_pCodecCtx)
   {
@@ -184,9 +189,21 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
                            packet.data, packet.size);
       if(frameFinished)
       {
-        img_convert((AVPicture *)m_pFrameRGB, PIX_FMT_RGB24, 
-                    (AVPicture*)m_pFrameYUV, m_pCodecCtx->pix_fmt,
-                    m_pCodecCtx->width, m_pCodecCtx->height);
+        if(m_pSWSCtx == NULL)
+        {
+          m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
+                                     m_pCodecCtx->width, m_pCodecCtx->height, PIX_FMT_RGB24,
+                                     0, NULL, NULL, NULL);
+          if(m_pSWSCtx == NULL)
+          {
+            cerr << "ffmpeg: couldn't create sws context" << endl;
+            return false;
+          }
+        }
+
+        sws_scale(m_pSWSCtx,
+                  m_pFrameYUV->data, m_pFrameYUV->linesize, 0, 0,
+                  m_pFrameRGB->data, m_pFrameRGB->linesize);
 
         for(int y=0; y<m_pCodecCtx->height; y++)
         {
@@ -253,7 +270,7 @@ bool FFmpegEncoder::open(const char* filename)
   m_pCodecCtx->time_base    = (AVRational){1,15}; /* frames per second */
   m_pCodecCtx->gop_size     = 10; /* emit one intra frame every ten frames */
   m_pCodecCtx->max_b_frames = 1;
-  m_pCodecCtx->pix_fmt      = PIX_FMT_YUV420P;
+  m_pCodecCtx->pix_fmt      = OUTPUT_PIX_FMT;
 
   AVCodec* pCodec = avcodec_find_encoder(m_pCodecCtx->codec_id);
   if(pCodec == NULL)
@@ -283,9 +300,9 @@ bool FFmpegEncoder::open(const char* filename)
     cerr << "ffmpeg: couldn't alloc frame" << endl;
     return false;
   }
-  m_bufferYUVSize = avpicture_get_size(PIX_FMT_YUV420P, m_pCodecCtx->width, m_pCodecCtx->height);
+  m_bufferYUVSize = avpicture_get_size(m_pCodecCtx->pix_fmt, m_pCodecCtx->width, m_pCodecCtx->height);
   m_bufferYUV     = (uint8_t*)av_malloc(m_bufferYUVSize * sizeof(uint8_t));
-  avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, PIX_FMT_YUV420P,
+  avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, m_pCodecCtx->pix_fmt,
                  m_pCodecCtx->width, m_pCodecCtx->height);
 
   m_pFrameRGB = avcodec_alloc_frame();
@@ -308,6 +325,15 @@ bool FFmpegEncoder::open(const char* filename)
 
   av_write_header(m_pFormatCtx);
 
+  m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, PIX_FMT_RGB24,
+                             m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
+                             0, NULL, NULL, NULL);
+  if(m_pSWSCtx == NULL)
+  {
+    cerr << "ffmpeg: couldn't create sws context" << endl;
+    return false;
+  }
+  
   m_bOpen = m_bOK = true;
   return true;
 }
@@ -317,6 +343,22 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
   if(!m_bOpen || !m_bOK)
     return false;
 
+
+
+
+#if 0
+
+  for(int y=0; y<m_pCodecCtx->height; y++)
+  {
+    unsigned char* pDat = m_pFrameYUV->data[0] + y*m_pFrameYUV->linesize[0];
+    for(int x=0; x<m_pCodecCtx->width; x++)
+    {
+      pDat[4*x] = pDat[4*x + 1] = pDat[4*x + 2] = *pBuffer;
+      pDat[4*x + 3] = 255;
+      pBuffer++;
+    }
+  }
+#else
   for(int y=0; y<m_pCodecCtx->height; y++)
   {
     unsigned char* pDat = m_pFrameRGB->data[0] + y*m_pFrameRGB->linesize[0];
@@ -327,9 +369,11 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
     }
   }
 
-  img_convert((AVPicture *)m_pFrameYUV, m_pCodecCtx->pix_fmt, 
-              (AVPicture*)m_pFrameRGB, PIX_FMT_RGB24,
-              m_pCodecCtx->width, m_pCodecCtx->height);
+  sws_scale(m_pSWSCtx,
+            m_pFrameRGB->data, m_pFrameRGB->linesize, 0, 0,
+            m_pFrameYUV->data, m_pFrameYUV->linesize);
+#endif
+
 
   int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferYUV, m_bufferYUVSize, m_pFrameYUV);
   if(outsize <= 0)
