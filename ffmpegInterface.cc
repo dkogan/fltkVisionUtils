@@ -1,9 +1,13 @@
 #include "ffmpegInterface.hh"
 
-#define LOCAL_PIX_FMT   PIX_FMT_GRAY8
-#define OUTPUT_PIX_FMT  PIX_FMT_YUV420P
-#define OUTPUT_CODEC    CODEC_ID_FFV1
-#define OUTPUT_GOP_SIZE INT_MAX
+#define LOCAL_PIX_FMT       PIX_FMT_GRAY8
+#define OUTPUT_PIX_FMT      PIX_FMT_GRAY8
+#define OUTPUT_CODEC        CODEC_ID_RAWVIDEO
+#define OUTPUT_GOP_SIZE     0
+#define OUTPUT_MAX_B_FRAMES 0
+#define OUTPUT_FLAGS        0
+#define OUTPUT_FLAGS2       0
+#define OUTPUT_THREADS      2
 
 FFmpegTalker::FFmpegTalker()
 {
@@ -238,12 +242,14 @@ bool FFmpegEncoder::open(const char* filename)
   m_pCodecCtx->codec_type   = CODEC_TYPE_VIDEO;
   m_pCodecCtx->codec_id     = OUTPUT_CODEC;
   m_pCodecCtx->bit_rate     = 1000000;
-  m_pCodecCtx->flags        = 0; 
+  m_pCodecCtx->flags        = OUTPUT_FLAGS;
+  m_pCodecCtx->flags2       = OUTPUT_FLAGS2;
+  m_pCodecCtx->thread_count = OUTPUT_THREADS;
   m_pCodecCtx->width        = 640;
   m_pCodecCtx->height       = 480;
   m_pCodecCtx->time_base    = (AVRational){1,15}; /* frames per second */
   m_pCodecCtx->gop_size     = OUTPUT_GOP_SIZE;
-  m_pCodecCtx->max_b_frames = 0;
+  m_pCodecCtx->max_b_frames = OUTPUT_MAX_B_FRAMES;
   m_pCodecCtx->pix_fmt      = OUTPUT_PIX_FMT;
 
   AVCodec* pCodec = avcodec_find_encoder(m_pCodecCtx->codec_id);
@@ -318,7 +324,6 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
     }
   }
 #else
-
   sws_scale(m_pSWSCtx,
             &pBuffer, &m_pCodecCtx->width, 0, 0,
             m_pFrameYUV->data, m_pFrameYUV->linesize);
