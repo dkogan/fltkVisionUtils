@@ -36,6 +36,10 @@ public:
   {
     return !m_bOK;
   }
+  bool isOpen(void)
+  {
+    return m_bOpen;
+  }
 };
 
 class FFmpegDecoder : public FFmpegTalker
