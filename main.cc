@@ -1,5 +1,7 @@
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 #include "camera.hh"
@@ -23,7 +25,14 @@ int main(void)
             cerr << "couldn't get frame\n";
         }
         else
+        {
             cerr << "got frame at " << timestamp.tv_sec << endl;
+            static int i = 0;
+            ostringstream filename; 
+            filename << "dat" << i;
+            ofstream dat(filename.str().c_str());
+            dat.write((char*)frame, 1024*768*2);
+        }
     }
 
 }
