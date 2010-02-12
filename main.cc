@@ -37,14 +37,6 @@ void* cameraThread(void *pArg)
         {
             // DO SOMETHING WITH THE FRAME HERE
 
-//             static int i = 0;
-//             ostringstream filename;
-//             filename << "dat" << i << ".pgm";
-//             ofstream dat(filename.str().c_str());
-//             dat << "P4\n" << CAMERA_W << ' ' << CAMERA_H << "\n255\n";
-//             dat.write((char*)frame, CAMERA_W*CAMERA_H);
-//             i++;
-
             Fl::lock();
             fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
             Fl::unlock();
