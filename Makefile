@@ -1,4 +1,4 @@
-CXXFLAGS += -g
+CXXFLAGS += -g -Wall
 LDFLAGS  += -g
 
 LDLIBS += -lfltk -lpthread -lcamwire_1394 -ldc1394_control
