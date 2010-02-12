@@ -56,7 +56,7 @@ void* cameraThread(void *pArg)
 //             i++;
 
             Fl::lock();
-            box->redraw();
+            fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
             Fl::unlock();
         }
     }
@@ -67,6 +67,7 @@ void* cameraThread(void *pArg)
 int main(void)
 {
     Fl::lock();
+    Fl::visual(FL_RGB);
 
     // open the first camera we find
     Camera cam(0);
@@ -75,13 +76,14 @@ int main(void)
         return 0;
 
     Fl_Double_Window* w = new Fl_Double_Window(CAMERA_W,CAMERA_H);
-    Fl_Box box(0,0,CAMERA_W,CAMERA_H);
-    Fl_RGB_Image RGBimage(cam.getFrameBuffer(), CAMERA_W, CAMERA_H);
-    box.image(RGBimage);
+//     Fl_Box box(0,0,CAMERA_W,CAMERA_H);
+//     Fl_RGB_Image RGBimage(cam.getFrameBuffer(), CAMERA_W, CAMERA_H);
+//     box.image(RGBimage);
 
     camThreadContext context;
     context.cam = &cam;
-    context.box = &box;
+//     context.box = &box;
+
     pthread_t cameraThread_id;
     if(pthread_create(&cameraThread_id, NULL, &cameraThread, &context) != 0)
     {
