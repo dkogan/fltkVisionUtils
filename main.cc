@@ -33,6 +33,7 @@ int main(void)
             dat << "P4\n1024 768\n255\n";
             ofstream dat(filename.str().c_str());
             dat.write((char*)frame, 1024*768);
+            i++;
         }
     }
 
