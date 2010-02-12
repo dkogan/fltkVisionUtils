@@ -5,9 +5,7 @@
 using namespace std;
 
 #include <FL/Fl.H>
-#include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Box.H>
-#include <FL/Fl_RGB_Image.H>
+#include <FL/Fl_Window.H>
 #include <FL/fl_draw.H>
 
 #include "camera.hh"
@@ -19,18 +17,9 @@ using namespace std;
 
 #warning do I need this?
 
-struct camThreadContext
-{
-    Camera* cam;
-    Fl_Box* box;
-};
-
 void* cameraThread(void *pArg)
 {
-    camThreadContext* context = (camThreadContext*)pArg;
-
-    Camera* cam = context->cam;
-    Fl_Box* box = context->box;
+    Camera* cam = (Camera*)pArg;
 
     while(1)
     {
@@ -76,17 +65,10 @@ int main(void)
     if(!cam)
         return 0;
 
-    Fl_Double_Window* w = new Fl_Double_Window(CAMERA_W,CAMERA_H);
-//     Fl_Box box(0,0,CAMERA_W,CAMERA_H);
-//     Fl_RGB_Image RGBimage(cam.getFrameBuffer(), CAMERA_W, CAMERA_H);
-//     box.image(RGBimage);
-
-    camThreadContext context;
-    context.cam = &cam;
-//     context.box = &box;
+    Fl_Window* w = new Fl_Window(CAMERA_W,CAMERA_H);
 
     pthread_t cameraThread_id;
-    if(pthread_create(&cameraThread_id, NULL, &cameraThread, &context) != 0)
+    if(pthread_create(&cameraThread_id, NULL, &cameraThread, &cam) != 0)
     {
         cerr << "couldn't start thread" << endl;
         return 0;
