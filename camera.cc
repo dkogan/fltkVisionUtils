@@ -36,7 +36,7 @@ Camera::Camera(int cameraIndex)
     int num_handles;
     Camwire_handle *handle_array = NULL;
 
-    camwire_bus_reset();
+//     camwire_bus_reset();
 
     sleep(1);
 
