@@ -9,7 +9,7 @@ using namespace std;
 #include <FL/fl_draw.H>
 
 #include "camera.hh"
-#include "threadUtils.h"
+#include "pthread.h"
 
 #define CAMERA_W        1024
 #define CAMERA_H        768
