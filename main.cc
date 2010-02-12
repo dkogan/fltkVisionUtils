@@ -17,9 +17,19 @@ using namespace std;
 #define CAMERA_PERIOD_S 1
 
 #warning do I need this?
+
+struct camThreadContext
+{
+    Camera* cam;
+    Fl_Box* box;
+};
+
 void* cameraThread(void *pArg)
 {
-    Camera* cam = (Camera*)pArg;
+    camThreadContext* context = (camThreadContext*)pArg;
+
+    Camera* cam = context->cam;
+    Fl_Box* box = context->box;
 
     while(1)
     {
@@ -45,6 +55,9 @@ void* cameraThread(void *pArg)
 //             dat.write((char*)frame, CAMERA_W*CAMERA_H);
 //             i++;
 
+            Fl::lock();
+            box->redraw();
+            Fl::unlock();
         }
     }
     return NULL;
@@ -53,26 +66,28 @@ void* cameraThread(void *pArg)
 
 int main(void)
 {
+    Fl::lock();
+
     // open the first camera we find
     Camera cam(0);
 
     if(!cam)
         return 0;
 
+    Fl_Double_Window* w = new Fl_Double_Window(CAMERA_W,CAMERA_H);
+    Fl_Box box(0,0,CAMERA_W,CAMERA_H);
+    Fl_RGB_Image RGBimage(cam.getFrameBuffer(), CAMERA_W, CAMERA_H);
+    box.image(RGBimage);
+
+    camThreadContext context;
+    context.cam = &cam;
+    context.box = &box;
     pthread_t cameraThread_id;
     if(pthread_create(&cameraThread_id, NULL, &cameraThread, &cam) != 0)
     {
         cerr << "couldn't start thread" << endl;
         return 0;
     }
-
-
-    Fl_Double_Window* w = new Fl_Double_Window(CAMERA_W,CAMERA_H);
-    Fl_Box box(0,0,CAMERA_W,CAMERA_H);
-
-    Fl_RGB_Image RGBimage(cam.getFrameBuffer(), CAMERA_W, CAMERA_H);
-
-    box.image(RGBimage);
 
     w->resizable(w);
     w->end();
