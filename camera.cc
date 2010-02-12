@@ -67,6 +67,7 @@ Camera::Camera(int cameraIndex)
 
     frame = new unsigned char[set.width*set.height * BYTES_PER_PIXEL];
     inited = true;
+    cerr << "init done" << endl;
 }
 
 Camera::~Camera(void)
