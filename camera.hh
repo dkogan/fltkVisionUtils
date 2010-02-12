@@ -17,6 +17,7 @@ public:
 
     operator bool() { return inited; }
     unsigned char* getFrame(struct timespec* timestamp = NULL);
+    unsigned char* getFrameBuffer(void) { return frame; }
 };
 
 #endif

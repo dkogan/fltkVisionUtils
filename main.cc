@@ -70,7 +70,7 @@ int main(void)
     Fl_Double_Window* w = new Fl_Double_Window(CAMERA_W,CAMERA_H);
     Fl_Box box(0,0,CAMERA_W,CAMERA_H);
 
-    Fl_RGB_Image RGBimage(cam.getFrame(), CAMERA_W, CAMERA_H);
+    Fl_RGB_Image RGBimage(cam.getFrameBuffer(), CAMERA_W, CAMERA_H);
 
     box.image(RGBimage);
 
