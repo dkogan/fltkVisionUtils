@@ -38,7 +38,7 @@ void* cameraThread(void *pArg)
             // DO SOMETHING WITH THE FRAME HERE
 
 //             static int i = 0;
-//             ostringstream filename; 
+//             ostringstream filename;
 //             filename << "dat" << i << ".pgm";
 //             ofstream dat(filename.str().c_str());
 //             dat << "P4\n" << CAMERA_W << ' ' << CAMERA_H << "\n255\n";
