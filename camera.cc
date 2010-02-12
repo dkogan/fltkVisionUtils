@@ -38,7 +38,6 @@ Camera::Camera(int cameraIndex)
 
 //     camwire_bus_reset();
 
-    sleep(1);
 
     handle_array = camwire_bus_create(&num_handles);
     if(num_handles <= 0 || handle_array == NULL)
