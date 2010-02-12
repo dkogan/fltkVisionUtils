@@ -6,7 +6,7 @@ extern "C"
 #include <iostream>
 using namespace std;
 
-#define BYTES_PER_PIXEL 2
+#define BYTES_PER_PIXEL 1
 static Camwire_state settings(void)
 {
     Camwire_state set;
