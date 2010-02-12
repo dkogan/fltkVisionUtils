@@ -30,8 +30,8 @@ int main(void)
             static int i = 0;
             ostringstream filename; 
             filename << "dat" << i << ".pgm";
-            dat << "P4\n1024 768\n255\n";
             ofstream dat(filename.str().c_str());
+            dat << "P4\n1024 768\n255\n";
             dat.write((char*)frame, 1024*768);
             i++;
         }
