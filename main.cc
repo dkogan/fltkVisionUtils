@@ -18,11 +18,12 @@ using namespace std;
 
 #warning do I need this?
 
+static bool cameraThread_doTerminate = false;
 void* cameraThread(void *pArg)
 {
     Camera* cam = (Camera*)pArg;
 
-    while(1)
+    while(!cameraThread_doTerminate)
     {
         struct timespec delay;
         delay.tv_sec = 0;
@@ -42,6 +43,7 @@ void* cameraThread(void *pArg)
             // DO SOMETHING WITH THE FRAME HERE
 
             Fl::lock();
+            if(cameraThread_doTerminate) return NULL;
             fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
             Fl::unlock();
         }
@@ -73,5 +75,11 @@ int main(void)
     w->resizable(w);
     w->end();
     w->show();
-    return Fl::run();
+    Fl::run();
+
+    Fl::unlock();
+    cameraThread_doTerminate = true;
+    pthread_join(cameraThread_id, NULL);
+
+    return 0;
 }
