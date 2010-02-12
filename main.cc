@@ -47,6 +47,7 @@ void* cameraThread(void *pArg)
 
         }
     }
+    return NULL;
 }
 
 
