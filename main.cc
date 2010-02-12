@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <time.h>
 using namespace std;
 
 #include <FL/Fl.H>
@@ -11,9 +12,9 @@ using namespace std;
 #include "camera.hh"
 #include "pthread.h"
 
-#define CAMERA_W        1024
-#define CAMERA_H        768
-#define CAMERA_PERIOD_S 1
+#define CAMERA_W         1024
+#define CAMERA_H         768
+#define CAMERA_PERIOD_NS 100000000
 
 #warning do I need this?
 
@@ -23,7 +24,10 @@ void* cameraThread(void *pArg)
 
     while(1)
     {
-        sleep(CAMERA_PERIOD_S);
+        struct timespec delay;
+        delay.tv_sec = 0;
+        delay.tv_nsec = CAMERA_PERIOD_NS;
+        nanosleep(&delay, NULL);
 
         struct timespec timestamp;
         unsigned char* frame = cam->getFrame(&timestamp);
