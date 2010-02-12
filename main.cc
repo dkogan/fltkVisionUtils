@@ -29,7 +29,8 @@ int main(void)
             cerr << "got frame at " << timestamp.tv_sec << endl;
             static int i = 0;
             ostringstream filename; 
-            filename << "dat" << i;
+            filename << "dat" << i << ".pgm";
+            dat << "P4\n1024 768\n255\n";
             ofstream dat(filename.str().c_str());
             dat.write((char*)frame, 1024*768*2);
         }
