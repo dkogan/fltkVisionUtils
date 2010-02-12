@@ -38,19 +38,3 @@ int main(void)
     }
 
 }
-
-
-extern "C" void raw1394_set_iso_handler()
-{
-    cerr << "raw1394_set_iso_handler" << endl;
-}
-
-extern "C" void raw1394_start_iso_rcv()
-{
-    cerr << "raw1394_start_iso_rcv" << endl;
-}
-
-extern "C" void raw1394_stop_iso_rcv()
-{
-    cerr << "raw1394_stop_iso_handler" << endl;
-}
