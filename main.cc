@@ -60,7 +60,7 @@ int main(void)
         return 0;
 
     pthread_t cameraThread_id;
-    if(pthread_create(&cameraThread_id, NULL, &cameraThread, NULL) != 0)
+    if(pthread_create(&cameraThread_id, NULL, &cameraThread, &cam) != 0)
     {
         cerr << "couldn't start thread" << endl;
         return 0;
