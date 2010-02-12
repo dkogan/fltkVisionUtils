@@ -8,6 +8,7 @@ using namespace std;
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_RGB_Image.H>
+#include <FL/fl_draw.H>
 
 #include "camera.hh"
 #include "threadUtils.h"
