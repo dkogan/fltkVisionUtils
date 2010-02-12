@@ -16,7 +16,7 @@ public:
     ~Camera();
 
     operator bool() { return inited; }
-    unsigned char* getFrame(struct timespec* timestamp);
+    unsigned char* getFrame(struct timespec* timestamp = NULL);
 };
 
 #endif
