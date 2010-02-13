@@ -7,4 +7,4 @@ test: camera.o main.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 clean:
-	rm *.o test
+	rm -f *.o test
