@@ -46,10 +46,15 @@ Camera::Camera(unsigned _cameraIndex)
     // Release the resources that could have been allocated by previous instances of a program using
     // the cameras. I don't know which channels and how much bandwidth was allocated, so release
     // EVERYTHING. This can generate bogus error messages, but these should be ignored
-    fprintf(stderr, "cleaning up ieee1394 stack. This may cause error messages...\n");
-    dc1394_iso_release_bandwidth(camera, INT_MAX);
-    for (int channel = 0; channel < 64; channel++)
-        dc1394_iso_release_channel(camera, channel);
+    static bool doneOnce = false;
+    if(!doneOnce)
+    {
+        doneOnce = true;
+        fprintf(stderr, "cleaning up ieee1394 stack. This may cause error messages...\n");
+        dc1394_iso_release_bandwidth(camera, INT_MAX);
+        for (int channel = 0; channel < 64; channel++)
+            dc1394_iso_release_channel(camera, channel);
+    }
 
 
     // get the best video mode and highest framerate
