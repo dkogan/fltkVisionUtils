@@ -14,6 +14,7 @@ using namespace std;
 
 #define CAMERA_W         1024
 #define CAMERA_H         768
+#define CAMERA_PERIOD_NS 100000000
 
 #warning do I need this?
 
@@ -24,6 +25,11 @@ void* cameraThread(void *pArg)
 
     while(!cameraThread_doTerminate)
     {
+        struct timespec delay;
+        delay.tv_sec = 0;
+        delay.tv_nsec = CAMERA_PERIOD_NS;
+        nanosleep(&delay, NULL);
+
         struct timespec timestamp;
         unsigned char* frame = cam->getFrame(&timestamp);
 
