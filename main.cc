@@ -82,8 +82,8 @@ int main(void)
         return 0;
     }
 
-    Fl_Window* w = new Fl_Window(CAMERA_W,CAMERA_H);
-
+    Fl_Window w(CAMERA_W,CAMERA_H);
+    
 
     list<pthread_t> cameraThread_ids;
     for(list<Camera*>::iterator itr = cameras.begin();
