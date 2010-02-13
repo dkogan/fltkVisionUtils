@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <time.h>
+#include <list>
 using namespace std;
 
 #include <FL/Fl.H>
@@ -57,19 +58,45 @@ int main(void)
     Fl::lock();
     Fl::visual(FL_RGB);
 
-    // open the first camera we find
-    Camera cam(0);
+    list<Camera*> cameras;
 
-    if(!cam)
+    // keep opening the cameras as long as we can
+    int camidx = 0;
+    while(1)
+    {
+        Camera* cam = new Camera(camidx);
+        if(*cam)
+            cameras.push_back(cam);
+        else
+        {
+            delete cam;
+            break;
+        }
+
+        camidx++;
+    }
+
+    if( cameras.size() == 0)
+    {
+        fprintf(stderr, "no cameras found\n");
         return 0;
+    }
 
     Fl_Window* w = new Fl_Window(CAMERA_W,CAMERA_H);
 
-    pthread_t cameraThread_id;
-    if(pthread_create(&cameraThread_id, NULL, &cameraThread, &cam) != 0)
+
+    list<pthread_t> cameraThread_ids;
+    for(list<Camera*>::iterator itr = cameras.begin();
+        itr != cameras.end();
+        itr++)
     {
-        cerr << "couldn't start thread" << endl;
-        return 0;
+        pthread_t cameraThread_id;
+        if(pthread_create(&cameraThread_id, NULL, &cameraThread, *itr) != 0)
+        {
+            cerr << "couldn't start camera thread" << endl;
+            return 0;
+        }
+        cameraThread_ids.push_back(cameraThread_id);
     }
 
     w->resizable(w);
@@ -79,7 +106,20 @@ int main(void)
 
     Fl::unlock();
     cameraThread_doTerminate = true;
-    pthread_join(cameraThread_id, NULL);
+
+    for(list<pthread_t>::iterator itr = cameraThread_ids.begin();
+        itr != cameraThread_ids.end();
+        itr++)
+    {
+        pthread_join(*itr, NULL);
+    }
+
+    for(list<Camera*>::iterator itr = cameras.begin();
+        itr != cameras.end();
+        itr++)
+    {
+        delete *itr;
+    }
 
     return 0;
 }
