@@ -155,5 +155,14 @@ unsigned char* Camera::getFrame(uint64_t* timestamp_us)
     if(timestamp_us != NULL)
         *timestamp_us = cameraFrame->timestamp - timestamp0;
 
+    err = dc1394_capture_enqueue(camera, cameraFrame);
+    if( err != DC1394_SUCCESS )
+    {
+        dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
+                           dc1394_error_get_string(err),
+                           __FUNCTION__, __FILE__, __LINE__);
+        return NULL;
+    }
+
     return frame;
 }
