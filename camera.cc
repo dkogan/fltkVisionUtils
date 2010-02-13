@@ -103,7 +103,9 @@ Camera::Camera(unsigned _cameraIndex)
     err = dc1394_video_set_framerate(camera, framerate);
     DC1394_ERR(err,"Could not set framerate");
 
-    err = dc1394_capture_setup(camera, 4, DC1394_CAPTURE_FLAGS_DEFAULT);
+    // I always want only the latest frame available. I.e. I don't really care if I missed some
+    // frames. So I use a single DMA buffer
+    err = dc1394_capture_setup(camera, 1, DC1394_CAPTURE_FLAGS_DEFAULT);
     DC1394_ERR(err,"Could not setup camera-\nmake sure that the video mode and framerate are\nsupported by your camera");
 
 
