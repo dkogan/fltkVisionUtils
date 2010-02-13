@@ -1,108 +1,154 @@
-extern "C"
-{
+#include <stdio.h>
+#include <string.h>
 #include "camera.hh"
-}
 
-#include <iostream>
-using namespace std;
+// The camera context
+dc1394_t*            Camera::dc1394Context    = NULL;
+dc1394camera_list_t* Camera::cameraList       = NULL;
+int                  Camera::numInitedCameras = 0;
 
 #define BYTES_PER_PIXEL 1
-static Camwire_state settings(void)
-{
-    Camwire_state set;
-    set.num_frame_buffers = 2;
-    set.blue_gain         = 1.0;
-    set.red_gain          = 1.0;
-    set.left              = 0;
-    set.top               = 0;
-    set.width             = 1024;
-    set.height            = 768;
-    set.coding            = CAMWIRE_PIXEL_MONO8;
-    set.frame_rate        = 32;
-    set.shutter           = 0.022240; // to get shutter=1112 in coriander. scale factor is 50000 for some reason
-    set.external_trigger  = 0;
-    set.single_shot       = 0;
-    set.running           = 1;
-    set.shadow            = 0;
-    return set;
-}
 
-Camera::Camera(int _cameraIndex)
-    : cameraIndex(_cameraIndex)
+Camera::Camera(unsigned _cameraIndex)
+    : inited(false), cameraIndex(_cameraIndex), camera(NULL)
 {
-    cameraHandle = NULL;
-    frame        = NULL;
-    inited       = false;
+    dc1394error_t err;
 
-    // initialize the camera bus. This is common to ALL of the cameras. If it is not yet inited then
-    // handle_array==NULL
-    static int num_handles;
-    static Camwire_handle *handle_array = NULL;
-    if(handle_array == NULL)
+    if(dc1394Context == NULL)
     {
-        //     camwire_bus_reset();
-
-        handle_array = camwire_bus_create(&num_handles);
-        if(num_handles <= 0 || handle_array == NULL)
-        {
-            cerr << "camwire_bus_create failed" << endl;
+        dc1394Context = dc1394_new();
+        if (!dc1394Context)
             return;
-        }
-        if(num_handles <= 0)
+
+        err = dc1394_camera_enumerate (dc1394Context, &cameraList);
+        DC1394_ERR(err,"Failed to enumerate cameras");
+
+        if(cameraList->num == 0)
         {
-            cerr << "camwire_bus_create got fewer than 1 handle...." << endl;
+            dc1394_log_error("No cameras found");
             return;
         }
     }
 
-    if(cameraIndex >= num_handles)
+    if(cameraIndex >= cameraList->num)
+        return;
+
+    camera = dc1394_camera_new(dc1394Context, cameraList->ids[cameraIndex].guid);
+    if (!camera)
     {
-        cerr << "tried to use camera handle " << cameraIndex << " while there were only " <<
-            num_handles << " handles available" << endl;
+        dc1394_log_error("Failed to initialize camera with guid %ld", cameraList->ids[cameraIndex].guid);
         return;
     }
 
-    cameraHandle = handle_array[cameraIndex];
+    fprintf(stderr, "Using camera with GUID %ld\n", camera->guid);
 
-    Camwire_state set = settings();
-    if(camwire_create_from_struct(cameraHandle, &set) != CAMWIRE_SUCCESS)
+    // get the best video mode and highest framerate
+    // get video modes:
+    dc1394video_modes_t  video_modes;
+    dc1394video_mode_t   video_mode;
+    dc1394color_coding_t coding;
+    err = dc1394_video_get_supported_modes(camera, &video_modes);
+    DC1394_ERR(err, "Can't get video modes");
+
+    // select highest res mode:
+    int i;
+    for (i = video_modes.num - 1; i >= 0; i--)
+    {
+        if (!dc1394_is_video_mode_scalable(video_modes.modes[i]))
+        {
+            dc1394_get_color_coding_from_video_mode(camera, video_modes.modes[i], &coding);
+            if( coding == DC1394_COLOR_CODING_MONO8 )
+            {
+                video_mode = video_modes.modes[i];
+                break;
+            }
+        }
+    }
+    if (i < 0)
+    {
+        dc1394_log_error("Could not get a valid MONO8 mode");
         return;
+    }
 
-    frame = new unsigned char[set.width*set.height * BYTES_PER_PIXEL];
+    err = dc1394_get_color_coding_from_video_mode(camera, video_mode, &coding);
+    DC1394_ERR(err, "Could not get color coding");
+
+    // get highest framerate
+    dc1394framerates_t framerates;
+    dc1394framerate_t  framerate;
+    err = dc1394_video_get_supported_framerates(camera, video_mode, &framerates);
+    DC1394_ERR(err, "Could not get framerates");
+    framerate = framerates.framerates[framerates.num - 1];
+
+    // setup capture
+    err = dc1394_video_set_iso_speed(camera, DC1394_ISO_SPEED_400);
+    DC1394_ERR(err,"Could not set iso speed");
+
+    err = dc1394_video_set_mode(camera, video_mode);
+    DC1394_ERR(err,"Could not set video mode");
+
+    err = dc1394_video_set_framerate(camera, framerate);
+    DC1394_ERR(err,"Could not set framerate");
+
+    err = dc1394_capture_setup(camera, 4, DC1394_CAPTURE_FLAGS_DEFAULT);
+    DC1394_ERR(err,"Could not setup camera-\nmake sure that the video mode and framerate are\nsupported by your camera");
+
+
+    // have the camera start sending us data
+    err = dc1394_video_set_transmission(camera, DC1394_ON);
+    DC1394_ERR(err,"Could not start camera iso transmission");
+
+    dc1394_get_image_size_from_video_mode(camera, video_mode, &width, &height);
+    frame = new unsigned char[width * height * BYTES_PER_PIXEL];
+
     inited = true;
-    cerr << "init done" << endl;
+    numInitedCameras++;
+
+    fprintf(stderr, "init done\n");
 }
 
 Camera::~Camera(void)
 {
-    if (cameraHandle != NULL)
+    if (camera != NULL)
     {
-        // stop the camera, and sleep 2 frames worth of time
-        camwire_set_run_stop(cameraHandle, 0);
-        double framerate;
-        camwire_get_framerate(cameraHandle, &framerate);
-        double period = 2.0 / framerate;
-        struct timespec sleeptime;
-        sleeptime.tv_sec  = period;
-        sleeptime.tv_nsec = (period - sleeptime.tv_sec) * 1.0e9;
-        nanosleep(&sleeptime, NULL);
-        camwire_destroy(cameraHandle);
-        camwire_bus_destroy();
+        dc1394_video_set_transmission(camera, DC1394_OFF);
+        dc1394_capture_stop(camera);
+        dc1394_camera_free(camera);
+        camera = NULL;
+    }
 
-        cameraHandle = NULL;
+    if(inited)
+        numInitedCameras--;
+
+    if(dc1394Context != NULL && numInitedCameras <= 0)
+    {
+        dc1394_free(dc1394Context);
+        dc1394Context = NULL;
+        dc1394_camera_free_list (cameraList);
     }
 
     if(frame != NULL)
         delete[] frame;
 }
 
-unsigned char* Camera::getFrame(struct timespec* timestamp)
+unsigned char* Camera::getFrame(uint64_t* timestamp_us)
 {
-    if(camwire_copy_next_frame(cameraHandle, (void*)frame, NULL) != CAMWIRE_SUCCESS)
-        return NULL;
+    dc1394error_t err;
+    dc1394video_frame_t* cameraFrame;
+    err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &cameraFrame);
 
-    if(timestamp != NULL)
-        camwire_get_timestamp(cameraHandle, timestamp);
+    if( err != DC1394_SUCCESS )
+    {
+        dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
+                           dc1394_error_get_string(err),
+                           __FUNCTION__, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    memcpy(frame, cameraFrame->image, width*height*BYTES_PER_PIXEL);
+
+    if(timestamp_us != NULL)
+        *timestamp_us = cameraFrame->timestamp;
 
     return frame;
 }

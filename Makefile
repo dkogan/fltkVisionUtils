@@ -1,7 +1,7 @@
 CXXFLAGS += -g -Wall -Wextra -pedantic
 LDFLAGS  += -g
 
-LDLIBS += -lfltk -lpthread -lcamwire_1394 -ldc1394_control
+LDLIBS += -lfltk -lpthread -ldc1394
 
 test: camera.o main.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
