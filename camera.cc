@@ -34,22 +34,25 @@ Camera::Camera(int _cameraIndex)
     frame        = NULL;
     inited       = false;
 
-    int num_handles;
-    Camwire_handle *handle_array = NULL;
-
-//     camwire_bus_reset();
-
-
-    handle_array = camwire_bus_create(&num_handles);
-    if(num_handles <= 0 || handle_array == NULL)
+    // initialize the camera bus. This is common to ALL of the cameras. If it is not yet inited then
+    // handle_array==NULL
+    static int num_handles;
+    static Camwire_handle *handle_array = NULL;
+    if(handle_array == NULL)
     {
-        cerr << "camwire_bus_create failed" << endl;
-        return;
-    }
-    if(num_handles <= 0)
-    {
-        cerr << "camwire_bus_create got fewer than 1 handle...." << endl;
-        return;
+        //     camwire_bus_reset();
+
+        handle_array = camwire_bus_create(&num_handles);
+        if(num_handles <= 0 || handle_array == NULL)
+        {
+            cerr << "camwire_bus_create failed" << endl;
+            return;
+        }
+        if(num_handles <= 0)
+        {
+            cerr << "camwire_bus_create got fewer than 1 handle...." << endl;
+            return;
+        }
     }
 
     if(cameraIndex >= num_handles)
