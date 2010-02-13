@@ -27,7 +27,8 @@ static Camwire_state settings(void)
     return set;
 }
 
-Camera::Camera(int cameraIndex)
+Camera::Camera(int _cameraIndex)
+    : cameraIndex(_cameraIndex)
 {
     cameraHandle = NULL;
     frame        = NULL;

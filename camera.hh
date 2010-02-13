@@ -11,13 +11,16 @@ class Camera
 
     unsigned char* frame;
 
+    int cameraIndex;
+
 public:
-    Camera(int cameraIndex);
+    Camera(int _cameraIndex);
     ~Camera();
 
     operator bool() { return inited; }
     unsigned char* getFrame(struct timespec* timestamp = NULL);
     unsigned char* getFrameBuffer(void) { return frame; }
+    int idx(void) { return cameraIndex; }
 };
 
 #endif
