@@ -4,11 +4,12 @@
 #include <sstream>
 #include <time.h>
 #include <list>
+#include <string.h>
 using namespace std;
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
-#include <FL/fl_draw.H>
+#include "FLTK_camera.hh"
 
 #include "camera.hh"
 #include "pthread.h"
@@ -18,6 +19,8 @@ using namespace std;
 #define CAMERA_PERIOD_NS 100000000
 
 #warning do I need this?
+
+static CameraWidget* camWidget;
 
 static bool cameraThread_doTerminate = false;
 void* cameraThread(void *pArg)
@@ -33,10 +36,12 @@ void* cameraThread(void *pArg)
 
         uint64_t timestamp_us;
         unsigned char* frame = cam->getFrame(&timestamp_us);
+        camWidget->updateFrame( frame );
 
         if(frame == NULL)
         {
             cerr << "couldn't get frame\n";
+            cam->releaseFrame();
             return NULL;
         }
         else
@@ -48,6 +53,7 @@ void* cameraThread(void *pArg)
             fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
             Fl::unlock();
         }
+        cam->releaseFrame();
     }
     return NULL;
 }
@@ -82,8 +88,9 @@ int main(void)
         return 0;
     }
 
-    Fl_Window w(CAMERA_W,CAMERA_H);
-    
+    Fl_Window window(CAMERA_W,CAMERA_H);
+    camWidget = new CameraWidget(0,0,CAMERA_W,CAMERA_H,
+                                 CAMERA_W,CAMERA_H);
 
     list<pthread_t> cameraThread_ids;
     for(list<Camera*>::iterator itr = cameras.begin();
@@ -99,9 +106,9 @@ int main(void)
         cameraThread_ids.push_back(cameraThread_id);
     }
 
-    w->resizable(w);
-    w->end();
-    w->show();
+    window.resizable(window);
+    window.end();
+    window.show();
     Fl::run();
 
     Fl::unlock();
@@ -120,6 +127,8 @@ int main(void)
     {
         delete *itr;
     }
+
+    delete camWidget;
 
     return 0;
 }
