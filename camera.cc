@@ -91,7 +91,10 @@ Camera::Camera(unsigned _cameraIndex)
     framerate = framerates.framerates[framerates.num - 1];
 
     // setup capture
-    err = dc1394_video_set_iso_speed(camera, DC1394_ISO_SPEED_400);
+    err = dc1394_video_set_operation_mode(camera, DC1394_OPERATION_MODE_1394B);
+    DC1394_ERR(err,"Could not set operation mode");
+
+    err = dc1394_video_set_iso_speed(camera, DC1394_ISO_SPEED_800);
     DC1394_ERR(err,"Could not set iso speed");
 
     err = dc1394_video_set_mode(camera, video_mode);
