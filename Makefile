@@ -8,3 +8,9 @@ test: camera.o main.o
 
 clean:
 	rm -f *.o test
+
+deps.d: $(wildcard *.c *.cc *.cpp *.h *.hh)
+	@touch $@
+	makedepend -f $@ -Y -- $(CFLAGS) $(CXXFLAGS) $(INCLUDE) -- $(wildcard *.c *.cc *.cpp) 2>/dev/null
+
+-include deps.d
