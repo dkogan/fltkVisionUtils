@@ -10,7 +10,7 @@ int                  Camera::numInitedCameras = 0;
 #define BYTES_PER_PIXEL 1
 
 Camera::Camera(unsigned _cameraIndex)
-    : inited(false), cameraIndex(_cameraIndex), camera(NULL)
+    : inited(false), frame(NULL), cameraIndex(_cameraIndex), camera(NULL)
 {
     dc1394error_t err;
 
