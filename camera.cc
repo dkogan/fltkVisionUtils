@@ -133,6 +133,8 @@ Camera::~Camera(void)
 
 unsigned char* Camera::getFrame(uint64_t* timestamp_us)
 {
+    static uint64_t timestamp0 = 0;
+
     dc1394error_t err;
     dc1394video_frame_t* cameraFrame;
     err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &cameraFrame);
@@ -147,8 +149,11 @@ unsigned char* Camera::getFrame(uint64_t* timestamp_us)
 
     memcpy(frame, cameraFrame->image, width*height*BYTES_PER_PIXEL);
 
+    if(timestamp0 == 0)
+        timestamp0 = cameraFrame->timestamp;
+
     if(timestamp_us != NULL)
-        *timestamp_us = cameraFrame->timestamp;
+        *timestamp_us = cameraFrame->timestamp - timestamp0;
 
     return frame;
 }
