@@ -9,6 +9,8 @@ using namespace std;
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
+#include <FL/Fl_Value_Slider.H>
+
 #include "FLTK_camera.hh"
 
 #include "camera.hh"
@@ -20,7 +22,8 @@ using namespace std;
 
 #warning do I need this?
 
-static CameraWidget* camWidget;
+static CameraWidget*    camWidget;
+static Fl_Value_Slider* cameraSelector;
 
 static bool cameraThread_doTerminate = false;
 void* cameraThread(void *pArg)
@@ -92,6 +95,16 @@ int main(void)
     camWidget = new CameraWidget(0,0,CAMERA_W,CAMERA_H,
                                  CAMERA_W,CAMERA_H);
 
+    cameraSelector = new Fl_Value_Slider(0, CAMERA_H+10, 300, 20, "Displayed camera");
+    cameraSelector->type(FL_HOR_NICE_SLIDER);
+    cameraSelector->range(0, cameras.size()-1);
+    cameraSelector->precision(0); // integer
+
+    window.resizable(window);
+    window.end();
+    window.show();
+
+
     list<pthread_t> cameraThread_ids;
     for(list<Camera*>::iterator itr = cameras.begin();
         itr != cameras.end();
@@ -106,9 +119,6 @@ int main(void)
         cameraThread_ids.push_back(cameraThread_id);
     }
 
-    window.resizable(window);
-    window.end();
-    window.show();
     Fl::run();
 
     Fl::unlock();
@@ -129,6 +139,7 @@ int main(void)
     }
 
     delete camWidget;
+    delete cameraSelector;
 
     return 0;
 }
