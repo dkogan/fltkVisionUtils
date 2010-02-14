@@ -70,10 +70,9 @@ int main(void)
     list<Camera*> cameras;
 
     // keep opening the cameras as long as we can
-    int camidx = 0;
     while(1)
     {
-        Camera* cam = new Camera(camidx);
+        Camera* cam = new Camera( cameras.size() );
         if(*cam)
             cameras.push_back(cam);
         else
@@ -81,8 +80,6 @@ int main(void)
             delete cam;
             break;
         }
-
-        camidx++;
     }
 
     if( cameras.size() == 0)
