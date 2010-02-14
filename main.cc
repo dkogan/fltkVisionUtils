@@ -91,7 +91,7 @@ int main(void)
         return 0;
     }
 
-    Fl_Window window(CAMERA_W,CAMERA_H);
+    Fl_Window window(CAMERA_W,CAMERA_H+30);
     camWidget = new CameraWidget(0,0,CAMERA_W,CAMERA_H,
                                  CAMERA_W,CAMERA_H);
 
