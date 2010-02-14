@@ -28,7 +28,14 @@ public:
     void updateFrame(unsigned char* frame)
     {
         if(frame)
+        {
+            // I want to draw the next frame. Set the damage flag to tell the widget that it needs
+            // to be redrawn, and actually draw the frame. Normally the drawing will be done in the
+            // draw() callback, but since I will update the image with the camera updates, this will
+            // happen often anyway and I don't need X's fancy redrawing and caching logic
+            damage(0);
             fl_draw_image_mono(frame, x(), y(), cameraW, cameraH);
+        }
     }
 };
 
