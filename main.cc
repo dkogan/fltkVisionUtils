@@ -31,8 +31,8 @@ void* cameraThread(void *pArg)
         delay.tv_nsec = CAMERA_PERIOD_NS;
         nanosleep(&delay, NULL);
 
-        struct timespec timestamp;
-        unsigned char* frame = cam->getFrame(&timestamp);
+        uint64_t timestamp_us;
+        unsigned char* frame = cam->getFrame(&timestamp_us);
 
         if(frame == NULL)
         {
