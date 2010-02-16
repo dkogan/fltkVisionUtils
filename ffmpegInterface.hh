@@ -22,7 +22,7 @@ protected:
     bool             m_bOpen;
     bool             m_bOK;
 
-    virtual void initVars(void);
+    virtual void reset(void);
     virtual void free(void);
 
 public:
@@ -45,7 +45,7 @@ class FFmpegDecoder : public FFmpegTalker
 {
     int              m_videoStream;
 
-    void initVars(void);
+    void reset(void);
 
 public:
     FFmpegDecoder()
@@ -80,7 +80,7 @@ class FFmpegEncoder : public FFmpegTalker
     uint8_t*         m_bufferYUV;
     int              m_bufferYUVSize;
 
-    void initVars(void);
+    void reset(void);
 
 public:
     FFmpegEncoder()
