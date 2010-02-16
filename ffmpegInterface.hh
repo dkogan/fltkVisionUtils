@@ -4,20 +4,96 @@
 #include <ffmpeg/avcodec.h>
 #include <ffmpeg/avformat.h>
 
+#include <iostream>
+using namespace std;
+
 class FFmpegTalker
 {
+protected:
+  AVOutputFormat*  m_pOutputFormat;
+  AVStream*        m_pStream;
   AVFormatContext* m_pFormatCtx;
-  int              m_videoStream;
   AVCodecContext*  m_pCodecCtx;
-  AVFrame*         m_pFrame; 
+  AVFrame*         m_pFrameYUV;
   AVFrame*         m_pFrameRGB;
-  uint8_t*         m_buffer;
+  uint8_t*         m_bufferRGB;
+  int              m_bufferRGBSize;
+  uint8_t*         m_bufferYUV;
+  int              m_bufferYUVSize;
+  int              m_videoStream;
+
+  bool             m_bOpen;
+  bool             m_bOK;
+
+  void initVars(void);
+  virtual void free(void);
 
 public:
   FFmpegTalker();
-  ~FFmpegTalker();
-  bool openForReading(const char* filename);
+  virtual ~FFmpegTalker();
+
+  virtual bool open(const char* filename) = 0;
+  virtual void close(void) = 0;
+  bool operator!()
+  {
+    return !m_bOK;
+  }
+};
+
+class FFmpegDecoder : public FFmpegTalker
+{
+public:
+  FFmpegDecoder()
+    : FFmpegTalker()
+  {}
+  FFmpegDecoder(const char* filename)
+    : FFmpegTalker()
+  {
+    open(filename);
+  }
+  ~FFmpegDecoder()
+  {
+    cerr << "~FFmpegDecoder" << endl;
+    close();
+  }
+
+  bool open(const char* filename);
   bool readFrameGrayscale(unsigned char* pBuffer);
+  void close(void);
+  void free(void);
+
+  bool operator>>(unsigned char* pBuffer)
+  {
+    return readFrameGrayscale(pBuffer);
+  }
+};
+
+class FFmpegEncoder : public FFmpegTalker
+{
+public:
+  FFmpegEncoder()
+    : FFmpegTalker()
+  {}
+  FFmpegEncoder(const char* filename)
+    : FFmpegTalker()
+  {
+    open(filename);
+  }
+  ~FFmpegEncoder()
+  {
+    cerr << "~FFmpegEncoder" << endl;
+    close();
+  }
+
+  bool open(const char* filename);
+  bool writeFrameGrayscale(unsigned char* pBuffer);
+  void close(void);
+  void free(void);
+
+  bool operator<<(unsigned char* pBuffer)
+  {
+    return writeFrameGrayscale(pBuffer);
+  }
 };
 
 #endif //_FFMPEG_TALKER_H_
