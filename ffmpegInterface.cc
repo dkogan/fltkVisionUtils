@@ -119,13 +119,13 @@ bool FFmpegTalker::readFrameGrayscale(unsigned char* pBuffer)
             pBuffer++;
           }
         }
-        break;
-  
+        av_free_packet(&packet);
+        return true;
       }
     }
     
-    av_free_packet(&packet);
   }
   
-  return true;
+  av_free_packet(&packet);
+  return false;
 }
