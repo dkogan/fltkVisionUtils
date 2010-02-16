@@ -1,9 +1,10 @@
 CXXFLAGS += -g -Wall -Wextra -pedantic
 LDFLAGS  += -g
 
-LDLIBS += -lfltk -lpthread -ldc1394
+LDLIBS += -lfltk -lpthread -ldc1394 -lavformat -lavcodec -lswscale -lavutil
 
-test: frameSource.o camera.o main.o
+
+test: frameSource.o camera.o main.o ffmpegInterface.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 clean:

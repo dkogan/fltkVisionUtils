@@ -101,7 +101,7 @@ void FFmpegEncoder::close(void)
     if(m_bOpen)
     {
         av_write_trailer(m_pFormatCtx);
-        url_fclose(&m_pFormatCtx->pb);
+        url_fclose(m_pFormatCtx->pb);
     }
     free();
 }
@@ -137,7 +137,7 @@ bool FFmpegDecoder::open(const char* filename)
 
     // Find the first video stream
     m_videoStream = -1;
-    for(int i=0; i<m_pFormatCtx->nb_streams; i++)
+    for(unsigned int i=0; i<m_pFormatCtx->nb_streams; i++)
     {
         if(m_pFormatCtx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO)
         {
@@ -232,7 +232,7 @@ bool FFmpegEncoder::open(const char* filename)
         return false;
     }
 
-    m_pFormatCtx = av_alloc_format_context();
+    m_pFormatCtx = avformat_alloc_context();
     if(m_pFormatCtx == NULL)
     {
         cerr << "ffmpeg: couldn't alloc format context" << endl;
@@ -250,19 +250,20 @@ bool FFmpegEncoder::open(const char* filename)
         return false;
     }
 
-    m_pCodecCtx               = m_pStream->codec;
-    m_pCodecCtx->codec_type   = CODEC_TYPE_VIDEO;
-    m_pCodecCtx->codec_id     = OUTPUT_CODEC;
-    m_pCodecCtx->bit_rate     = 1000000;
-    m_pCodecCtx->flags        = OUTPUT_FLAGS;
-    m_pCodecCtx->flags2       = OUTPUT_FLAGS2;
-    m_pCodecCtx->thread_count = OUTPUT_THREADS;
-    m_pCodecCtx->width        = 640;
-    m_pCodecCtx->height       = 480;
-    m_pCodecCtx->time_base    = (AVRational){1,15}; /* frames per second */
-    m_pCodecCtx->gop_size     = OUTPUT_GOP_SIZE;
-    m_pCodecCtx->max_b_frames = OUTPUT_MAX_B_FRAMES;
-    m_pCodecCtx->pix_fmt      = OUTPUT_PIX_FMT;
+    m_pCodecCtx                = m_pStream->codec;
+    m_pCodecCtx->codec_type    = CODEC_TYPE_VIDEO;
+    m_pCodecCtx->codec_id      = OUTPUT_CODEC;
+    m_pCodecCtx->bit_rate      = 1000000;
+    m_pCodecCtx->flags         = OUTPUT_FLAGS;
+    m_pCodecCtx->flags2        = OUTPUT_FLAGS2;
+    m_pCodecCtx->thread_count  = OUTPUT_THREADS;
+    m_pCodecCtx->width         = 640;
+    m_pCodecCtx->height        = 480;
+    m_pCodecCtx->time_base.num = 1;
+    m_pCodecCtx->time_base.den = 15; // frames per second
+    m_pCodecCtx->gop_size      = OUTPUT_GOP_SIZE;
+    m_pCodecCtx->max_b_frames  = OUTPUT_MAX_B_FRAMES;
+    m_pCodecCtx->pix_fmt       = OUTPUT_PIX_FMT;
 
     AVCodec* pCodec = avcodec_find_encoder(m_pCodecCtx->codec_id);
     if(pCodec == NULL)
