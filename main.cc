@@ -47,15 +47,13 @@ void* cameraThread(void *pArg)
             cam->releaseFrame();
             return NULL;
         }
-        else
-        {
-            // DO SOMETHING WITH THE FRAME HERE
 
-            Fl::lock();
-            if(cameraThread_doTerminate) return NULL;
-            fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
-            Fl::unlock();
-        }
+        // DO SOMETHING WITH THE FRAME HERE
+
+        Fl::lock();
+        if(cameraThread_doTerminate) return NULL;
+        fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
+        Fl::unlock();
         cam->releaseFrame();
     }
     return NULL;
