@@ -6,11 +6,11 @@ extern "C"
 #include <iostream>
 using namespace std;
 
-#define BYTES_PER_PIXEL 1
+#define BYTES_PER_PIXEL 2
 static Camwire_state settings(void)
 {
     Camwire_state set;
-    set.num_frame_buffers = 10;
+    set.num_frame_buffers = 2;
     set.blue_gain         = 1.0;
     set.red_gain          = 1.0;
     set.left              = 0;
@@ -18,7 +18,7 @@ static Camwire_state settings(void)
     set.width             = 1024;
     set.height            = 768;
     set.coding            = CAMWIRE_PIXEL_MONO8;
-    set.frame_rate        = 1;
+    set.frame_rate        = 32;
     set.shutter           = 0.022240; // to get shutter=1112 in coriander. scale factor is 50000 for some reason
     set.external_trigger  = 0;
     set.single_shot       = 0;
