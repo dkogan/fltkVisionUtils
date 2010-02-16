@@ -171,7 +171,7 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
     {
         if(packet.stream_index == m_videoStream)
         {
-            avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished, 
+            avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished,
                                  packet.data, packet.size);
             if(frameFinished)
             {
