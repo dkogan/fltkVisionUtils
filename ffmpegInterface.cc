@@ -11,338 +11,338 @@
 
 FFmpegTalker::FFmpegTalker()
 {
-  av_register_all();
-  initVars();
+    av_register_all();
+    initVars();
 }
 void FFmpegTalker::initVars(void)
 {
-  m_bOpen         = false;
-  m_bOK           = true;
+    m_bOpen         = false;
+    m_bOK           = true;
 
-  m_pOutputFormat   = NULL;
-  m_pStream         = NULL;
-  m_pFormatCtx      = NULL;
-  m_pCodecCtx       = NULL;
-  m_pFrameYUV       = NULL;
-  m_bufferYUV       = NULL;
-  m_bufferYUVSize   = -1;
-  m_pSWSCtx         = NULL;
+    m_pOutputFormat   = NULL;
+    m_pStream         = NULL;
+    m_pFormatCtx      = NULL;
+    m_pCodecCtx       = NULL;
+    m_pFrameYUV       = NULL;
+    m_bufferYUV       = NULL;
+    m_bufferYUVSize   = -1;
+    m_pSWSCtx         = NULL;
 
-  m_videoStream   = -1;
+    m_videoStream   = -1;
 }
 FFmpegTalker::~FFmpegTalker()
 {
-  cerr << "FFmpegTalker::~FFmpegTalker" << endl;
-  free();
+    cerr << "FFmpegTalker::~FFmpegTalker" << endl;
+    free();
 }
 void FFmpegTalker::free(void)
 {
-  cerr << "FFmpegTalker::free(void)" << endl;
-  if(m_bufferYUV)    av_free(m_bufferYUV);
-  if(m_pFrameYUV)    av_free(m_pFrameYUV);
+    cerr << "FFmpegTalker::free(void)" << endl;
+    if(m_bufferYUV)    av_free(m_bufferYUV);
+    if(m_pFrameYUV)    av_free(m_pFrameYUV);
 
-  if(m_pSWSCtx)      sws_freeContext(m_pSWSCtx);
+    if(m_pSWSCtx)      sws_freeContext(m_pSWSCtx);
 
-  if(m_pCodecCtx)
-  {
-    if(m_pCodecCtx->codec != NULL)
+    if(m_pCodecCtx)
     {
-      cerr << "avcodec_close" << endl;
-      avcodec_close(m_pCodecCtx);
+        if(m_pCodecCtx->codec != NULL)
+        {
+            cerr << "avcodec_close" << endl;
+            avcodec_close(m_pCodecCtx);
+        }
     }
-  }
 
-  if(m_pStream)
-    av_free(m_pStream);
+    if(m_pStream)
+        av_free(m_pStream);
 }
 void FFmpegDecoder::free(void)
 {
-  cerr << "FFmpegDecoder::free(void)" << endl;
-  FFmpegTalker::free();
+    cerr << "FFmpegDecoder::free(void)" << endl;
+    FFmpegTalker::free();
 
-  if(m_pFormatCtx)
-    av_close_input_file(m_pFormatCtx);
-  initVars();
+    if(m_pFormatCtx)
+        av_close_input_file(m_pFormatCtx);
+    initVars();
 }
 void FFmpegEncoder::free(void)
 {
-  cerr << "FFmpegEncoder::free(void)" << endl;
+    cerr << "FFmpegEncoder::free(void)" << endl;
 
-  FFmpegTalker::free();
+    FFmpegTalker::free();
 
-  if(m_pCodecCtx)
-    av_free(m_pCodecCtx);
-  if(m_pFormatCtx)
-    av_free(m_pFormatCtx);
+    if(m_pCodecCtx)
+        av_free(m_pCodecCtx);
+    if(m_pFormatCtx)
+        av_free(m_pFormatCtx);
 
-  initVars();
+    initVars();
 }
 
 void FFmpegDecoder::close(void)
 {
-  cerr << "FFmpegDecoder::close(void)" << endl;
-  free();
+    cerr << "FFmpegDecoder::close(void)" << endl;
+    free();
 }
 void FFmpegEncoder::close(void)
 {
-  cerr << "FFmpegEncoder::close(void)" << endl;
-  if(m_bOpen)
-  {
-    av_write_trailer(m_pFormatCtx);
-    url_fclose(&m_pFormatCtx->pb);
-  }
-  free();
+    cerr << "FFmpegEncoder::close(void)" << endl;
+    if(m_bOpen)
+    {
+        av_write_trailer(m_pFormatCtx);
+        url_fclose(&m_pFormatCtx->pb);
+    }
+    free();
 }
 
 
 bool FFmpegDecoder::open(const char* filename)
 {
-  if(m_bOpen)
-  {
-    cerr << "FFmpegDecoder: trying to open a file while we're already open. Doing nothing." << endl;
-    return true;
-  }
-  if(!m_bOK)
-  {
-    cerr << "FFmpegDecoder: trying to open a file while we're not ok. Reseting and trying again." << endl;
-    close();
-  }
-  m_bOK = false;
-
-  if(av_open_input_file(&m_pFormatCtx, filename, NULL, 0, NULL) != 0)
-  {
-    cerr << "ffmpeg: couldn't open input file" << endl;
-    return false;
-  }
-
-  // this dumps info into stdout
-//   if(av_find_stream_info(m_pFormatCtx) < 0)
-//   {
-//     cerr << "ffmpeg: couldn't find stream info" << endl;
-//     return false;
-//   }
-//   dump_format(pFormatCtx, 0, filename, 0);
-
-  // Find the first video stream
-  m_videoStream = -1;
-  for(int i=0; i<m_pFormatCtx->nb_streams; i++)
-  {
-    if(m_pFormatCtx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO)
+    if(m_bOpen)
     {
-      m_videoStream = i;
-      break;
+        cerr << "FFmpegDecoder: trying to open a file while we're already open. Doing nothing." << endl;
+        return true;
     }
-  }
-  if(m_videoStream == -1)
-  {
-    cerr << "ffmpeg: couldn't find first video stream" << endl;
-    return false;
-  }
-  m_pCodecCtx = m_pFormatCtx->streams[m_videoStream]->codec;
+    if(!m_bOK)
+    {
+        cerr << "FFmpegDecoder: trying to open a file while we're not ok. Reseting and trying again." << endl;
+        close();
+    }
+    m_bOK = false;
 
-  AVCodec* pCodec = avcodec_find_decoder(m_pCodecCtx->codec_id);
-  if(pCodec == NULL)
-  {
-    cerr << "ffmpeg: couldn't find decoder" << endl;
-    return false;
-  }
+    if(av_open_input_file(&m_pFormatCtx, filename, NULL, 0, NULL) != 0)
+    {
+        cerr << "ffmpeg: couldn't open input file" << endl;
+        return false;
+    }
 
-  if(avcodec_open(m_pCodecCtx, pCodec) < 0)
-  {
-    cerr << "ffmpeg: couldn't open codec" << endl;
-    return false;
-  }
+    // this dumps info into stdout
+    //   if(av_find_stream_info(m_pFormatCtx) < 0)
+    //   {
+    //     cerr << "ffmpeg: couldn't find stream info" << endl;
+    //     return false;
+    //   }
+    //   dump_format(pFormatCtx, 0, filename, 0);
 
-  m_pFrameYUV = avcodec_alloc_frame();
+    // Find the first video stream
+    m_videoStream = -1;
+    for(int i=0; i<m_pFormatCtx->nb_streams; i++)
+    {
+        if(m_pFormatCtx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO)
+        {
+            m_videoStream = i;
+            break;
+        }
+    }
+    if(m_videoStream == -1)
+    {
+        cerr << "ffmpeg: couldn't find first video stream" << endl;
+        return false;
+    }
+    m_pCodecCtx = m_pFormatCtx->streams[m_videoStream]->codec;
 
-  m_bOpen = m_bOK = true;
-  return true;
+    AVCodec* pCodec = avcodec_find_decoder(m_pCodecCtx->codec_id);
+    if(pCodec == NULL)
+    {
+        cerr << "ffmpeg: couldn't find decoder" << endl;
+        return false;
+    }
+
+    if(avcodec_open(m_pCodecCtx, pCodec) < 0)
+    {
+        cerr << "ffmpeg: couldn't open codec" << endl;
+        return false;
+    }
+
+    m_pFrameYUV = avcodec_alloc_frame();
+
+    m_bOpen = m_bOK = true;
+    return true;
 }
 
 bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
 {
-  if(!m_bOpen || !m_bOK)
-    return false;
+    if(!m_bOpen || !m_bOK)
+        return false;
 
-  AVPacket packet;
-  int frameFinished;
+    AVPacket packet;
+    int frameFinished;
 
-  while(av_read_frame(m_pFormatCtx, &packet) >= 0)
-  {
-    if(packet.stream_index == m_videoStream)
+    while(av_read_frame(m_pFormatCtx, &packet) >= 0)
     {
-      avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished, 
-                           packet.data, packet.size);
-      if(frameFinished)
-      {
-        if(m_pSWSCtx == NULL)
+        if(packet.stream_index == m_videoStream)
         {
-          m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
-                                     m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
-                                     0, NULL, NULL, NULL);
-          if(m_pSWSCtx == NULL)
-          {
-            cerr << "ffmpeg: couldn't create sws context" << endl;
-            return false;
-          }
+            avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished, 
+                                 packet.data, packet.size);
+            if(frameFinished)
+            {
+                if(m_pSWSCtx == NULL)
+                {
+                    m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
+                                               m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
+                                               0, NULL, NULL, NULL);
+                    if(m_pSWSCtx == NULL)
+                    {
+                        cerr << "ffmpeg: couldn't create sws context" << endl;
+                        return false;
+                    }
+                }
+
+                sws_scale(m_pSWSCtx,
+                          m_pFrameYUV->data,   m_pFrameYUV->linesize, 0, 0,
+                          &pBuffer, &m_pCodecCtx->width);
+
+                av_free_packet(&packet);
+                return true;
+            }
         }
-
-        sws_scale(m_pSWSCtx,
-                  m_pFrameYUV->data,   m_pFrameYUV->linesize, 0, 0,
-                  &pBuffer, &m_pCodecCtx->width);
-
-        av_free_packet(&packet);
-        return true;
-      }
     }
-  }
-  return false;
+    return false;
 }
 
 bool FFmpegEncoder::open(const char* filename)
 {
-  if(m_bOpen)
-  {
-    cerr << "FFmpegEncoder: trying to open a file while we're already open. Doing nothing." << endl;
-    return true;
-  }
-  if(!m_bOK)
-  {
-    cerr << "FFmpegDecoder: trying to open a file while we're not ok. Reseting and trying again." << endl;
-    close();
-  }
-  m_bOK = false;
-
-  m_pOutputFormat = guess_format(NULL, "blah.avi", NULL);
-  if(!m_pOutputFormat)
-  {
-    cerr << "ffmpeg: guess_format couldn't figure it out" << endl;
-    return false;
-  }
-
-  m_pFormatCtx = av_alloc_format_context();
-  if(m_pFormatCtx == NULL)
-  {
-    cerr << "ffmpeg: couldn't alloc format context" << endl;
-    return false;
-  }
-
-  // set the output format and filename
-  m_pFormatCtx->oformat = m_pOutputFormat;
-  strncpy(m_pFormatCtx->filename, filename, sizeof(m_pFormatCtx->filename));
-
-  m_pStream = av_new_stream(m_pFormatCtx, 0);
-  if(m_pStream == NULL)
-  {
-    cerr << "ffmpeg: av_new_stream failed" << endl;
-    return false;
-  }
-
-  m_pCodecCtx               = m_pStream->codec;
-  m_pCodecCtx->codec_type   = CODEC_TYPE_VIDEO;
-  m_pCodecCtx->codec_id     = OUTPUT_CODEC;
-  m_pCodecCtx->bit_rate     = 1000000;
-  m_pCodecCtx->flags        = OUTPUT_FLAGS;
-  m_pCodecCtx->flags2       = OUTPUT_FLAGS2;
-  m_pCodecCtx->thread_count = OUTPUT_THREADS;
-  m_pCodecCtx->width        = 640;
-  m_pCodecCtx->height       = 480;
-  m_pCodecCtx->time_base    = (AVRational){1,15}; /* frames per second */
-  m_pCodecCtx->gop_size     = OUTPUT_GOP_SIZE;
-  m_pCodecCtx->max_b_frames = OUTPUT_MAX_B_FRAMES;
-  m_pCodecCtx->pix_fmt      = OUTPUT_PIX_FMT;
-
-  AVCodec* pCodec = avcodec_find_encoder(m_pCodecCtx->codec_id);
-  if(pCodec == NULL)
-  {
-    cerr << "ffmpeg: couldn't find encoder. Available:" << endl;
-
-    extern AVCodec *first_avcodec;
-    pCodec = first_avcodec;
-    while(pCodec)
+    if(m_bOpen)
     {
-      if (pCodec->encode)
-        cerr << pCodec->id << ": " << pCodec->name << endl;
-      pCodec = pCodec->next;
+        cerr << "FFmpegEncoder: trying to open a file while we're already open. Doing nothing." << endl;
+        return true;
     }
-    return false;
-  }
+    if(!m_bOK)
+    {
+        cerr << "FFmpegDecoder: trying to open a file while we're not ok. Reseting and trying again." << endl;
+        close();
+    }
+    m_bOK = false;
 
-  if(avcodec_open(m_pCodecCtx, pCodec) < 0)
-  {
-    cerr << "ffmpeg: couldn't open codec" << endl;
-    return false;
-  }
+    m_pOutputFormat = guess_format(NULL, "blah.avi", NULL);
+    if(!m_pOutputFormat)
+    {
+        cerr << "ffmpeg: guess_format couldn't figure it out" << endl;
+        return false;
+    }
 
-  m_pFrameYUV = avcodec_alloc_frame();
-  if(m_pFrameYUV == NULL)
-  {
-    cerr << "ffmpeg: couldn't alloc frame" << endl;
-    return false;
-  }
-  m_bufferYUVSize = avpicture_get_size(m_pCodecCtx->pix_fmt, m_pCodecCtx->width, m_pCodecCtx->height);
-  m_bufferYUV     = (uint8_t*)av_malloc(m_bufferYUVSize * sizeof(uint8_t));
-  avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, m_pCodecCtx->pix_fmt,
-                 m_pCodecCtx->width, m_pCodecCtx->height);
+    m_pFormatCtx = av_alloc_format_context();
+    if(m_pFormatCtx == NULL)
+    {
+        cerr << "ffmpeg: couldn't alloc format context" << endl;
+        return false;
+    }
 
-  // open the file
-  if(url_fopen(&m_pFormatCtx->pb, filename, URL_WRONLY) < 0)
-  {
-    cerr << "ffmpeg: couldn't open file " << filename << endl;
-    return false;
-  }
+    // set the output format and filename
+    m_pFormatCtx->oformat = m_pOutputFormat;
+    strncpy(m_pFormatCtx->filename, filename, sizeof(m_pFormatCtx->filename));
 
-  av_write_header(m_pFormatCtx);
+    m_pStream = av_new_stream(m_pFormatCtx, 0);
+    if(m_pStream == NULL)
+    {
+        cerr << "ffmpeg: av_new_stream failed" << endl;
+        return false;
+    }
 
-  m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
-                             m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
-                             0, NULL, NULL, NULL);
-  if(m_pSWSCtx == NULL)
-  {
-    cerr << "ffmpeg: couldn't create sws context" << endl;
-    return false;
-  }
+    m_pCodecCtx               = m_pStream->codec;
+    m_pCodecCtx->codec_type   = CODEC_TYPE_VIDEO;
+    m_pCodecCtx->codec_id     = OUTPUT_CODEC;
+    m_pCodecCtx->bit_rate     = 1000000;
+    m_pCodecCtx->flags        = OUTPUT_FLAGS;
+    m_pCodecCtx->flags2       = OUTPUT_FLAGS2;
+    m_pCodecCtx->thread_count = OUTPUT_THREADS;
+    m_pCodecCtx->width        = 640;
+    m_pCodecCtx->height       = 480;
+    m_pCodecCtx->time_base    = (AVRational){1,15}; /* frames per second */
+    m_pCodecCtx->gop_size     = OUTPUT_GOP_SIZE;
+    m_pCodecCtx->max_b_frames = OUTPUT_MAX_B_FRAMES;
+    m_pCodecCtx->pix_fmt      = OUTPUT_PIX_FMT;
+
+    AVCodec* pCodec = avcodec_find_encoder(m_pCodecCtx->codec_id);
+    if(pCodec == NULL)
+    {
+        cerr << "ffmpeg: couldn't find encoder. Available:" << endl;
+
+        extern AVCodec *first_avcodec;
+        pCodec = first_avcodec;
+        while(pCodec)
+        {
+            if (pCodec->encode)
+                cerr << pCodec->id << ": " << pCodec->name << endl;
+            pCodec = pCodec->next;
+        }
+        return false;
+    }
+
+    if(avcodec_open(m_pCodecCtx, pCodec) < 0)
+    {
+        cerr << "ffmpeg: couldn't open codec" << endl;
+        return false;
+    }
+
+    m_pFrameYUV = avcodec_alloc_frame();
+    if(m_pFrameYUV == NULL)
+    {
+        cerr << "ffmpeg: couldn't alloc frame" << endl;
+        return false;
+    }
+    m_bufferYUVSize = avpicture_get_size(m_pCodecCtx->pix_fmt, m_pCodecCtx->width, m_pCodecCtx->height);
+    m_bufferYUV     = (uint8_t*)av_malloc(m_bufferYUVSize * sizeof(uint8_t));
+    avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, m_pCodecCtx->pix_fmt,
+                   m_pCodecCtx->width, m_pCodecCtx->height);
+
+    // open the file
+    if(url_fopen(&m_pFormatCtx->pb, filename, URL_WRONLY) < 0)
+    {
+        cerr << "ffmpeg: couldn't open file " << filename << endl;
+        return false;
+    }
+
+    av_write_header(m_pFormatCtx);
+
+    m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
+                               m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
+                               0, NULL, NULL, NULL);
+    if(m_pSWSCtx == NULL)
+    {
+        cerr << "ffmpeg: couldn't create sws context" << endl;
+        return false;
+    }
   
-  m_bOpen = m_bOK = true;
-  return true;
+    m_bOpen = m_bOK = true;
+    return true;
 }
 
 bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
 {
-  if(!m_bOpen || !m_bOK)
-    return false;
+    if(!m_bOpen || !m_bOK)
+        return false;
 
 #if 0
-  for(int y=0; y<m_pCodecCtx->height; y++)
-  {
-    unsigned char* pDat = m_pFrameYUV->data[0] + y*m_pFrameYUV->linesize[0];
-    for(int x=0; x<m_pCodecCtx->width; x++)
+    for(int y=0; y<m_pCodecCtx->height; y++)
     {
-      pDat[4*x] = pDat[4*x + 1] = pDat[4*x + 2] = *pBuffer;
-      pDat[4*x + 3] = 255;
-      pBuffer++;
+        unsigned char* pDat = m_pFrameYUV->data[0] + y*m_pFrameYUV->linesize[0];
+        for(int x=0; x<m_pCodecCtx->width; x++)
+        {
+            pDat[4*x] = pDat[4*x + 1] = pDat[4*x + 2] = *pBuffer;
+            pDat[4*x + 3] = 255;
+            pBuffer++;
+        }
     }
-  }
 #else
-  sws_scale(m_pSWSCtx,
-            &pBuffer, &m_pCodecCtx->width, 0, 0,
-            m_pFrameYUV->data, m_pFrameYUV->linesize);
+    sws_scale(m_pSWSCtx,
+              &pBuffer, &m_pCodecCtx->width, 0, 0,
+              m_pFrameYUV->data, m_pFrameYUV->linesize);
 #endif
 
-  int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferYUV, m_bufferYUVSize, m_pFrameYUV);
-  if(outsize <= 0)
-  {
-    cerr << "ffmpeg: couldn't write grayscale frame" << endl;
-    return false;
-  }
+    int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferYUV, m_bufferYUVSize, m_pFrameYUV);
+    if(outsize <= 0)
+    {
+        cerr << "ffmpeg: couldn't write grayscale frame" << endl;
+        return false;
+    }
 
-  AVPacket packet;
-  av_init_packet(&packet);
-  packet.stream_index = m_pStream->index;
-  packet.data         = m_bufferYUV;
-  packet.size         = outsize;
-  av_write_frame(m_pFormatCtx, &packet);
+    AVPacket packet;
+    av_init_packet(&packet);
+    packet.stream_index = m_pStream->index;
+    packet.data         = m_bufferYUV;
+    packet.size         = outsize;
+    av_write_frame(m_pFormatCtx, &packet);
 
-  av_free_packet(&packet);
-  return true;
+    av_free_packet(&packet);
+    return true;
 }
