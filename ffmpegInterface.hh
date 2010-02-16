@@ -10,20 +10,15 @@ using namespace std;
 class FFmpegTalker
 {
 protected:
-    AVOutputFormat*  m_pOutputFormat;
-    AVStream*        m_pStream;
     AVFormatContext* m_pFormatCtx;
     AVCodecContext*  m_pCodecCtx;
     AVFrame*         m_pFrameYUV;
-    uint8_t*         m_bufferYUV;
-    int              m_bufferYUVSize;
-    int              m_videoStream;
     SwsContext*      m_pSWSCtx;
 
     bool             m_bOpen;
     bool             m_bOK;
 
-    void initVars(void);
+    virtual void initVars(void);
     virtual void free(void);
 
 public:
@@ -44,6 +39,8 @@ public:
 
 class FFmpegDecoder : public FFmpegTalker
 {
+    int              m_videoStream;
+
 public:
     FFmpegDecoder()
         : FFmpegTalker()
@@ -59,6 +56,8 @@ public:
         close();
     }
 
+    void initVars(void);
+
     bool open(const char* filename);
     bool readFrameGrayscale(unsigned char* pBuffer);
     void close(void);
@@ -72,6 +71,11 @@ public:
 
 class FFmpegEncoder : public FFmpegTalker
 {
+    AVOutputFormat*  m_pOutputFormat;
+    AVStream*        m_pStream;
+    uint8_t*         m_bufferYUV;
+    int              m_bufferYUVSize;
+
 public:
     FFmpegEncoder()
         : FFmpegTalker()
@@ -86,6 +90,8 @@ public:
         cerr << "~FFmpegEncoder" << endl;
         close();
     }
+
+    void initVars(void);
 
     bool open(const char* filename);
     bool writeFrameGrayscale(unsigned char* pBuffer);

@@ -19,17 +19,29 @@ void FFmpegTalker::initVars(void)
     m_bOpen         = false;
     m_bOK           = true;
 
-    m_pOutputFormat   = NULL;
-    m_pStream         = NULL;
     m_pFormatCtx      = NULL;
     m_pCodecCtx       = NULL;
     m_pFrameYUV       = NULL;
+    m_pSWSCtx         = NULL;
+}
+
+void FFmpegEncoder::initVars(void)
+{
+    m_pOutputFormat   = NULL;
+    m_pStream         = NULL;
     m_bufferYUV       = NULL;
     m_bufferYUVSize   = -1;
-    m_pSWSCtx         = NULL;
 
-    m_videoStream   = -1;
+    FFmpegTalker::initVars();
 }
+
+void FFmpegDecoder::initVars(void)
+{
+    m_videoStream   = -1;
+
+    FFmpegTalker::initVars();
+}
+
 FFmpegTalker::~FFmpegTalker()
 {
     cerr << "FFmpegTalker::~FFmpegTalker" << endl;
@@ -38,7 +50,6 @@ FFmpegTalker::~FFmpegTalker()
 void FFmpegTalker::free(void)
 {
     cerr << "FFmpegTalker::free(void)" << endl;
-    if(m_bufferYUV)    av_free(m_bufferYUV);
     if(m_pFrameYUV)    av_free(m_pFrameYUV);
 
     if(m_pSWSCtx)      sws_freeContext(m_pSWSCtx);
@@ -51,9 +62,6 @@ void FFmpegTalker::free(void)
             avcodec_close(m_pCodecCtx);
         }
     }
-
-    if(m_pStream)
-        av_free(m_pStream);
 }
 void FFmpegDecoder::free(void)
 {
@@ -70,6 +78,10 @@ void FFmpegEncoder::free(void)
 
     FFmpegTalker::free();
 
+    if(m_bufferYUV)
+        av_free(m_bufferYUV);
+    if(m_pStream)
+        av_free(m_pStream);
     if(m_pCodecCtx)
         av_free(m_pCodecCtx);
     if(m_pFormatCtx)
