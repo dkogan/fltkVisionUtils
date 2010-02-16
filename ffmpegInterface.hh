@@ -45,6 +45,8 @@ class FFmpegDecoder : public FFmpegTalker
 {
     int              m_videoStream;
 
+    void initVars(void);
+
 public:
     FFmpegDecoder()
         : FFmpegTalker()
@@ -59,8 +61,6 @@ public:
         cerr << "~FFmpegDecoder" << endl;
         close();
     }
-
-    void initVars(void);
 
     bool open(const char* filename);
     bool readFrameGrayscale(unsigned char* pBuffer);
@@ -80,6 +80,8 @@ class FFmpegEncoder : public FFmpegTalker
     uint8_t*         m_bufferYUV;
     int              m_bufferYUVSize;
 
+    void initVars(void);
+
 public:
     FFmpegEncoder()
         : FFmpegTalker()
@@ -94,8 +96,6 @@ public:
         cerr << "~FFmpegEncoder" << endl;
         close();
     }
-
-    void initVars(void);
 
     bool open(const char* filename);
     bool writeFrameGrayscale(unsigned char* pBuffer);
