@@ -1,14 +1,11 @@
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
 
-#include "stdlib.h"
 #include "dc1394/dc1394.h"
+#include "frameSource.hh"
 
-class Camera
+class Camera : public FrameSource
 {
-    bool inited;
-
-    unsigned int                width, height;
     unsigned                    cameraIndex;
     dc1394camera_t*             camera;
     dc1394video_frame_t*        cameraFrame;
@@ -21,12 +18,11 @@ public:
     Camera(unsigned _cameraIndex);
     ~Camera();
 
-    operator bool() { return inited; }
-
-    // returns a pointer to the raw frame data. This data should not be modified and releaseFrame()
-    // should be called when we're done
-    unsigned char* getFrame(uint64_t* timestamp_us);
-    void releaseFrame(void);
+    // peekFrame() blocks until a frame is available. A pointer to the internal buffer is returned
+    // (NULL on error). This buffer must be given back to the system by calling
+    // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
+    unsigned char* peekFrame(uint64_t* timestamp_us);
+    void unpeekFrame(void);
 
     int idx(void) { return cameraIndex; }
 };

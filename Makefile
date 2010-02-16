@@ -3,7 +3,7 @@ LDFLAGS  += -g
 
 LDLIBS += -lfltk -lpthread -ldc1394
 
-test: camera.o main.o
+test: frameSource.o camera.o main.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 clean:

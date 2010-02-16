@@ -10,7 +10,7 @@ int                  Camera::numInitedCameras = 0;
 #define BYTES_PER_PIXEL 1
 
 Camera::Camera(unsigned _cameraIndex)
-    : inited(false), cameraIndex(_cameraIndex), camera(NULL), cameraFrame(NULL)
+    : cameraIndex(_cameraIndex), camera(NULL), cameraFrame(NULL)
 {
     dc1394error_t err;
 
@@ -118,6 +118,7 @@ Camera::Camera(unsigned _cameraIndex)
     DC1394_ERR(err,"Could not start camera iso transmission");
 
     dc1394_get_image_size_from_video_mode(camera, video_mode, &width, &height);
+    bitsPerPixel = BYTES_PER_PIXEL*8;
 
     inited = true;
     numInitedCameras++;
@@ -146,11 +147,18 @@ Camera::~Camera(void)
     }
 }
 
-// returns a pointer to the raw frame data. This data should not be modified and releaseFrame()
-// should be called when we're done
-unsigned char* Camera::getFrame(uint64_t* timestamp_us)
+// peekFrame() blocks until a frame is available. A pointer to the internal buffer is returned
+// (NULL on error). This buffer must be given back to the system by calling
+// unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
+unsigned char* Camera::peekFrame(uint64_t* timestamp_us)
 {
     static uint64_t timestamp0 = 0;
+
+    if(cameraFrame != NULL)
+    {
+        fprintf(stderr, "error: peekFrame() before unpeekFrame()\n");
+        return NULL;
+    }
 
     dc1394error_t err;
     err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &cameraFrame);
@@ -172,7 +180,7 @@ unsigned char* Camera::getFrame(uint64_t* timestamp_us)
     return cameraFrame->image;
 }
 
-void Camera::releaseFrame(void)
+void Camera::unpeekFrame(void)
 {
     if(cameraFrame == NULL)
         return;

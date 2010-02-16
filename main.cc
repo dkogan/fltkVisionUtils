@@ -38,13 +38,13 @@ void* cameraThread(void *pArg)
         nanosleep(&delay, NULL);
 
         uint64_t timestamp_us;
-        unsigned char* frame = cam->getFrame(&timestamp_us);
+        unsigned char* frame = cam->peekFrame(&timestamp_us);
         camWidget->updateFrame( frame );
 
         if(frame == NULL)
         {
             cerr << "couldn't get frame\n";
-            cam->releaseFrame();
+            cam->unpeekFrame();
             return NULL;
         }
 
@@ -54,7 +54,7 @@ void* cameraThread(void *pArg)
         if(cameraThread_doTerminate) return NULL;
         fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
         Fl::unlock();
-        cam->releaseFrame();
+        cam->unpeekFrame();
     }
     return NULL;
 }
