@@ -16,7 +16,7 @@ class FFmpegTalker
 public:
   FFmpegTalker();
   ~FFmpegTalker();
-  bool open(const char* filename);
+  bool openForReading(const char* filename);
   bool readFrameGrayscale(unsigned char* pBuffer);
 };
 

@@ -27,7 +27,7 @@ FFmpegTalker::~FFmpegTalker()
     av_close_input_file(m_pFormatCtx);
 }
 
-bool FFmpegTalker::open(const char* filename)
+bool FFmpegTalker::openForReading(const char* filename)
 {
   if(av_open_input_file(&m_pFormatCtx, filename, NULL, 0, NULL) != 0)
   {
