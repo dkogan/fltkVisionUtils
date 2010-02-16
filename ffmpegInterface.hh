@@ -1,9 +1,9 @@
 #ifndef _FFMPEG_TALKER_H_
 #define _FFMPEG_TALKER_H_
 
-#include <ffmpeg/avcodec.h>
-#include <ffmpeg/avformat.h>
-#include <ffmpeg/swscale.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
 #include <iostream>
 using namespace std;
 
