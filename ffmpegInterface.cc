@@ -270,14 +270,16 @@ bool FFmpegEncoder::open(const char* filename)
     {
         cerr << "ffmpeg: couldn't find encoder. Available:" << endl;
 
-        extern AVCodec *first_avcodec;
-        pCodec = first_avcodec;
-        while(pCodec)
-        {
-            if (pCodec->encode)
-                cerr << pCodec->id << ": " << pCodec->name << endl;
-            pCodec = pCodec->next;
-        }
+        // I was seeing a linker error with first_avcodec. At some point I should fix that and
+        // re-enable this code
+//         extern AVCodec *first_avcodec;
+//         pCodec = first_avcodec;
+//         while(pCodec)
+//         {
+//             if (pCodec->encode)
+//                 cerr << pCodec->id << ": " << pCodec->name << endl;
+//             pCodec = pCodec->next;
+//         }
         return false;
     }
 
