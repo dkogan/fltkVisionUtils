@@ -1,5 +1,5 @@
-#ifndef _FFMPEG_TALKER_H_
-#define _FFMPEG_TALKER_H_
+#ifndef __FFMPEG_TALKER_H__
+#define __FFMPEG_TALKER_H__
 
 extern "C"
 {
@@ -108,4 +108,4 @@ public:
     }
 };
 
-#endif //_FFMPEG_TALKER_H_
+#endif
