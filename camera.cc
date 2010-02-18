@@ -147,6 +147,36 @@ Camera::~Camera(void)
     }
 }
 
+// Fetch all of the frames in the buffer and throw them away
+void Camera::flushFrameBuffer(void)
+{
+    dc1394error_t err;
+    while(true)
+    {
+        err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
+
+        if( err != DC1394_SUCCESS )
+        {
+            dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
+                               dc1394_error_get_string(err),
+                               __FUNCTION__, __FILE__, __LINE__);
+            return;
+        }
+        if(cameraFrame == NULL)
+            break;
+
+        err = dc1394_capture_enqueue(camera, cameraFrame);
+        if( err != DC1394_SUCCESS )
+        {
+            dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
+                               dc1394_error_get_string(err),
+                               __FUNCTION__, __FILE__, __LINE__);
+            return;
+        }
+        cameraFrame = NULL;
+    }
+}
+
 // peekFrame() blocks until a frame is available. A pointer to the internal buffer is returned
 // (NULL on error). This buffer must be given back to the system by calling
 // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed

@@ -14,6 +14,8 @@ class Camera : public FrameSource
     static dc1394camera_list_t* cameraList;
     static int                  numInitedCameras;
 
+    void flushFrameBuffer(void);
+
 public:
     Camera(unsigned _cameraIndex);
     ~Camera();
