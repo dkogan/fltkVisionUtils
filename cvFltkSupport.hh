@@ -83,6 +83,7 @@ public:
         cvCopy(mat, cvImage);
         flImage->uncache();
         redraw();
+        Fl::flush();
     }
 
     void replace(IplImage* img)
