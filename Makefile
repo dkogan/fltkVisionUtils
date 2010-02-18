@@ -1,7 +1,7 @@
 CXXFLAGS += -g -Wall -Wextra -pedantic
 LDFLAGS  += -g
 
-LDLIBS += -lfltk -lpthread -ldc1394 -lavformat -lavcodec -lswscale -lavutil
+LDLIBS += -lfltk -lpthread -ldc1394 -lavformat -lavcodec -lswscale -lavutil -lhighgui -lcv
 
 
 test: frameSource.o camera.o main.o ffmpegInterface.o
