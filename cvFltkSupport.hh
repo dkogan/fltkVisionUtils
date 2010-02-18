@@ -82,6 +82,7 @@ public:
     {
         cvCopy(mat, cvImage);
         flImage->uncache();
+        redraw();
     }
 };
 
