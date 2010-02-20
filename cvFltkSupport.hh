@@ -83,6 +83,8 @@ public:
         cvCopy(mat, cvImage);
         flImage->uncache();
         redraw();
+
+#warning this flush() shouldn't be needed. Without it, draw() isn't called when frames come from a camera
         Fl::flush();
     }
 
