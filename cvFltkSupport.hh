@@ -11,13 +11,8 @@ class cvFltkImage : public Fl_Widget
     Fl_RGB_Image* flImage;      // for drawing
     IplImage*     cvImage;      // for processing
 
-public:
-    // a dummy size to start out with. will correct once I load the image
-    cvFltkImage(const char* path, int x, int y, int w = 10, int h = 10)
-        : Fl_Widget(x, y, w, h),
-          flImage(NULL), cvImage(NULL)
+    void finishConstructing(void)
     {
-        cvImage = cvLoadImage(path, CV_LOAD_IMAGE_GRAYSCALE);
         if(cvImage == NULL)
             return;
 
@@ -25,16 +20,21 @@ public:
         size(flImage->w(), flImage->h());
     }
 
+public:
+    cvFltkImage(const char* path, int x, int y)
+        : Fl_Widget(x, y, 10, 10), // dummy size. Real size set later
+          flImage(NULL), cvImage(NULL)
+    {
+        cvImage = cvLoadImage(path, CV_LOAD_IMAGE_GRAYSCALE);
+        finishConstructing();
+    }
+
     cvFltkImage(int x, int y, int w, int h)
         : Fl_Widget(x, y, w, h),
           flImage(NULL), cvImage(NULL)
     {
         cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
-        if(cvImage == NULL)
-            return;
-
-        flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData, cvImage->width, cvImage->height, 1);
-        size(flImage->w(), flImage->h());
+        finishConstructing();
     }
 
     ~cvFltkImage()
