@@ -21,14 +21,6 @@ class CvFltkWidget : public Fl_Widget
     }
 
 public:
-    CvFltkWidget(const char* path, int x, int y)
-        : Fl_Widget(x, y, 10, 10), // dummy size. Real size set later
-          flImage(NULL), cvImage(NULL)
-    {
-        cvImage = cvLoadImage(path, CV_LOAD_IMAGE_GRAYSCALE);
-        finishConstructing();
-    }
-
     CvFltkWidget(int x, int y, int w, int h)
         : Fl_Widget(x, y, w, h),
           flImage(NULL), cvImage(NULL)
