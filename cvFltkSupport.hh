@@ -25,8 +25,12 @@ class CvFltkWidget : public Fl_Widget
         }
     }
 
-    void finishConstructing(void)
+public:
+    CvFltkWidget(int x, int y, int w, int h)
+        : Fl_Widget(x, y, w, h),
+          flImage(NULL), cvImage(NULL)
     {
+        cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
         if(cvImage == NULL)
             return;
 
@@ -38,15 +42,6 @@ class CvFltkWidget : public Fl_Widget
         }
 
         size(flImage->w(), flImage->h());
-    }
-
-public:
-    CvFltkWidget(int x, int y, int w, int h)
-        : Fl_Widget(x, y, w, h),
-          flImage(NULL), cvImage(NULL)
-    {
-        cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
-        finishConstructing();
     }
 
     ~CvFltkWidget()
