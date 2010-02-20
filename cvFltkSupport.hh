@@ -90,8 +90,8 @@ public:
 
     void replace(IplImage* img)
     {
-        // the opencv API treats IplImage* and CvMat* equally, but is written in C. Thus I must
-        // create this equivalence explicitly
+        // the opencv API treats IplImage* and CvMat* equally, but this API is written in C. I'm
+        // using C++ so I must create this equivalence explicitly
         replace((CvMat*)img);
     }
 };
