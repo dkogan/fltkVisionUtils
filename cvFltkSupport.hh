@@ -78,7 +78,7 @@ public:
         return flImage->h();
     }
 
-    void replace(CvMat* mat)
+    void updateImage(CvMat* mat)
     {
         cvCopy(mat, cvImage);
         flImage->uncache();
@@ -88,11 +88,11 @@ public:
         Fl::flush();
     }
 
-    void replace(IplImage* img)
+    void updateImage(IplImage* img)
     {
         // the opencv API treats IplImage* and CvMat* equally, but this API is written in C. I'm
         // using C++ so I must create this equivalence explicitly
-        replace((CvMat*)img);
+        updateImage((CvMat*)img);
     }
 };
 
