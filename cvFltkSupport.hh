@@ -6,7 +6,7 @@
 #include "opencv/highgui.h"
 #include "opencv/cv.h"
 
-class cvFltkImage : public Fl_Widget
+class CvFltkWidget : public Fl_Widget
 {
     Fl_RGB_Image* flImage;      // for drawing
     IplImage*     cvImage;      // for processing
@@ -21,7 +21,7 @@ class cvFltkImage : public Fl_Widget
     }
 
 public:
-    cvFltkImage(const char* path, int x, int y)
+    CvFltkWidget(const char* path, int x, int y)
         : Fl_Widget(x, y, 10, 10), // dummy size. Real size set later
           flImage(NULL), cvImage(NULL)
     {
@@ -29,7 +29,7 @@ public:
         finishConstructing();
     }
 
-    cvFltkImage(int x, int y, int w, int h)
+    CvFltkWidget(int x, int y, int w, int h)
         : Fl_Widget(x, y, w, h),
           flImage(NULL), cvImage(NULL)
     {
@@ -37,7 +37,7 @@ public:
         finishConstructing();
     }
 
-    ~cvFltkImage()
+    ~CvFltkWidget()
     {
         if(flImage != NULL)
         {
