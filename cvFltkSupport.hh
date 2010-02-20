@@ -10,12 +10,33 @@ class CvFltkWidget : public Fl_Widget
     Fl_RGB_Image* flImage;      // for drawing
     IplImage*     cvImage;      // for processing
 
+    void cleanup(void)
+    {
+        if(flImage != NULL)
+        {
+            delete flImage;
+            flImage = NULL;
+        }
+
+        if(cvImage == NULL)
+        {
+            cvReleaseImage(&cvImage);
+            cvImage = NULL;
+        }
+    }
+
     void finishConstructing(void)
     {
         if(cvImage == NULL)
             return;
 
         flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData, cvImage->width, cvImage->height, 1);
+        if(flImage == NULL)
+        {
+            cleanup();
+            return;
+        }
+
         size(flImage->w(), flImage->h());
     }
 
@@ -30,17 +51,7 @@ public:
 
     ~CvFltkWidget()
     {
-        if(flImage != NULL)
-        {
-            delete flImage;
-            flImage = NULL;
-        }
-
-        if(cvImage == NULL)
-        {
-            cvReleaseImage(&cvImage);
-            cvImage = NULL;
-        }
+        cleanup();
     }
 
     operator bool()
