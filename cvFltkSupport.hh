@@ -3,7 +3,6 @@
 
 #include <FL/Fl_RGB_Image.H>
 
-#include "opencv/highgui.h"
 #include "opencv/cv.h"
 
 class CvFltkWidget : public Fl_Widget
