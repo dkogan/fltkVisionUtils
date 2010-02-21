@@ -147,7 +147,8 @@ Camera::~Camera(void)
     }
 }
 
-// Fetch all of the frames in the buffer and throw them away
+// Fetches all of the frames in the buffer and throws them away. If we do this we guarantee that the
+// next frame read will be the most recent
 void Camera::flushFrameBuffer(void)
 {
     dc1394error_t err;
