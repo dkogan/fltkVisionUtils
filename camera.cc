@@ -72,8 +72,9 @@ static resolution_t getResolutionWorth(dc1394video_mode_t mode)
 
 // The colormodes that I know about. These are listed in order from least to most desireable
 enum colormode_t { COLORMODE_UNWANTED,
+                   COLORMODE_MONO16, // FrameSource always uses 8bits per channel, so mono16 does
+                                     // nothing for me. Thus it's least desireable
                    COLORMODE_MONO8,
-                   COLORMODE_MONO16,
                    COLORMODE_YUV411,
                    COLORMODE_YUV422,
                    COLORMODE_YUV444,
@@ -81,7 +82,6 @@ enum colormode_t { COLORMODE_UNWANTED,
 
                    // if we wanted grayscale output, then it is more desireable still
                    COLORMODE_MONO8_REQUESTED,
-                   COLORMODE_MONO16_REQUESTED,
 };
 
 // returns desireability of the color mode. Higher is more desireable
@@ -105,7 +105,7 @@ static colormode_t getColormodeWorth(dc1394video_mode_t mode)
     case DC1394_VIDEO_MODE_1024x768_MONO16:
     case DC1394_VIDEO_MODE_1280x960_MONO16:
     case DC1394_VIDEO_MODE_1600x1200_MONO16:
-        return isColor ? COLORMODE_MONO16 : COLORMODE_MONO16_REQUESTED;
+        return COLORMODE_MONO16;
 
     case DC1394_VIDEO_MODE_640x480_YUV411:
         return COLORMODE_YUV411;
