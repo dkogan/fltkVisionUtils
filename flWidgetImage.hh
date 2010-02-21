@@ -58,10 +58,10 @@ public:
     FlWidgetImage(int x, int y, int w, int h,
                   FlWidgetImage_ColorChoice  _colorMode,
                   FlWidgetImage_RedrawChoice _redrawMode)
-        : frameW(w), frameH(h),
+        : Fl_Widget(x,y,w,h),
+          frameW(w), frameH(h),
           colorMode(_colorMode), redrawMode(_redrawMode),
-          imageData(NULL), flImage(NULL),
-          Fl_Widget(x,y,w,h)
+          imageData(NULL), flImage(NULL)
     {
         unsigned int bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
 
