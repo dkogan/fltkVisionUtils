@@ -6,6 +6,7 @@
 #include "dc1394/dc1394.h"
 #include "frameSource.hh"
 
+// hardware camera settings:
 // The colormodes that I know about. These are listed in order from least to most desireable
 enum colormode_t { COLORMODE_UNWANTED,
                    COLORMODE_MONO16, // FrameSource always uses 8bits per channel, so mono16 does
@@ -20,6 +21,7 @@ enum colormode_t { COLORMODE_UNWANTED,
                    COLORMODE_MONO8_REQUESTED
 };
 
+// hardware camera settings:
 // The resolutions that I know about. These are listed in order from least to most desireable
 enum resolution_t { MODE_UNWANTED,
                     MODE_160x120,
@@ -54,7 +56,7 @@ class Camera : public FrameSource
     colormode_t getColormodeWorth(dc1394video_mode_t mode);
 
 public:
-    Camera(bool _isColor = true);
+    Camera(FrameSource_UserColorChoice _userColorMode);
     ~Camera();
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
@@ -70,8 +72,8 @@ public:
     void unpeekFrame(void);
 
     // these are like the peek() functions, but these convert the incoming data to the desired
-    // colorspace (RGB8 or MONO8 depending on isColor). Since these make a copy of the data, calling
-    // unpeek() is not needed. false returned on error
+    // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
+    // data, calling unpeek() is not needed. false returned on error
     bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer);
     bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer);
 

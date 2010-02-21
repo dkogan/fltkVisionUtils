@@ -3,19 +3,22 @@
 
 #include <stdint.h>
 
+// user interface color choice. RGB8 or MONO8
+enum FrameSource_UserColorChoice  { COLOR, GRAYSCALE };
+
 // This is the base class for different frame grabbers. The constructor allows color or monochrome
 // mode to be selected. For simplicity, color always means 8-bits-per-channel RGB and monochrome
 // always means 8-bit grayscale
 class FrameSource
 {
 protected:
-    bool         isColor; // color (RGB8) or grayscale (MONO8)?
-    bool         inited;
-    unsigned int width, height;
+    FrameSource_UserColorChoice userColorMode; // color (RGB8) or grayscale (MONO8)
+    bool                        inited;
+    unsigned int                width, height;
 
 public:
-    FrameSource (bool _isColor)
-        : isColor(_isColor), inited(false) { }
+    FrameSource (FrameSource_UserColorChoice _userColorMode)
+        : userColorMode(_userColorMode), inited(false) { }
 
     virtual ~FrameSource() {}
 
@@ -34,8 +37,8 @@ public:
     virtual void unpeekFrame(void) = 0;
 
     // these are like the peek() functions, but these convert the incoming data to the desired
-    // colorspace (RGB8 or MONO8 depending on isColor). Since these make a copy of the data, calling
-    // unpeek() is not needed. false returned on error
+    // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
+    // data, calling unpeek() is not needed. false returned on error
     virtual bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer) = 0;
     virtual bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer) = 0;
 
