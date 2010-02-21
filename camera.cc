@@ -265,7 +265,7 @@ Camera::Camera()
 
     // Using 5 frame buffers. This should work for many applications
     err = dc1394_capture_setup(camera, 5, DC1394_CAPTURE_FLAGS_DEFAULT);
-    DC1394_ERR(err,"Could not setup camera-\nmake sure that the video mode and framerate are\nsupported by your camera");
+    DC1394_ERR(err,"Could not setup camera...");
 
 
     // have the camera start sending us data
