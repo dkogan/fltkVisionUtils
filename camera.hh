@@ -8,11 +8,13 @@
 
 class Camera : public FrameSource
 {
-    unsigned                    cameraIndex;
-    dc1394camera_t*             camera;
-    dc1394video_frame_t*        cameraFrame;
+    unsigned             cameraIndex;
+    dc1394camera_t*      camera;
+    dc1394video_frame_t* cameraFrame;
 
-    std::string                 cameraDescription;
+    std::string          cameraDescription;
+
+    uint64_t             frame0Timestamp;
 
     // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
     // declaring them static

@@ -127,7 +127,7 @@ static colormode_t getColormode(dc1394video_mode_t mode)
 }
 
 Camera::Camera()
-    : camera(NULL), cameraFrame(NULL)
+    : camera(NULL), cameraFrame(NULL), frame0Timestamp(0)
 {
     if(!uninitedCamerasLeft())
     {
@@ -311,7 +311,7 @@ Camera::~Camera(void)
 // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
 unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
 {
-    static uint64_t timestamp0 = 0;
+    static uint64_t frame0Timestamp = 0;
 
     if(cameraFrame != NULL)
     {
@@ -332,11 +332,11 @@ unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
         return NULL;
     }
 
-    if(timestamp0 == 0)
-        timestamp0 = cameraFrame->timestamp;
+    if(frame0Timestamp == 0)
+        frame0Timestamp = cameraFrame->timestamp;
 
     if(timestamp_us != NULL)
-        *timestamp_us = cameraFrame->timestamp - timestamp0;
+        *timestamp_us = cameraFrame->timestamp - frame0Timestamp;
 
     return cameraFrame->image;
 }
@@ -348,8 +348,6 @@ unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
 // failed
 unsigned char* Camera::peekMostRecentFrame(uint64_t* timestamp_us)
 {
-    static uint64_t timestamp0 = 0;
-
     if(cameraFrame != NULL)
     {
         fprintf(stderr, "warning: peekMostRecentFrame() before unpeekFrame()\n"
@@ -410,11 +408,11 @@ unsigned char* Camera::peekMostRecentFrame(uint64_t* timestamp_us)
     }
 
 
-    if(timestamp0 == 0)
-        timestamp0 = cameraFrame->timestamp;
+    if(frame0Timestamp == 0)
+        frame0Timestamp = cameraFrame->timestamp;
 
     if(timestamp_us != NULL)
-        *timestamp_us = cameraFrame->timestamp - timestamp0;
+        *timestamp_us = cameraFrame->timestamp - frame0Timestamp;
 
     return cameraFrame->image;
 }
