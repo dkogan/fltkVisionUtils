@@ -38,8 +38,6 @@ class Camera : public FrameSource
 
     std::string          cameraDescription;
 
-    uint64_t             frame0Timestamp;
-
     // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
     // declaring them static
     static dc1394_t*            dc1394Context;

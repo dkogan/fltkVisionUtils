@@ -110,7 +110,7 @@ colormode_t Camera::getColormodeWorth(dc1394video_mode_t mode)
 }
 
 Camera::Camera(bool _isColor)
-    : FrameSource(_isColor), camera(NULL), cameraFrame(NULL), frame0Timestamp(0)
+    : FrameSource(_isColor), camera(NULL), cameraFrame(NULL)
 {
     if(!uninitedCamerasLeft())
     {
@@ -294,8 +294,6 @@ Camera::~Camera(void)
 // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
 unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
 {
-    static uint64_t frame0Timestamp = 0;
-
     if(cameraFrame != NULL)
     {
         fprintf(stderr, "warning: peekNextFrame() before unpeekFrame()\n"
@@ -314,12 +312,6 @@ unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
                            __FUNCTION__, __FILE__, __LINE__);
         return NULL;
     }
-
-    if(frame0Timestamp == 0)
-        frame0Timestamp = cameraFrame->timestamp;
-
-    if(timestamp_us != NULL)
-        *timestamp_us = cameraFrame->timestamp - frame0Timestamp;
 
     return cameraFrame->image;
 }
@@ -391,11 +383,8 @@ unsigned char* Camera::peekMostRecentFrame(uint64_t* timestamp_us)
     }
 
 
-    if(frame0Timestamp == 0)
-        frame0Timestamp = cameraFrame->timestamp;
-
     if(timestamp_us != NULL)
-        *timestamp_us = cameraFrame->timestamp - frame0Timestamp;
+        *timestamp_us = cameraFrame->timestamp;
 
     return cameraFrame->image;
 }
