@@ -54,7 +54,7 @@ class Camera : public FrameSource
     colormode_t getColormodeWorth(dc1394video_mode_t mode);
 
 public:
-    Camera(bool _isColor);
+    Camera(bool _isColor = true);
     ~Camera();
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
