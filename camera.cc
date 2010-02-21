@@ -272,8 +272,12 @@ Camera::Camera()
     err = dc1394_video_set_transmission(camera, DC1394_ON);
     DC1394_ERR(err,"Could not start camera iso transmission");
 
-    dc1394_get_image_size_from_video_mode(camera, video_mode, &width, &height);
-    bitsPerPixel = BYTES_PER_PIXEL*8;
+    // get the dimensions of the frames. Not writing directly to width/height because I want to be
+    // absolutely certain that the pointers I'm passing in are pointing to the correct data type
+    uint32_t w, h;
+    dc1394_get_image_size_from_video_mode(camera, video_mode, &w, &h);
+    width  = w;
+    height = h;
 
     inited = true;
     numInitedCameras++;
