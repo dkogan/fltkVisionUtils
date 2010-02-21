@@ -5,6 +5,9 @@
 
 #include "opencv/cv.h"
 
+// this class is designed for simple visualization of an openCV image in an FLTK widget. The
+// IplImage object contains the image data. The Fl_RGB_Image object does not contain the image data,
+// but rather references the IplImage
 class CvFltkWidget : public Fl_Widget
 {
     Fl_RGB_Image* flImage;      // for drawing
