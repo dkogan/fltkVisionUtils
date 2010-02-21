@@ -12,7 +12,7 @@
 
 // Both color and grayscale displays are supported. Incoming data is assumed to be of the desired
 // type
-enum FlWidgetImage_ColorChoice  { COLOR,     GRAYSCALE };
+enum FlWidgetImage_ColorChoice  { WIDGET_COLOR, WIDGET_GRAYSCALE };
 
 // Two drawing modes are supported:
 
@@ -63,7 +63,7 @@ public:
           imageData(NULL), flImage(NULL),
           Fl_Widget(x,y,w,h)
     {
-        unsigned int bytesPerPixel = (colorMode == COLOR) ? 3 : 1;
+        unsigned int bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
 
         if(redrawMode == NORMAL)
         {
@@ -108,7 +108,7 @@ public:
         }
         else
         {
-            if(colorMode == COLOR)
+            if(colorMode == WIDGET_COLOR)
                 fl_draw_image(frame, x(), y(), frameW, frameH, 3);
             else
                 fl_draw_image_mono(frame, x(), y(), frameW, frameH);
