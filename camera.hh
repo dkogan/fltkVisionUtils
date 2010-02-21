@@ -20,7 +20,7 @@ class Camera : public FrameSource
     // declaring them static
     static dc1394_t*            dc1394Context;
     static dc1394camera_list_t* cameraList;
-    static int                  numInitedCameras;
+    static unsigned int         numInitedCameras;
 
 public:
     Camera();

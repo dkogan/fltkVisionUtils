@@ -1,22 +1,23 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
 #include "camera.hh"
 
 // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
 // declaring them static members
-static dc1394_t*            Camera::dc1394Context    = NULL;
-static dc1394camera_list_t* Camera::cameraList       = NULL;
-static int                  Camera::numInitedCameras = 0;
+dc1394_t*            Camera::dc1394Context    = NULL;
+dc1394camera_list_t* Camera::cameraList       = NULL;
+unsigned int         Camera::numInitedCameras = 0;
 
 // The resolutions that I know about. These are listed in order from least to most desireable
-enum { MODE_UNWANTED,
-       MODE_160x120,
-       MODE_320x240,
-       MODE_640x480,
-       MODE_800x600,
-       MODE_1024x768,
-       MODE_1280x960,
-       MODE_1600x1200} resolution_t;
+enum resolution_t { MODE_UNWANTED,
+                    MODE_160x120,
+                    MODE_320x240,
+                    MODE_640x480,
+                    MODE_800x600,
+                    MODE_1024x768,
+                    MODE_1280x960,
+                    MODE_1600x1200};
 
 static resolution_t getResolution(dc1394video_mode_t mode)
 {
@@ -69,13 +70,13 @@ static resolution_t getResolution(dc1394video_mode_t mode)
 }
 
 // The colormodes that I know about. These are listed in order from least to most desireable
-enum { COLORMODE_UNWANTED,
-       COLORMODE_MONO8,
-       COLORMODE_MONO16,
-       COLORMODE_YUV411,
-       COLORMODE_YUV422,
-       COLORMODE_YUV444,
-       COLORMODE_RGB8} colormode_t;
+enum colormode_t { COLORMODE_UNWANTED,
+                   COLORMODE_MONO8,
+                   COLORMODE_MONO16,
+                   COLORMODE_YUV411,
+                   COLORMODE_YUV422,
+                   COLORMODE_YUV444,
+                   COLORMODE_RGB8};
 
 static colormode_t getColormode(dc1394video_mode_t mode)
 {
@@ -201,7 +202,7 @@ Camera::Camera()
     resolution_t bestRes = MODE_UNWANTED;
     colormode_t bestColormode = COLORMODE_UNWANTED;
     int bestModeIdx = -1;
-    for (int i=0; i<video_modes.num; i++)
+    for (unsigned int i=0; i<video_modes.num; i++)
     {
         resolution_t res = getResolution(video_modes.modes[i]);
         colormode_t colormode = getColormode(video_modes.modes[i]);
@@ -210,7 +211,7 @@ Camera::Camera()
             if(colormode != COLORMODE_UNWANTED)
             {
                 bestRes = res;
-                bestColormode = colormode_unwanted;
+                bestColormode = colormode;
                 bestModeIdx = i;
             }
         }
@@ -233,7 +234,7 @@ Camera::Camera()
     dc1394framerate_t  bestFramerate = DC1394_FRAMERATE_MIN;
     err = dc1394_video_get_supported_framerates(camera, video_mode, &framerates);
     DC1394_ERR(err, "Could not get framerates");
-    for(int i=0; i<framerates.num; i++)
+    for(unsigned int i=0; i<framerates.num; i++)
     {
         // the framerates defined by the dc1394framerate_t enum are sorted from worst to best, so I
         // just loop through and pick the highest one
