@@ -3,14 +3,20 @@
 
 #include <stdint.h>
 
+// This is the base class for different frame grabbers. The constructor allows color or monochrome
+// mode to be selected. For simplicity, color always means 8-bits-per-channel RGB and monochrome
+// always means 8-bit grayscale
 class FrameSource
 {
 protected:
+    bool         isColor; // color (RGB8) or grayscale (MONO8)?
     bool         inited;
     unsigned int width, height;
 
 public:
-    FrameSource () { inited = false; }
+    FrameSource (bool _isColor)
+        : isColor(_isColor), inited(false) { }
+
     virtual ~FrameSource() {}
 
     operator bool() { return inited; }

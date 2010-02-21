@@ -19,7 +19,8 @@ enum resolution_t { MODE_UNWANTED,
                     MODE_1280x960,
                     MODE_1600x1200};
 
-static resolution_t getResolution(dc1394video_mode_t mode)
+// returns desireability of the resolution. Higher is more desireable
+static resolution_t getResolutionWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -76,9 +77,15 @@ enum colormode_t { COLORMODE_UNWANTED,
                    COLORMODE_YUV411,
                    COLORMODE_YUV422,
                    COLORMODE_YUV444,
-                   COLORMODE_RGB8};
+                   COLORMODE_RGB8,
 
-static colormode_t getColormode(dc1394video_mode_t mode)
+                   // if we wanted grayscale output, then it is more desireable still
+                   COLORMODE_MONO8_REQUESTED,
+                   COLORMODE_MONO16_REQUESTED,
+};
+
+// returns desireability of the color mode. Higher is more desireable
+static colormode_t getColormodeWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -91,14 +98,14 @@ static colormode_t getColormode(dc1394video_mode_t mode)
     case DC1394_VIDEO_MODE_1024x768_MONO8:
     case DC1394_VIDEO_MODE_1280x960_MONO8:
     case DC1394_VIDEO_MODE_1600x1200_MONO8:
-        return COLORMODE_MONO8;
+        return isColor ? COLORMODE_MONO8 : COLORMODE_MONO8_REQUESTED;
 
     case DC1394_VIDEO_MODE_640x480_MONO16:
     case DC1394_VIDEO_MODE_800x600_MONO16:
     case DC1394_VIDEO_MODE_1024x768_MONO16:
     case DC1394_VIDEO_MODE_1280x960_MONO16:
     case DC1394_VIDEO_MODE_1600x1200_MONO16:
-        return COLORMODE_MONO16;
+        return isColor ? COLORMODE_MONO16 : COLORMODE_MONO16_REQUESTED;
 
     case DC1394_VIDEO_MODE_640x480_YUV411:
         return COLORMODE_YUV411;
@@ -126,8 +133,8 @@ static colormode_t getColormode(dc1394video_mode_t mode)
     }
 }
 
-Camera::Camera()
-    : camera(NULL), cameraFrame(NULL), frame0Timestamp(0)
+Camera::Camera(bool _isColor)
+    : FrameSource(_isColor), camera(NULL), cameraFrame(NULL), frame0Timestamp(0)
 {
     if(!uninitedCamerasLeft())
     {
@@ -204,8 +211,8 @@ Camera::Camera()
     int bestModeIdx = -1;
     for (unsigned int i=0; i<video_modes.num; i++)
     {
-        resolution_t res = getResolution(video_modes.modes[i]);
-        colormode_t colormode = getColormode(video_modes.modes[i]);
+        resolution_t res = getResolutionWorth(video_modes.modes[i]);
+        colormode_t colormode = getColormodeWorth(video_modes.modes[i]);
         if(res > bestRes)
         {
             if(colormode != COLORMODE_UNWANTED)

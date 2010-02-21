@@ -23,7 +23,7 @@ class Camera : public FrameSource
     static unsigned int         numInitedCameras;
 
 public:
-    Camera();
+    Camera(bool _isColor);
     ~Camera();
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
