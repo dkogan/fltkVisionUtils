@@ -3,7 +3,7 @@
 
 #include <FL/Fl.H>
 #include <FL/fl_draw.H>
-
+#include <FL/Fl_RGB_Image.H>
 #include <string.h>
 #include <stdio.h>
 
