@@ -78,7 +78,7 @@ public:
         return flImage->h();
     }
 
-    void updateImage(CvMat* mat)
+    void updateImageFromGrayscale(CvMat* mat)
     {
         cvCvtColor(mat, cvImage, CV_GRAY2RGB);
         flImage->uncache();
@@ -88,11 +88,11 @@ public:
         Fl::flush();
     }
 
-    void updateImage(IplImage* img)
+    void updateImageFromGrayscale(IplImage* img)
     {
         // the opencv API treats IplImage* and CvMat* equally, but this API is written in C. I'm
         // using C++ so I must create this equivalence explicitly
-        updateImage((CvMat*)img);
+        updateImageFromGrayscale((CvMat*)img);
     }
 };
 
