@@ -17,12 +17,9 @@ class FlWidgetFastDraw : public Fl_Widget
     int frameW, frameH;
 
 public:
-    FlWidgetFastDraw(int x, int y, int w, int h,
-                     int _frameW, int _frameH)
-        : Fl_Widget(x,y,w,h)
+    FlWidgetFastDraw(int x, int y, int w, int h)
+        : frameW(w), frameH(h), Fl_Widget(x,y,w,h)
     {
-        frameW = _frameW;
-        frameH = _frameH;
     }
 
     // this is the FLTK draw-me-now callback
