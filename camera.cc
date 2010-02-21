@@ -313,7 +313,7 @@ unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
         return NULL;
     }
 
-    return cameraFrame->image;
+    return finishPeek(timestamp_us);
 }
 
 // peekMostRecentFrame() checks the frame buffer. If there are no frames in it, it blocks until a
@@ -382,11 +382,61 @@ unsigned char* Camera::peekMostRecentFrame(uint64_t* timestamp_us)
         polledFrame = cameraFrame;
     }
 
+    return finishPeek(timestamp_us);
+}
 
+unsigned char* Camera::finishPeek(uint64_t* timestamp_us)
+{
     if(timestamp_us != NULL)
         *timestamp_us = cameraFrame->timestamp;
 
     return cameraFrame->image;
+}
+
+bool Camera::getNextFrame(uint64_t* timestamp_us, unsigned char* buffer)
+{
+    if(peekNextFrame(timestamp_us) == NULL)
+        return false;
+
+    return finishGet(buffer);
+}
+
+bool Camera::getMostRecentFrame(uint64_t* timestamp_us, unsigned char* buffer)
+{
+    if(peekMostRecentFrame(timestamp_us) == NULL)
+        return false;
+
+    return finishGet(buffer);
+}
+
+bool Camera::finishGet(unsigned char* buffer)
+{
+    dc1394error_t err;
+    if(isColor)
+        err = dc1394_convert_to_RGB8(cameraFrame->image,
+                                     buffer,
+                                     cameraFrame->size[0], cameraFrame->size[1],
+                                     cameraFrame->yuv_byte_order,
+                                     cameraFrame->color_coding,
+                                     0 // supposedly useful for 16-bit formats only, so I don't care
+                                     );
+    else
+        err = dc1394_convert_to_MONO8(cameraFrame->image,
+                                      buffer,
+                                      cameraFrame->size[0], cameraFrame->size[1],
+                                      cameraFrame->yuv_byte_order,
+                                      cameraFrame->color_coding,
+                                      0 // supposedly useful for 16-bit formats only, so I don't care
+                                      );
+    unpeekFrame();
+
+    if(err != DC1394_SUCCESS)
+    {
+        fprintf(stderr, "Error ocnverting colorspaces\n");
+        return false;
+    }
+
+    return true;
 }
 
 void Camera::unpeekFrame(void)

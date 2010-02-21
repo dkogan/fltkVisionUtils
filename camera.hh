@@ -44,6 +44,9 @@ class Camera : public FrameSource
     static dc1394camera_list_t* cameraList;
     static unsigned int         numInitedCameras;
 
+    unsigned char* finishPeek(uint64_t* timestamp_us);
+    bool finishGet(unsigned char* buffer);
+
     // returns desireability of the resolution. Higher is more desireable
     resolution_t getResolutionWorth(dc1394video_mode_t mode);
 
@@ -58,10 +61,19 @@ public:
     // returned (NULL on error). This buffer must be given back to the system by calling
     // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed.
     // peekNextFrame() returns the next frame in the buffer.
-    // peekMostRecentFrame() purges the buffer and returns the most recent frame availabl
+    // peekMostRecentFrame() purges the buffer and returns the most recent frame available
+    //
+    // The peek...Frame() functions return RAW data. No color conversion is attempted. Use with
+    // caution
     unsigned char* peekNextFrame      (uint64_t* timestamp_us);
     unsigned char* peekMostRecentFrame(uint64_t* timestamp_us);
     void unpeekFrame(void);
+
+    // these are like the peek() functions, but these convert the incoming data to the desired
+    // colorspace (RGB8 or MONO8 depending on isColor). Since these make a copy of the data, calling
+    // unpeek() is not needed. false returned on error
+    bool getNextFrame      (uint64_t* timestamp_us, unsigned char* buffer);
+    bool getMostRecentFrame(uint64_t* timestamp_us, unsigned char* buffer);
 
     int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }
