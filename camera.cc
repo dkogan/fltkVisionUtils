@@ -9,6 +9,123 @@ static dc1394_t*            Camera::dc1394Context    = NULL;
 static dc1394camera_list_t* Camera::cameraList       = NULL;
 static int                  Camera::numInitedCameras = 0;
 
+// The resolutions that I know about. These are listed in order from least to most desireable
+enum { MODE_UNWANTED,
+       MODE_160x120,
+       MODE_320x240,
+       MODE_640x480,
+       MODE_800x600,
+       MODE_1024x768,
+       MODE_1280x960,
+       MODE_1600x1200} resolution_t;
+
+static resolution_t getResolution(dc1394video_mode_t mode)
+{
+    // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
+    // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
+    // bother supporting it until I need it
+
+    switch(mode)
+    {
+    case DC1394_VIDEO_MODE_160x120_YUV444:
+        return MODE_160x120;
+
+    case DC1394_VIDEO_MODE_320x240_YUV422:
+        return MODE_320x240;
+
+    case DC1394_VIDEO_MODE_640x480_MONO8:
+    case DC1394_VIDEO_MODE_640x480_MONO16:
+    case DC1394_VIDEO_MODE_640x480_YUV411:
+    case DC1394_VIDEO_MODE_640x480_YUV422:
+    case DC1394_VIDEO_MODE_640x480_RGB8:
+        return MODE_640x480;
+
+    case DC1394_VIDEO_MODE_800x600_MONO8:
+    case DC1394_VIDEO_MODE_800x600_MONO16:
+    case DC1394_VIDEO_MODE_800x600_YUV422:
+    case DC1394_VIDEO_MODE_800x600_RGB8:
+        return MODE_800x600;
+
+    case DC1394_VIDEO_MODE_1024x768_YUV422:
+    case DC1394_VIDEO_MODE_1024x768_RGB8:
+    case DC1394_VIDEO_MODE_1024x768_MONO8:
+    case DC1394_VIDEO_MODE_1024x768_MONO16:
+        return MODE_1024x768;
+
+    case DC1394_VIDEO_MODE_1280x960_YUV422:
+    case DC1394_VIDEO_MODE_1280x960_RGB8:
+    case DC1394_VIDEO_MODE_1280x960_MONO8:
+    case DC1394_VIDEO_MODE_1280x960_MONO16:
+        return MODE_1280x960;
+
+    case DC1394_VIDEO_MODE_1600x1200_YUV422:
+    case DC1394_VIDEO_MODE_1600x1200_RGB8:
+    case DC1394_VIDEO_MODE_1600x1200_MONO8:
+    case DC1394_VIDEO_MODE_1600x1200_MONO16:
+        return MODE_1600x1200;
+
+    default:
+        return MODE_UNWANTED;
+    }
+}
+
+// The colormodes that I know about. These are listed in order from least to most desireable
+enum { COLORMODE_UNWANTED,
+       COLORMODE_MONO8,
+       COLORMODE_MONO16,
+       COLORMODE_YUV411,
+       COLORMODE_YUV422,
+       COLORMODE_YUV444,
+       COLORMODE_RGB8} colormode_t;
+
+static colormode_t getColormode(dc1394video_mode_t mode)
+{
+    // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
+    // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
+    // bother supporting it until I need it
+
+    switch(mode)
+    {
+    case DC1394_VIDEO_MODE_640x480_MONO8:
+    case DC1394_VIDEO_MODE_800x600_MONO8:
+    case DC1394_VIDEO_MODE_1024x768_MONO8:
+    case DC1394_VIDEO_MODE_1280x960_MONO8:
+    case DC1394_VIDEO_MODE_1600x1200_MONO8:
+        return COLORMODE_MONO8;
+
+    case DC1394_VIDEO_MODE_640x480_MONO16:
+    case DC1394_VIDEO_MODE_800x600_MONO16:
+    case DC1394_VIDEO_MODE_1024x768_MONO16:
+    case DC1394_VIDEO_MODE_1280x960_MONO16:
+    case DC1394_VIDEO_MODE_1600x1200_MONO16:
+        return COLORMODE_MONO16;
+
+    case DC1394_VIDEO_MODE_640x480_YUV411:
+        return COLORMODE_YUV411;
+
+    case DC1394_VIDEO_MODE_320x240_YUV422:
+    case DC1394_VIDEO_MODE_640x480_YUV422:
+    case DC1394_VIDEO_MODE_800x600_YUV422:
+    case DC1394_VIDEO_MODE_1024x768_YUV422:
+    case DC1394_VIDEO_MODE_1280x960_YUV422:
+    case DC1394_VIDEO_MODE_1600x1200_YUV422:
+        return COLORMODE_YUV422;
+
+    case DC1394_VIDEO_MODE_160x120_YUV444:
+        return COLORMODE_YUV444;
+
+    case DC1394_VIDEO_MODE_640x480_RGB8:
+    case DC1394_VIDEO_MODE_800x600_RGB8:
+    case DC1394_VIDEO_MODE_1024x768_RGB8:
+    case DC1394_VIDEO_MODE_1280x960_RGB8:
+    case DC1394_VIDEO_MODE_1600x1200_RGB8:
+        return COLORMODE_RGB8;
+
+    default:
+        return COLORMODE_UNWANTED;
+    }
+}
+
 Camera::Camera()
     : camera(NULL), cameraFrame(NULL)
 {
@@ -71,56 +188,79 @@ Camera::Camera()
             dc1394_iso_release_channel(camera, channel);
     }
 
+    // I am now configuring the camera. Right now this is hardcoded to pick the highest available
+    // spatial resolution then the best color resolution then the highest framerate
 
-    // get the best video mode and highest framerate
-    // get video modes:
+    // Resolution. For simplicity I currently avoid mode 7 (scalable video) since it requires
+    // more configuration. I will add it later when/if I need it
     dc1394video_modes_t  video_modes;
     dc1394video_mode_t   video_mode;
-    dc1394color_coding_t coding;
+
     err = dc1394_video_get_supported_modes(camera, &video_modes);
     DC1394_ERR(err, "Can't get video modes");
 
-    // select highest res mode:
-    int i;
-    for (i = video_modes.num - 1; i >= 0; i--)
+    resolution_t bestRes = MODE_UNWANTED;
+    colormode_t bestColormode = COLORMODE_UNWANTED;
+    int bestModeIdx = -1;
+    for (int i=0; i<video_modes.num; i++)
     {
-        if (!dc1394_is_video_mode_scalable(video_modes.modes[i]))
+        resolution_t res = getResolution(video_modes.modes[i]);
+        colormode_t colormode = getColormode(video_modes.modes[i]);
+        if(res > bestRes)
         {
-            dc1394_get_color_coding_from_video_mode(camera, video_modes.modes[i], &coding);
-            if( coding == DC1394_COLOR_CODING_MONO8 )
+            if(colormode != COLORMODE_UNWANTED)
             {
-                video_mode = video_modes.modes[i];
-                break;
+                bestRes = res;
+                bestColormode = colormode_unwanted;
+                bestModeIdx = i;
             }
         }
+        else if(res == bestRes)
+            if(colormode > bestColormode)
+            {
+                bestColormode = colormode;
+                bestModeIdx = i;
+            }
     }
-    if (i < 0)
+    if(bestModeIdx == -1)
     {
-        dc1394_log_error("Could not get a valid MONO8 mode");
+        fprintf(stderr, "No known resolutions/colormodes supported. Maybe this is a format7-only camera?\n");
         return;
     }
+    video_mode = video_modes.modes[bestModeIdx];
 
-    err = dc1394_get_color_coding_from_video_mode(camera, video_mode, &coding);
-    DC1394_ERR(err, "Could not get color coding");
-
-    // get highest framerate
+    // get the highest framerate
     dc1394framerates_t framerates;
-    dc1394framerate_t  framerate;
+    dc1394framerate_t  bestFramerate = DC1394_FRAMERATE_MIN;
     err = dc1394_video_get_supported_framerates(camera, video_mode, &framerates);
     DC1394_ERR(err, "Could not get framerates");
-    framerate = framerates.framerates[framerates.num - 1];
+    for(int i=0; i<framerates.num; i++)
+    {
+        // the framerates defined by the dc1394framerate_t enum are sorted from worst to best, so I
+        // just loop through and pick the highest one
+        if(framerates.framerates[i] > bestFramerate)
+            bestFramerate = framerates.framerates[i];
+    }
 
-    // setup capture
-    err = dc1394_video_set_operation_mode(camera, DC1394_OPERATION_MODE_1394B);
-    DC1394_ERR(err,"Could not set operation mode");
+    // setup capture. Use the 1394-B mode if possible
+    if( dc1394_video_set_operation_mode(camera, DC1394_OPERATION_MODE_1394B) == DC1394_SUCCESS)
+    {
+        err = dc1394_video_set_iso_speed(camera, DC1394_ISO_SPEED_800);
+        DC1394_ERR(err,"Could not set iso speed");
+    }
+    else
+    {
+        err = dc1394_video_set_operation_mode(camera, DC1394_OPERATION_MODE_LEGACY);
+        DC1394_ERR(err,"Could not set operation mode");
 
-    err = dc1394_video_set_iso_speed(camera, DC1394_ISO_SPEED_800);
-    DC1394_ERR(err,"Could not set iso speed");
+        err = dc1394_video_set_iso_speed(camera, DC1394_ISO_SPEED_400);
+        DC1394_ERR(err,"Could not set iso speed");
+    }
 
     err = dc1394_video_set_mode(camera, video_mode);
     DC1394_ERR(err,"Could not set video mode");
 
-    err = dc1394_video_set_framerate(camera, framerate);
+    err = dc1394_video_set_framerate(camera, bestFramerate);
     DC1394_ERR(err,"Could not set framerate");
 
     // I always want only the latest frame available. I.e. I don't really care if I missed some
