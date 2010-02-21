@@ -87,9 +87,11 @@ public:
         redraw();
 
 #warning this flush() shouldn't be needed. Without it, draw() isn't called when frames come from a camera
+#warning probably don't need this anymore since updateImageFromGrayscale() should be called from the main thread
         Fl::flush();
     }
 
+#warning I should use the c++ opencv API. Then maybe I don't need to duplicate this here
     void updateImageFromGrayscale(IplImage* img)
     {
         // the opencv API treats IplImage* and CvMat* equally, but this API is written in C. I'm
