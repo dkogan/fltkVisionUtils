@@ -9,18 +9,8 @@ dc1394_t*            Camera::dc1394Context    = NULL;
 dc1394camera_list_t* Camera::cameraList       = NULL;
 unsigned int         Camera::numInitedCameras = 0;
 
-// The resolutions that I know about. These are listed in order from least to most desireable
-enum resolution_t { MODE_UNWANTED,
-                    MODE_160x120,
-                    MODE_320x240,
-                    MODE_640x480,
-                    MODE_800x600,
-                    MODE_1024x768,
-                    MODE_1280x960,
-                    MODE_1600x1200};
-
 // returns desireability of the resolution. Higher is more desireable
-static resolution_t getResolutionWorth(dc1394video_mode_t mode)
+resolution_t Camera::getResolutionWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -70,22 +60,8 @@ static resolution_t getResolutionWorth(dc1394video_mode_t mode)
     }
 }
 
-// The colormodes that I know about. These are listed in order from least to most desireable
-enum colormode_t { COLORMODE_UNWANTED,
-                   COLORMODE_MONO16, // FrameSource always uses 8bits per channel, so mono16 does
-                                     // nothing for me. Thus it's least desireable
-                   COLORMODE_MONO8,
-                   COLORMODE_YUV411,
-                   COLORMODE_YUV422,
-                   COLORMODE_YUV444,
-                   COLORMODE_RGB8,
-
-                   // if we wanted grayscale output, then it is more desireable still
-                   COLORMODE_MONO8_REQUESTED,
-};
-
 // returns desireability of the color mode. Higher is more desireable
-static colormode_t getColormodeWorth(dc1394video_mode_t mode)
+colormode_t Camera::getColormodeWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
