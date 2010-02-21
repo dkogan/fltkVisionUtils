@@ -7,40 +7,108 @@
 #include <string.h>
 #include <stdio.h>
 
-// this class is designed for simple visualization of streaming data. This class makes an assumption
-// that new frames are constantly arriving, thus it draws DIRECTLY into the widget without creating
-// an Fl_Image. The makes the drawing faster, but breaks redrawing. We're assuming we're constantly
-// getting new data so redrawing is not needed. At some point in the distant future this should be
-// changed to use hardware acceleration designed for this purpose, like Xv
+// this class is designed for simple visualization of data passed into the class from the
+// outside. Examples of data sources are cameras, video files, still images, processed data, etc.
+
+// Both color and grayscale displays are supported. Incoming data is assumed to be of the desired
+// type
+enum FlWidgetImage_ColorChoice  { COLOR,     GRAYSCALE };
+
+// Two drawing modes are supported:
+
+// 1. Normal drawing using an Fl_Image object. This mode requires a bit of overhead for the initial
+// drawing operation, but redraws are very fast. This is the mode to use most of the time
+//
+// 2. Direct drawing mode. This modes makes an assumption that new frames are constantly arriving,
+// thus it draws DIRECTLY into the widget without creating an Fl_Image. This makes the drawing
+// faster, but breaks redrawing. This mode assumes that we're constantly getting new data so
+// intelligent redrawing is not needed. At some point in the distant future this should be changed
+// to use hardware acceleration designed for this purpose, like Xv. This mode can be used to display
+// data coming from a video camera, for example
+enum FlWidgetImage_RedrawChoice { NORMAL, FAST_REDRAW = NORMAL,
+                                  DIRECT, FAST_DRAW   = DIRECT};
+
 class FlWidgetFastDraw : public Fl_Widget
 {
     int frameW, frameH;
-    bool isColor;
+
+    FlWidgetImage_ColorChoice  colorMode;
+    FlWidgetImage_RedrawChoice redrawMode;
+    unsigned int bytesPerPixel;
+
+    // these are only used for FAST_REDRAW
+    unsigned char* imageData;
+    Fl_RGB_Image*  flImage;
+
+    void cleanup(void)
+    {
+        if(flImage != NULL)
+        {
+            delete flImage;
+            flImage = NULL;
+        }
+        if(imageData != NULL)
+        {
+            delete[] imageData;
+            imageData = NULL;
+        }
+    }
 
 public:
     FlWidgetFastDraw(int x, int y, int w, int h,
-                     bool _isColor = true)
-        : frameW(w), frameH(h), isColor(_isColor), Fl_Widget(x,y,w,h)
+                     FlWidgetImage_ColorChoice  _colorMode,
+                     FlWidgetImage_RedrawChoice _redrawMode)
+        : frameW(w), frameH(h),
+          colorMode(_colorMode), redrawMode(_redrawMode),
+          imageData(NULL), flImage(NULL),
+          Fl_Widget(x,y,w,h)
     {
+        unsigned int bytesPerPixel = (colorMode == COLOR) ? 3 : 1;
+
+        if(redrawMode == NORMAL)
+        {
+            imageData = new unsigned char[frameW * frameH * bytesPerPixel];
+            if(imageData == NULL)
+                return;
+
+            flImage = new Fl_RGB_Image(imageData, frameW, frameH, bytesPerPixel);
+            if(flImage == NULL)
+            {
+                cleanup();
+                return;
+            }
+        }
     }
 
-    // this is the FLTK draw-me-now callback
+    ~FlWidgetFastDraw()
+    {
+        cleanup();
+    }
+
     void draw()
     {
-        // nothing here. We draw directly into the widget when new data comes in and never bother
-        // with redrawing
+        // this is the FLTK draw-me-now callback. Draw the image if we're not direct drawing
+        if(redrawMode == NORMAL)
+            flImage->draw(0,0);
     }
 
     // this should be called from the main FLTK thread or from any other thread after obtaining an
     // Fl::lock()
     void updateFrame(unsigned char* frame)
     {
-        if(frame)
+        if(!frame)
+            return;
+
+        if(redrawMode == NORMAL)
         {
-            // I now draw the frame. Normally the drawing will be done in the draw() callback, but
-            // since I will update the image with the camera updates, this will happen often anyway
-            // and I don't need X's fancy redrawing and caching logic
-            if(isColor)
+            memcpy(imageData, frame, frameW*frameH*bytesPerPixel);
+
+            flImage->uncache();
+            redraw();
+        }
+        else
+        {
+            if(colorMode == COLOR)
                 fl_draw_image(frame, x(), y(), frameW, frameH, 3);
             else
                 fl_draw_image_mono(frame, x(), y(), frameW, frameH);
