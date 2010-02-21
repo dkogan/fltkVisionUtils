@@ -4,7 +4,7 @@ LDFLAGS  += -g
 LDLIBS += -lfltk -lpthread -ldc1394 -lavformat -lavcodec -lswscale -lavutil -lhighgui -lcv
 
 
-test: frameSource.o camera.o main.o ffmpegInterface.o
+test: camera.o main.o ffmpegInterface.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 clean:
