@@ -8,7 +8,7 @@
 // this class is designed for simple visualization of an openCV image in an FLTK widget. The
 // IplImage object contains the image data. The Fl_RGB_Image object does not contain the image data,
 // but rather references the IplImage
-class CvFltkWidget : public Fl_Widget
+class FlWidgetCv : public Fl_Widget
 {
     Fl_RGB_Image* flImage;      // for drawing
     IplImage*     cvImage;      // for processing
@@ -29,7 +29,7 @@ class CvFltkWidget : public Fl_Widget
     }
 
 public:
-    CvFltkWidget(int x, int y, int w, int h)
+    FlWidgetCv(int x, int y, int w, int h)
         : Fl_Widget(x, y, w, h),
           flImage(NULL), cvImage(NULL)
     {
@@ -47,7 +47,7 @@ public:
         size(flImage->w(), flImage->h());
     }
 
-    ~CvFltkWidget()
+    ~FlWidgetCv()
     {
         cleanup();
     }
