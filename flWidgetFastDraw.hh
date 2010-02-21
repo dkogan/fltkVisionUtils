@@ -15,10 +15,12 @@
 class FlWidgetFastDraw : public Fl_Widget
 {
     int frameW, frameH;
+    bool isColor;
 
 public:
-    FlWidgetFastDraw(int x, int y, int w, int h)
-        : frameW(w), frameH(h), Fl_Widget(x,y,w,h)
+    FlWidgetFastDraw(int x, int y, int w, int h,
+                     bool _isColor = true)
+        : frameW(w), frameH(h), isColor(_isColor), Fl_Widget(x,y,w,h)
     {
     }
 
@@ -38,7 +40,10 @@ public:
             // I now draw the frame. Normally the drawing will be done in the draw() callback, but
             // since I will update the image with the camera updates, this will happen often anyway
             // and I don't need X's fancy redrawing and caching logic
-            fl_draw_image_mono(frame, x(), y(), frameW, frameH);
+            if(isColor)
+                fl_draw_image(frame, x(), y(), frameW, frameH, 3);
+            else
+                fl_draw_image_mono(frame, x(), y(), frameW, frameH);
         }
     }
 };
