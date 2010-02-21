@@ -9,9 +9,17 @@ static dc1394_t*            Camera::dc1394Context    = NULL;
 static dc1394camera_list_t* Camera::cameraList       = NULL;
 static int                  Camera::numInitedCameras = 0;
 
-Camera::Camera(unsigned _cameraIndex)
-    : cameraIndex(_cameraIndex), camera(NULL), cameraFrame(NULL)
+Camera::Camera()
+    : camera(NULL), cameraFrame(NULL)
 {
+    if(!uninitedCamerasLeft())
+    {
+        fprintf(stderr, "no more cameras left to init\n");
+        return;
+    }
+
+    cameraIndex = numInitedCameras;
+
     dc1394error_t err;
 
     if(dc1394Context == NULL)
@@ -29,9 +37,6 @@ Camera::Camera(unsigned _cameraIndex)
             return;
         }
     }
-
-    if(cameraIndex >= cameraList->num)
-        return;
 
     camera = dc1394_camera_new(dc1394Context, cameraList->ids[cameraIndex].guid);
     if (!camera)
