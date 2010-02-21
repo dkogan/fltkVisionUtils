@@ -3,27 +3,20 @@
 #include <fstream>
 #include <sstream>
 #include <time.h>
-#include <list>
 #include <string.h>
 using namespace std;
 
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
-#include <FL/Fl_Value_Slider.H>
 
-#include "FLTK_camera.hh"
+#include "flWidgetImage.hh"
 
 #include "camera.hh"
 #include "pthread.h"
 
-#define CAMERA_W         1024
-#define CAMERA_H         768
-#define CAMERA_PERIOD_NS 100000000
+#define CAMERA_PERIOD_NS 1000000000
 
-#warning do I need this?
-
-static CameraWidget*    camWidget;
-static Fl_Value_Slider* cameraSelector;
+static FlWidgetImage* camWidget;
 
 static bool cameraThread_doTerminate = false;
 void* cameraThread(void *pArg)
@@ -38,8 +31,7 @@ void* cameraThread(void *pArg)
         nanosleep(&delay, NULL);
 
         uint64_t timestamp_us;
-        unsigned char* frame = cam->peekFrame(&timestamp_us);
-        camWidget->updateFrame( frame );
+        unsigned char* frame = cam->peekLatestFrame(&timestamp_us);
 
         if(frame == NULL)
         {
@@ -48,11 +40,10 @@ void* cameraThread(void *pArg)
             return NULL;
         }
 
-        // DO SOMETHING WITH THE FRAME HERE
-
         Fl::lock();
         if(cameraThread_doTerminate) return NULL;
-        fl_draw_image_mono(frame, 0, 0, CAMERA_W, CAMERA_H);
+
+        camWidget->updateFrame( frame );
         Fl::unlock();
         cam->unpeekFrame();
     }
@@ -65,53 +56,28 @@ int main(void)
     Fl::lock();
     Fl::visual(FL_RGB);
 
-    list<Camera*> cameras;
-
-    // keep opening the cameras as long as we can
-    while(1)
+    // open the first camera. request color
+    Camera* cam = new Camera(FRAMESOURCE_COLOR);
+    if(! *cam)
     {
-        Camera* cam = new Camera( cameras.size() );
-        if(*cam)
-            cameras.push_back(cam);
-        else
-        {
-            delete cam;
-            break;
-        }
-    }
-
-    if( cameras.size() == 0)
-    {
-        fprintf(stderr, "no cameras found\n");
+        fprintf(stderr, "couldn't open camera\n");
         return 0;
     }
 
-    Fl_Window window(CAMERA_W,CAMERA_H+30);
-    camWidget = new CameraWidget(0,0,CAMERA_W,CAMERA_H,
-                                 CAMERA_W,CAMERA_H);
-
-    cameraSelector = new Fl_Value_Slider(0, CAMERA_H+10, 300, 20, "Displayed camera");
-    cameraSelector->type(FL_HOR_NICE_SLIDER);
-    cameraSelector->range(0, cameras.size()-1);
-    cameraSelector->precision(0); // integer
+    Fl_Window window(cam->w(), cam->h());
+    camWidget = new FlWidgetImage(0, 0, cam->w(), cam->h(),
+                                  WIDGET_COLOR, FAST_DRAW);
 
     window.resizable(window);
     window.end();
     window.show();
 
 
-    list<pthread_t> cameraThread_ids;
-    for(list<Camera*>::iterator itr = cameras.begin();
-        itr != cameras.end();
-        itr++)
+    pthread_t cameraThread_id;
+    if(pthread_create(&cameraThread_id, NULL, &cameraThread, cam) != 0)
     {
-        pthread_t cameraThread_id;
-        if(pthread_create(&cameraThread_id, NULL, &cameraThread, *itr) != 0)
-        {
-            cerr << "couldn't start camera thread" << endl;
-            return 0;
-        }
-        cameraThread_ids.push_back(cameraThread_id);
+        cerr << "couldn't start camera thread" << endl;
+        return 0;
     }
 
     while (Fl::wait())
@@ -121,22 +87,10 @@ int main(void)
     Fl::unlock();
     cameraThread_doTerminate = true;
 
-    for(list<pthread_t>::iterator itr = cameraThread_ids.begin();
-        itr != cameraThread_ids.end();
-        itr++)
-    {
-        pthread_join(*itr, NULL);
-    }
+    pthread_join(cameraThread_id, NULL);
 
-    for(list<Camera*>::iterator itr = cameras.begin();
-        itr != cameras.end();
-        itr++)
-    {
-        delete *itr;
-    }
-
+    delete cam;
     delete camWidget;
-    delete cameraSelector;
 
     return 0;
 }
