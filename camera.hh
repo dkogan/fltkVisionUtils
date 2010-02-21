@@ -25,7 +25,7 @@ class Camera : public FrameSource
     void flushFrameBuffer(void);
 
 public:
-    Camera(unsigned _cameraIndex);
+    Camera();
     ~Camera();
 
     // peekFrame() blocks until a frame is available. A pointer to the internal buffer is returned
