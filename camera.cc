@@ -337,10 +337,10 @@ void Camera::flushFrameBuffer(void)
     }
 }
 
-// peekFrame() blocks until a frame is available. A pointer to the internal buffer is returned
+// peekNextFrame() blocks until a frame is available. A pointer to the internal buffer is returned
 // (NULL on error). This buffer must be given back to the system by calling
 // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
-unsigned char* Camera::peekFrame(uint64_t* timestamp_us)
+unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
 {
     static uint64_t timestamp0 = 0;
 
@@ -362,6 +362,84 @@ unsigned char* Camera::peekFrame(uint64_t* timestamp_us)
                            __FUNCTION__, __FILE__, __LINE__);
         return NULL;
     }
+
+    if(timestamp0 == 0)
+        timestamp0 = cameraFrame->timestamp;
+
+    if(timestamp_us != NULL)
+        *timestamp_us = cameraFrame->timestamp - timestamp0;
+
+    return cameraFrame->image;
+}
+
+// peekMostRecentFrame() checks the frame buffer. If there are no frames in it, it blocks until a
+// frame is available. If there are frames, the buffer is purged and the most recent frame is
+// returned. A pointer to the internal buffer is returned (NULL on error). This buffer must be given
+// back to the system by calling unpeekFrame(). unpeekFrame() need not be called if peekFrame()
+// failed
+unsigned char* Camera::peekMostRecentFrame(uint64_t* timestamp_us)
+{
+    static uint64_t timestamp0 = 0;
+
+    if(cameraFrame != NULL)
+    {
+        fprintf(stderr, "warning: peekMostRecentFrame() before unpeekFrame()\n"
+                "Calling unpeekFrame() for you, but you should do this yourself\n"
+                "as soon as you're done with the data\n");
+        unpeekFrame();
+    }
+
+    // first, poll the buffer. If no frames are available, use the plain peekNextFrame() call to
+    // wait for one
+    dc1394error_t err;
+    dc1394video_frame_t* polledFrame;
+    err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &polledFrame);
+    if( err != DC1394_SUCCESS )
+    {
+        dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
+                           dc1394_error_get_string(err),
+                           __FUNCTION__, __FILE__, __LINE__);
+        return NULL;
+    }
+    if(polledFrame == NULL)
+        return peekNextFrame(timestamp_us);
+
+
+    // A frame was available, so I pull the frames off until I reach the end
+    while(true)
+    {
+        // at this point we have one dequeued frame and it's in polledFrame. I try to dequeue one
+        // more to see if it's the last
+
+        err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
+        if( err != DC1394_SUCCESS )
+        {
+            dc1394_capture_enqueue(camera, polledFrame);
+            dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
+                               dc1394_error_get_string(err),
+                               __FUNCTION__, __FILE__, __LINE__);
+            return NULL;
+        }
+        if(cameraFrame == NULL)
+        {
+            // no new frame, so polledFrame is the last
+            cameraFrame = polledFrame;
+            break;
+        }
+
+        // I just dequeued a frame, so polledFrame wasn't the last. I enqueue the polledFrame, and
+        // point it to my new most-recent frame
+        err = dc1394_capture_enqueue(camera, polledFrame);
+        if( err != DC1394_SUCCESS )
+        {
+            dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
+                               dc1394_error_get_string(err),
+                               __FUNCTION__, __FILE__, __LINE__);
+            return NULL;
+        }
+        polledFrame = cameraFrame;
+    }
+
 
     if(timestamp0 == 0)
         timestamp0 = cameraFrame->timestamp;

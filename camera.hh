@@ -28,10 +28,13 @@ public:
     Camera();
     ~Camera();
 
-    // peekFrame() blocks until a frame is available. A pointer to the internal buffer is returned
-    // (NULL on error). This buffer must be given back to the system by calling
-    // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
-    unsigned char* peekFrame(uint64_t* timestamp_us);
+    // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
+    // returned (NULL on error). This buffer must be given back to the system by calling
+    // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed.
+    // peekNextFrame() returns the next frame in the buffer.
+    // peekMostRecentFrame() purges the buffer and returns the most recent frame availabl
+    unsigned char* peekNextFrame      (uint64_t* timestamp_us);
+    unsigned char* peekMostRecentFrame(uint64_t* timestamp_us);
     void unpeekFrame(void);
 
     int getCameraIndex(void)                { return cameraIndex;       }
