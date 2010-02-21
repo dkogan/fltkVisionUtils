@@ -1,5 +1,5 @@
-#ifndef __CV_FLTK_SUPPORT_HH__
-#define __CV_FLTK_SUPPORT_HH__
+#ifndef __FL_WIDGET_CV_HH__
+#define __FL_WIDGET_CV_HH__
 
 #include <FL/Fl_RGB_Image.H>
 

@@ -1,5 +1,5 @@
-#ifndef __FLTK_CAMERA_HH__
-#define __FLTK_CAMERA_HH__
+#ifndef __FL_WIDGET_FAST_DRAW_HH__
+#define __FL_WIDGET_FAST_DRAW_HH__
 
 #include <FL/Fl.H>
 #include <FL/fl_draw.H>
