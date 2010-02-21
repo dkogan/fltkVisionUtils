@@ -346,8 +346,10 @@ unsigned char* Camera::peekFrame(uint64_t* timestamp_us)
 
     if(cameraFrame != NULL)
     {
-        fprintf(stderr, "error: peekFrame() before unpeekFrame()\n");
-        return NULL;
+        fprintf(stderr, "warning: peekNextFrame() before unpeekFrame()\n"
+                "Calling unpeekFrame() for you, but you should do this yourself\n"
+                "as soon as you're done with the data\n");
+        unpeekFrame();
     }
 
     dc1394error_t err;
