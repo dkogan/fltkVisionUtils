@@ -7,7 +7,6 @@ class FrameSource
 {
 protected:
     bool         inited;
-    unsigned int bitsPerPixel;
     unsigned int width, height;
 
 public:

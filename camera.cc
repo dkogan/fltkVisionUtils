@@ -2,7 +2,6 @@
 #include <limits.h>
 #include "camera.hh"
 
-#define BYTES_PER_PIXEL 1
 // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
 // declaring them static members
 static dc1394_t*            Camera::dc1394Context    = NULL;
