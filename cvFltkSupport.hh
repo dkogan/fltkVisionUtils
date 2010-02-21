@@ -78,6 +78,8 @@ public:
         return flImage->h();
     }
 
+    // this should be called from the main FLTK thread or from any other thread after obtaining an
+    // Fl::lock()
     void updateImageFromGrayscale(CvMat* mat)
     {
         cvCvtColor(mat, cvImage, CV_GRAY2RGB);
