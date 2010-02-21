@@ -2,12 +2,12 @@
 #include <limits.h>
 #include "camera.hh"
 
-// The camera context
-dc1394_t*            Camera::dc1394Context    = NULL;
-dc1394camera_list_t* Camera::cameraList       = NULL;
-int                  Camera::numInitedCameras = 0;
-
 #define BYTES_PER_PIXEL 1
+// These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
+// declaring them static members
+static dc1394_t*            Camera::dc1394Context    = NULL;
+static dc1394camera_list_t* Camera::cameraList       = NULL;
+static int                  Camera::numInitedCameras = 0;
 
 Camera::Camera(unsigned _cameraIndex)
     : cameraIndex(_cameraIndex), camera(NULL), cameraFrame(NULL)
