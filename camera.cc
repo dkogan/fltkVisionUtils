@@ -45,7 +45,18 @@ Camera::Camera()
         return;
     }
 
-    fprintf(stderr, "Using camera with GUID %ld\n", camera->guid);
+    // I use the libdc1394 function to report the information about this camera. The library can
+    // only output this to a FILE structure, so I jump through hoops a bit to get this into my C++
+    // string instead
+    char*  cameraInfoStr;
+    size_t cameraInfoSize;
+    FILE*  cameraInfo = open_memstream(&cameraInfoStr, &cameraInfoSize);
+    err = dc1394_camera_print_info(camera, cameraInfo);
+    fclose(cameraInfo);
+    DC1394_ERR_CLN(err, free(cameraInfoStr), "Couldn't get the camera information");
+    cameraDescription = cameraInfoStr;
+    cameraDescription += "\n";
+    free(cameraInfoStr);
 
     // Release the resources that could have been allocated by previous instances of a program using
     // the cameras. I don't know which channels and how much bandwidth was allocated, so release
