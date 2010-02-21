@@ -61,6 +61,7 @@ int main(void)
     if(! *cam)
     {
         fprintf(stderr, "couldn't open camera\n");
+        delete cam;
         return 0;
     }
 
