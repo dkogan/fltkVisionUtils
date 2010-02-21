@@ -316,16 +316,16 @@ unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
     return finishPeek(timestamp_us);
 }
 
-// peekMostRecentFrame() checks the frame buffer. If there are no frames in it, it blocks until a
+// peekLatestFrame() checks the frame buffer. If there are no frames in it, it blocks until a
 // frame is available. If there are frames, the buffer is purged and the most recent frame is
 // returned. A pointer to the internal buffer is returned (NULL on error). This buffer must be given
 // back to the system by calling unpeekFrame(). unpeekFrame() need not be called if peekFrame()
 // failed
-unsigned char* Camera::peekMostRecentFrame(uint64_t* timestamp_us)
+unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
 {
     if(cameraFrame != NULL)
     {
-        fprintf(stderr, "warning: peekMostRecentFrame() before unpeekFrame()\n"
+        fprintf(stderr, "warning: peekLatestFrame() before unpeekFrame()\n"
                 "Calling unpeekFrame() for you, but you should do this yourself\n"
                 "as soon as you're done with the data\n");
         unpeekFrame();
@@ -401,9 +401,9 @@ bool Camera::getNextFrame(uint64_t* timestamp_us, unsigned char* buffer)
     return finishGet(buffer);
 }
 
-bool Camera::getMostRecentFrame(uint64_t* timestamp_us, unsigned char* buffer)
+bool Camera::getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer)
 {
-    if(peekMostRecentFrame(timestamp_us) == NULL)
+    if(peekLatestFrame(timestamp_us) == NULL)
         return false;
 
     return finishGet(buffer);
