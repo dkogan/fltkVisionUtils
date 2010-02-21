@@ -10,7 +10,8 @@
 // this class is designed for simple visualization of streaming data. This class makes an assumption
 // that new frames are constantly arriving, thus it draws DIRECTLY into the widget without creating
 // an Fl_Image. The makes the drawing faster, but breaks redrawing. We're assuming we're constantly
-// getting new data so redrawing is not needed
+// getting new data so redrawing is not needed. At some point in the distant future this should be
+// changed to use hardware acceleration designed for this purpose, like Xv
 class CameraWidget : public Fl_Widget
 {
     int cameraW, cameraH;
