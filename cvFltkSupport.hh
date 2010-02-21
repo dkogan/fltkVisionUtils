@@ -80,7 +80,7 @@ public:
 
     void updateImage(CvMat* mat)
     {
-        cvCopy(mat, cvImage);
+        cvCvtColor(mat, cvImage, CV_GRAY2RGB);
         flImage->uncache();
         redraw();
 
