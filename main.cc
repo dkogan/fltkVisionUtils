@@ -114,7 +114,9 @@ int main(void)
         cameraThread_ids.push_back(cameraThread_id);
     }
 
-    Fl::run();
+    while (Fl::wait())
+    {
+    }
 
     Fl::unlock();
     cameraThread_doTerminate = true;
