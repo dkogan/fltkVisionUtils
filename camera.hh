@@ -1,6 +1,8 @@
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
 
+#include <string>
+
 #include "dc1394/dc1394.h"
 #include "frameSource.hh"
 
@@ -10,6 +12,10 @@ class Camera : public FrameSource
     dc1394camera_t*             camera;
     dc1394video_frame_t*        cameraFrame;
 
+    std::string                 cameraDescription;
+
+    // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
+    // declaring them static
     static dc1394_t*            dc1394Context;
     static dc1394camera_list_t* cameraList;
     static int                  numInitedCameras;
@@ -29,6 +35,7 @@ public:
     void unpeekFrame(void);
 
     int idx(void) { return cameraIndex; }
+    const std::string& getDescription(void) { return cameraDescription; }
 };
 
 #endif
