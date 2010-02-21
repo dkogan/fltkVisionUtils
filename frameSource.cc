@@ -10,6 +10,7 @@ unsigned char* FrameSource::copyFrame(uint64_t* timestamp_us, unsigned char* fra
         return NULL;
 
     memcpy(frame, buf, width*height * 3); // I'm assuming 24-bit RGB
+    unpeekFrame();
 
     return frame;
 }
