@@ -30,11 +30,11 @@ public:
         : Fl_Widget(x, y, w, h),
           flImage(NULL), cvImage(NULL)
     {
-        cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 1);
+        cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 3);
         if(cvImage == NULL)
             return;
 
-        flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData, cvImage->width, cvImage->height, 1);
+        flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData, cvImage->width, cvImage->height, 3);
         if(flImage == NULL)
         {
             cleanup();
