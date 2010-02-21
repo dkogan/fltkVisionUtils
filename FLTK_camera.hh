@@ -7,6 +7,10 @@
 #include <string.h>
 #include <stdio.h>
 
+// this class is designed for simple visualization of data streaming from in from a camera. Since
+// this class assumes that new data is always arriving, it draws DIRECTLY into the widget without
+// creating an Fl_Image. The makes the drawing faster, but breaks redrawing. We're assuming we're
+// constantly getting new data so redrawing is not needed
 class CameraWidget : public Fl_Widget
 {
     int cameraW, cameraH;
@@ -23,8 +27,12 @@ public:
     // this is the FLTK draw-me-now callback
     void draw()
     {
+        // nothing here. We draw directly into the widget when new data comes in and never bother
+        // with redrawing
     }
 
+    // this should be called from the main FLTK thread or from any other thread after obtaining an
+    // Fl::lock()
     void updateFrame(unsigned char* frame)
     {
         if(frame)
