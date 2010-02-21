@@ -1,5 +1,5 @@
-#ifndef __FL_WIDGET_FAST_DRAW_HH__
-#define __FL_WIDGET_FAST_DRAW_HH__
+#ifndef __FL_WIDGET_IMAGE_HH__
+#define __FL_WIDGET_IMAGE_HH__
 
 #include <FL/Fl.H>
 #include <FL/fl_draw.H>
@@ -28,7 +28,7 @@ enum FlWidgetImage_ColorChoice  { COLOR,     GRAYSCALE };
 enum FlWidgetImage_RedrawChoice { NORMAL, FAST_REDRAW = NORMAL,
                                   DIRECT, FAST_DRAW   = DIRECT};
 
-class FlWidgetFastDraw : public Fl_Widget
+class FlWidgetImage : public Fl_Widget
 {
     int frameW, frameH;
 
@@ -55,9 +55,9 @@ class FlWidgetFastDraw : public Fl_Widget
     }
 
 public:
-    FlWidgetFastDraw(int x, int y, int w, int h,
-                     FlWidgetImage_ColorChoice  _colorMode,
-                     FlWidgetImage_RedrawChoice _redrawMode)
+    FlWidgetImage(int x, int y, int w, int h,
+                  FlWidgetImage_ColorChoice  _colorMode,
+                  FlWidgetImage_RedrawChoice _redrawMode)
         : frameW(w), frameH(h),
           colorMode(_colorMode), redrawMode(_redrawMode),
           imageData(NULL), flImage(NULL),
@@ -80,7 +80,7 @@ public:
         }
     }
 
-    ~FlWidgetFastDraw()
+    ~FlWidgetImage()
     {
         cleanup();
     }
