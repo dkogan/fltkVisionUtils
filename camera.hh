@@ -36,6 +36,8 @@ public:
 
     int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }
+
+    static bool uninitedCamerasLeft(void)   { return numInitedCameras < cameraList->num; }
 };
 
 #endif
