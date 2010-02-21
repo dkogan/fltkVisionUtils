@@ -14,6 +14,8 @@ class Camera : public FrameSource
     static dc1394camera_list_t* cameraList;
     static int                  numInitedCameras;
 
+    // Fetches all of the frames in the buffer and throws them away. If we do this we guarantee that
+    // the next frame read will be the most recent
     void flushFrameBuffer(void);
 
 public:
