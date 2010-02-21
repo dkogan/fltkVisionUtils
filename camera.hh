@@ -34,7 +34,7 @@ public:
     unsigned char* peekFrame(uint64_t* timestamp_us);
     void unpeekFrame(void);
 
-    int idx(void) { return cameraIndex; }
+    int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }
 };
 
