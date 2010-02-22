@@ -187,8 +187,13 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
     {
         if(packet.stream_index == m_videoStream)
         {
-            avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished,
-                                 packet.data, packet.size);
+            if(avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished,
+                                    packet.data, packet.size) < 0)
+            {
+                cerr << "ffmpeg error avcodec_decode_video()" << endl;
+                return false;
+            }
+
             if(frameFinished)
             {
                 if(m_pSWSCtx == NULL)
