@@ -22,7 +22,8 @@ public:
 
     virtual ~FrameSource() {}
 
-    operator bool() { return inited; }
+    // I want to allow the derived classes to override this
+    virtual operator bool() { return inited; }
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
     // returned (NULL on error). This buffer must be given back to the system by calling
