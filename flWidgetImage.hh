@@ -85,6 +85,16 @@ public:
         cleanup();
     }
 
+    // this can be used to render directly into the buffer
+    unsigned char* getBuffer(void)
+    {
+        if(redrawMode != NORMAL)
+            fprintf(stderr, "FlWidgetImage::getBuffer() while redrawMode != NORMAL.\n"
+                    "This mode doesn't use a buffer\n");
+
+        return imageData;
+    }
+
     void draw()
     {
         // this is the FLTK draw-me-now callback. Draw the image if we're not direct drawing
@@ -117,6 +127,23 @@ public:
             else
                 fl_draw_image_mono(frame, x(), y(), frameW, frameH);
         }
+    }
+
+    // Used to trigger a redraw if out drawing buffer was already updated. This functin makes sense
+    // only in the buffered 'NORMAL' redraw mode
+    void redrawNewFrame(void)
+    {
+        if(redrawMode == NORMAL)
+        {
+            flImage->uncache();
+            redraw();
+
+            // If we're drawing from a different thread, FLTK needs to be woken up to actually do
+            // the redraw
+            Fl::awake();
+        }
+        else
+            fprintf(stderr, "redrawNewFrame() doesn't make sense in an unbuffered redraw mode\n");
     }
 };
 

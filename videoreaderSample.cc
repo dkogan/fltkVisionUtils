@@ -2,7 +2,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
 #include <time.h>
 #include <string.h>
 using namespace std;
@@ -25,9 +24,6 @@ void* sourceThread(void *pArg)
 {
     FrameSource* source = (FrameSource*)pArg;
 
-    std::vector<unsigned char> frameData;
-    frameData.reserve(source->w() * source->h() * 3);
-
     while(!sourceThread_doTerminate)
     {
         struct timespec delay;
@@ -37,7 +33,7 @@ void* sourceThread(void *pArg)
 
         uint64_t timestamp_us;
 
-        if( !source->getNextFrame(&timestamp_us, &frameData[0]) )
+        if( !source->getNextFrame(&timestamp_us, widgetImage->getBuffer()) )
         {
             cerr << "couldn't get frame\n";
             return NULL;
@@ -46,7 +42,7 @@ void* sourceThread(void *pArg)
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
 
-        widgetImage->updateFrame( &frameData[0] );
+        widgetImage->redrawNewFrame();
         Fl::unlock();
     }
     return NULL;
