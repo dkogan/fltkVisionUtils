@@ -90,10 +90,11 @@ public:
         if(!readFrameGrayscale(buffer))
             return false;
 
-        *timestamp_us =
-            (uint64_t)m_pCodecCtx->frame_number *
-            (uint64_t)m_pCodecCtx->time_base.num *
-            1000000ull / m_pCodecCtx->time_base.den;
+        if(timestamp_us != NULL)
+            *timestamp_us =
+                (uint64_t)m_pCodecCtx->frame_number *
+                (uint64_t)m_pCodecCtx->time_base.num *
+                1000000ull / m_pCodecCtx->time_base.den;
     }
 
     bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer)
