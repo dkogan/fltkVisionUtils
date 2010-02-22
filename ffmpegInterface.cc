@@ -193,8 +193,8 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
             {
                 if(m_pSWSCtx == NULL)
                 {
-                    m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
-                                               m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
+                    m_pSWSCtx = sws_getContext(width, height, m_pCodecCtx->pix_fmt,
+                                               width, height, LOCAL_PIX_FMT,
                                                0, NULL, NULL, NULL);
                     if(m_pSWSCtx == NULL)
                     {
@@ -205,7 +205,7 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
 
                 sws_scale(m_pSWSCtx,
                           m_pFrameYUV->data,   m_pFrameYUV->linesize, 0, 0,
-                          &pBuffer, &m_pCodecCtx->width);
+                          &pBuffer, &width);
 
                 av_free_packet(&packet);
                 return true;
