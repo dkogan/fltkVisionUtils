@@ -48,6 +48,7 @@ class FFmpegDecoder : public FFmpegTalker, public FrameSource
     int              m_videoStream;
 
     void reset(void);
+    bool readFrameGrayscale(unsigned char* pBuffer);
 
 public:
     FFmpegDecoder()
@@ -65,14 +66,8 @@ public:
     }
 
     bool open(const char* filename);
-    bool readFrameGrayscale(unsigned char* pBuffer);
     void close(void);
     void free(void);
-
-    bool operator>>(unsigned char* pBuffer)
-    {
-        return readFrameGrayscale(pBuffer);
-    }
 
 
     // These support the FrameSource API
