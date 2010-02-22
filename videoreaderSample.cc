@@ -53,7 +53,7 @@ void* sourceThread(void *pArg)
 
 int main(int argc, char* argv[])
 {
-    if(argc == 0)
+    if(argc <= 1)
     {
         fprintf(stderr, "need video file on the cmdline\n");
         return 0;
