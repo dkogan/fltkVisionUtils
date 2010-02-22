@@ -1,14 +1,13 @@
 CXXFLAGS += -g -Wall -Wextra -pedantic
 LDFLAGS  += -g
 
-LDLIBS += -lfltk -lpthread -ldc1394 -lavformat -lavcodec -lswscale -lavutil -lhighgui -lcv
+LDLIBS_CAMERASAMPLE += -lfltk -lpthread -ldc1394
 
-
-test: camera.o main.o ffmpegInterface.o
+cameraSample: camera.o cameraSample.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 clean:
-	rm -f *.o test
+	rm -f *.o cameraSample
 
 deps.d: $(wildcard *.c *.cc *.cpp *.h *.hh)
 	@touch $@
