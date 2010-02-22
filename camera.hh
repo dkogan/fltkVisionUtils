@@ -80,7 +80,12 @@ public:
     int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }
 
-    static bool uninitedCamerasLeft(void)   { return numInitedCameras < cameraList->num; }
+    static bool uninitedCamerasLeft(void)
+    {
+        // if we don't yet have a camera list, say there are cameras left to try to open them
+        return cameraList == NULL ||
+            numInitedCameras < cameraList->num;
+    }
 };
 
 #endif
