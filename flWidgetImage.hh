@@ -105,6 +105,10 @@ public:
 
             flImage->uncache();
             redraw();
+
+            // If we're drawing from a different thread, FLTK needs to be woken up to actually do
+            // the redraw
+            Fl::awake();
         }
         else
         {
