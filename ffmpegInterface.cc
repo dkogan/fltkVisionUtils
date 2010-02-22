@@ -168,6 +168,10 @@ bool FFmpegDecoder::open(const char* filename)
     m_pFrameYUV = avcodec_alloc_frame();
 
     m_bOpen = m_bOK = true;
+
+    width  = m_pCodecCtx->width;
+    height = m_pCodecCtx->height;
+
     return true;
 }
 
