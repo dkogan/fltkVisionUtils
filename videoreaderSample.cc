@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
-                                  WIDGET_COLOR, FAST_DRAW);
+                                    WIDGET_COLOR, FAST_DRAW);
 
     window.resizable(window);
     window.end();
