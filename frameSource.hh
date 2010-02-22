@@ -17,7 +17,7 @@ protected:
     unsigned int                width, height;
 
 public:
-    FrameSource (FrameSource_UserColorChoice _userColorMode)
+    FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
         : userColorMode(_userColorMode), inited(false) { }
 
     virtual ~FrameSource() {}
