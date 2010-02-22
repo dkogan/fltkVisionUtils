@@ -1,50 +1,38 @@
 #ifndef __FL_WIDGET_CV_HH__
 #define __FL_WIDGET_CV_HH__
 
-#include <FL/Fl_RGB_Image.H>
-
+#include "flWidgetImage.hh"
 #include "opencv/cv.h"
 
 // this class is designed for simple visualization of an openCV image in an FLTK widget. The
 // IplImage object contains the image data. The Fl_RGB_Image object does not contain the image data,
 // but rather references the IplImage
-class FlWidgetCv : public Fl_Widget
+class FlWidgetCv : public FlWidgetImage
 {
-    Fl_RGB_Image* flImage;      // for drawing
-    IplImage*     cvImage;      // for processing
+    IplImage*     cvImage;
 
     void cleanup(void)
     {
-        if(flImage != NULL)
-        {
-            delete flImage;
-            flImage = NULL;
-        }
-
         if(cvImage == NULL)
         {
-            cvReleaseImage(&cvImage);
+            cvReleaseImageHeader(&cvImage);
             cvImage = NULL;
         }
+
+        FlWidgetImage::cleanup();
     }
 
 public:
-    FlWidgetCv(int x, int y, int w, int h)
-        : Fl_Widget(x, y, w, h),
-          flImage(NULL), cvImage(NULL)
+    FlWidgetCv(int x, int y, int w, int h,
+               FlWidgetImage_ColorChoice  _colorMode)
+        : FlWidgetImage(x,y,w,h, _colorMode, FAST_REDRAW),
+          cvImage(NULL)
     {
-        cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 3);
+        cvImage = cvCreateImageHeader(cvSize(w,h), IPL_DEPTH_8U, bytesPerPixel);
         if(cvImage == NULL)
             return;
 
-        flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData, cvImage->width, cvImage->height, 3);
-        if(flImage == NULL)
-        {
-            cleanup();
-            return;
-        }
-
-        size(flImage->w(), flImage->h());
+        cvSetData(cvImage, imageData, w*bytesPerPixel);
     }
 
     ~FlWidgetCv()
@@ -52,53 +40,11 @@ public:
         cleanup();
     }
 
-    operator bool()
-    {
-        return cvImage != NULL;
-    }
-
     operator IplImage*()
     {
         return cvImage;
     }
 
-    // this is the FLTK draw-me-now callback
-    void draw()
-    {
-        flImage->draw(0,0);
-    }
-
-    int w()
-    {
-        return flImage->w();
-    }
-
-    int h()
-    {
-        return flImage->h();
-    }
-
-    // this should be called from the main FLTK thread or from any other thread after obtaining an
-    // Fl::lock()
-    void updateImageFromGrayscale(CvMat* mat)
-    {
-        cvCvtColor(mat, cvImage, CV_GRAY2RGB);
-        flImage->uncache();
-        redraw();
-
-#warning this flush() shouldn't be needed. Without it, draw() isn't called when frames come from a camera
-#warning probably don't need this anymore since updateImageFromGrayscale() should be called from the main thread
-        Fl::flush();
-    }
-
-#warning I should use the c++ opencv API. Then maybe I don't need to duplicate this here
-    void updateImageFromGrayscale(IplImage* img)
-    {
-        // the opencv API treats IplImage* and CvMat* equally, but this API is written in C. I'm
-        // using C++ so I must create this equivalence explicitly
-        updateImageFromGrayscale((CvMat*)img);
-    }
 };
-
 
 #endif
