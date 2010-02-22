@@ -195,7 +195,7 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
                 {
                     m_pSWSCtx = sws_getContext(width, height, m_pCodecCtx->pix_fmt,
                                                width, height, LOCAL_PIX_FMT,
-                                               0, NULL, NULL, NULL);
+                                               SWS_POINT, NULL, NULL, NULL);
                     if(m_pSWSCtx == NULL)
                     {
                         cerr << "ffmpeg: couldn't create sws context" << endl;
@@ -315,7 +315,7 @@ bool FFmpegEncoder::open(const char* filename)
 
     m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, LOCAL_PIX_FMT,
                                m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
-                               0, NULL, NULL, NULL);
+                               SWS_POINT, NULL, NULL, NULL);
     if(m_pSWSCtx == NULL)
     {
         cerr << "ffmpeg: couldn't create sws context" << endl;
