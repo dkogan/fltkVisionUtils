@@ -15,7 +15,8 @@ using namespace std;
 #include "ffmpegInterface.hh"
 #include "pthread.h"
 
-#define SOURCE_PERIOD_NS 1000000000
+#define SOURCE_PERIOD_S  0
+#define SOURCE_PERIOD_NS 100000000
 
 static FlWidgetImage* widgetImage;
 
@@ -30,7 +31,7 @@ void* sourceThread(void *pArg)
     while(!sourceThread_doTerminate)
     {
         struct timespec delay;
-        delay.tv_sec = 0;
+        delay.tv_sec =  SOURCE_PERIOD_S;
         delay.tv_nsec = SOURCE_PERIOD_NS;
         nanosleep(&delay, NULL);
 
