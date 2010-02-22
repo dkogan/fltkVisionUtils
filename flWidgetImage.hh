@@ -100,7 +100,7 @@ public:
     {
         // this is the FLTK draw-me-now callback. Draw the image if we're not direct drawing
         if(redrawMode == NORMAL)
-            flImage->draw(0,0);
+            flImage->draw(x(), y());
     }
 
     // this should be called from the main FLTK thread or from any other thread after obtaining an
