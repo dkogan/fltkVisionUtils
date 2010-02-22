@@ -104,6 +104,11 @@ public:
     {
         return getNextFrame(timestamp_us, buffer);
     }
+
+    operator bool()
+    {
+        return m_bOpen && m_bOK;
+    }
 };
 
 class FFmpegEncoder : public FFmpegTalker

@@ -111,7 +111,7 @@ colormode_t Camera::getColormodeWorth(dc1394video_mode_t mode)
 }
 
 Camera::Camera(FrameSource_UserColorChoice _userColorMode)
-    : FrameSource(_userColorMode), camera(NULL), cameraFrame(NULL)
+    : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
     if(!uninitedCamerasLeft())
     {

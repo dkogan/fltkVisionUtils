@@ -34,6 +34,8 @@ enum resolution_t { MODE_UNWANTED,
 
 class Camera : public FrameSource
 {
+    bool                 inited;
+
     unsigned             cameraIndex;
     dc1394camera_t*      camera;
     dc1394video_frame_t* cameraFrame;
@@ -58,6 +60,8 @@ class Camera : public FrameSource
 public:
     Camera(FrameSource_UserColorChoice _userColorMode);
     ~Camera();
+
+    operator bool() { return inited; }
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
     // returned (NULL on error). This buffer must be given back to the system by calling

@@ -13,17 +13,16 @@ class FrameSource
 {
 protected:
     FrameSource_UserColorChoice userColorMode; // color (RGB8) or grayscale (MONO8)
-    bool                        inited;
     unsigned int                width, height;
 
 public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
-        : userColorMode(_userColorMode), inited(false) { }
+        : userColorMode(_userColorMode) { }
 
     virtual ~FrameSource() {}
 
-    // I want to allow the derived classes to override this
-    virtual operator bool() { return inited; }
+    // I want the derived classes to override this
+    virtual operator bool() = 0;
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
     // returned (NULL on error). This buffer must be given back to the system by calling
