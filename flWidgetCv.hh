@@ -45,6 +45,27 @@ public:
         return cvImage;
     }
 
+    void updateFrame(IplImage* image)
+    {
+        unsigned char* data;
+        cvGetRawData(image, &data);
+        updateFrame(data);
+    }
+
+    void updateFrame(CvMat* image)
+    {
+        unsigned char* data;
+        cvGetRawData(image, &data);
+        updateFrame(data);
+    }
+
+    void updateFrame(CvArr* image)
+    {
+        unsigned char* data;
+        cvGetRawData(image, &data);
+        updateFrame(data);
+    }
+
 };
 
 #endif
