@@ -209,7 +209,8 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
                 }
 
                 sws_scale(m_pSWSCtx,
-                          m_pFrameYUV->data,   m_pFrameYUV->linesize, 0, 0,
+                          m_pFrameYUV->data, m_pFrameYUV->linesize,
+                          0, height,
                           &pBuffer, (int*)&width);
 
                 av_free_packet(&packet);
@@ -349,7 +350,7 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
     }
 #else
     sws_scale(m_pSWSCtx,
-              &pBuffer, &m_pCodecCtx->width, 0, 0,
+              &pBuffer, &m_pCodecCtx->width, 0, m_pCodecCtx->height,
               m_pFrameYUV->data, m_pFrameYUV->linesize);
 #endif
 
