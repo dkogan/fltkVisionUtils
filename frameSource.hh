@@ -29,6 +29,8 @@ public:
     // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed.
     // peekNextFrame() returns the next frame in the buffer.
     // peekLatestFrame() purges the buffer and returns the most recent frame available
+    // For non-realtime data sources, such as video files, peekNextFrame() and peekLatestFrame() are
+    // the same
     //
     // The peek...Frame() functions return RAW data. No color conversion is attempted. Use with
     // caution
