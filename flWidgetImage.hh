@@ -30,6 +30,7 @@ enum FlWidgetImage_RedrawChoice { NORMAL, FAST_REDRAW = NORMAL,
 
 class FlWidgetImage : public Fl_Widget
 {
+protected:
     int frameW, frameH;
 
     FlWidgetImage_ColorChoice  colorMode;
