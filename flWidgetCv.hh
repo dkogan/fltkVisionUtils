@@ -45,19 +45,19 @@ public:
         return cvImage;
     }
 
-    void updateFrame(IplImage* image)
+    void updateFrameCv(IplImage* image)
     {
         cvCopy(image, cvImage);
         redrawNewFrame();
     }
 
-    void updateFrame(CvMat* image)
+    void updateFrameCv(CvMat* image)
     {
         cvCopy(image, cvImage);
         redrawNewFrame();
     }
 
-    void updateFrame(CvArr* image)
+    void updateFrameCv(CvArr* image)
     {
         cvCopy(image, cvImage);
         redrawNewFrame();
