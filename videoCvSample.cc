@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    FrameSource* source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR);
+    FrameSource* source = new FFmpegDecoder(argv[1], FRAMESOURCE_GRAYSCALE);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new FlWidgetCv(0, 0, source->w(), source->h(),
-                                 WIDGET_COLOR);
+                                 WIDGET_GRAYSCALE);
 
     window.resizable(window);
     window.end();
