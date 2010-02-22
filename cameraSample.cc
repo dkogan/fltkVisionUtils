@@ -14,38 +14,38 @@ using namespace std;
 #include "camera.hh"
 #include "pthread.h"
 
-#define CAMERA_PERIOD_NS 1000000000
+#define SOURCE_PERIOD_NS 1000000000
 
-static FlWidgetImage* camWidget;
+static FlWidgetImage* widgetImage;
 
-static bool cameraThread_doTerminate = false;
-void* cameraThread(void *pArg)
+static bool sourceThread_doTerminate = false;
+void* sourceThread(void *pArg)
 {
-    Camera* cam = (Camera*)pArg;
+    FrameSource* source = (FrameSource*)pArg;
 
-    while(!cameraThread_doTerminate)
+    while(!sourceThread_doTerminate)
     {
         struct timespec delay;
         delay.tv_sec = 0;
-        delay.tv_nsec = CAMERA_PERIOD_NS;
+        delay.tv_nsec = SOURCE_PERIOD_NS;
         nanosleep(&delay, NULL);
 
         uint64_t timestamp_us;
-        unsigned char* frame = cam->peekLatestFrame(&timestamp_us);
+        unsigned char* frame = source->peekLatestFrame(&timestamp_us);
 
         if(frame == NULL)
         {
             cerr << "couldn't get frame\n";
-            cam->unpeekFrame();
+            source->unpeekFrame();
             return NULL;
         }
 
         Fl::lock();
-        if(cameraThread_doTerminate) return NULL;
+        if(sourceThread_doTerminate) return NULL;
 
-        camWidget->updateFrame( frame );
+        widgetImage->updateFrame( frame );
         Fl::unlock();
-        cam->unpeekFrame();
+        source->unpeekFrame();
     }
     return NULL;
 }
@@ -56,17 +56,17 @@ int main(void)
     Fl::lock();
     Fl::visual(FL_RGB);
 
-    // open the first camera. request color
-    Camera* cam = new Camera(FRAMESOURCE_COLOR);
-    if(! *cam)
+    // open the first source. request color
+    FrameSource* source = new Camera(FRAMESOURCE_COLOR);
+    if(! *source)
     {
-        fprintf(stderr, "couldn't open camera\n");
-        delete cam;
+        fprintf(stderr, "couldn't open source\n");
+        delete source;
         return 0;
     }
 
-    Fl_Window window(cam->w(), cam->h());
-    camWidget = new FlWidgetImage(0, 0, cam->w(), cam->h(),
+    Fl_Window window(source->w(), source->h());
+    widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
                                   WIDGET_COLOR, FAST_DRAW);
 
     window.resizable(window);
@@ -74,10 +74,10 @@ int main(void)
     window.show();
 
 
-    pthread_t cameraThread_id;
-    if(pthread_create(&cameraThread_id, NULL, &cameraThread, cam) != 0)
+    pthread_t sourceThread_id;
+    if(pthread_create(&sourceThread_id, NULL, &sourceThread, source) != 0)
     {
-        cerr << "couldn't start camera thread" << endl;
+        cerr << "couldn't start source thread" << endl;
         return 0;
     }
 
@@ -86,12 +86,12 @@ int main(void)
     }
 
     Fl::unlock();
-    cameraThread_doTerminate = true;
+    sourceThread_doTerminate = true;
 
-    pthread_join(cameraThread_id, NULL);
+    pthread_join(sourceThread_id, NULL);
 
-    delete cam;
-    delete camWidget;
+    delete source;
+    delete widgetImage;
 
     return 0;
 }
