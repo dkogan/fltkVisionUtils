@@ -20,7 +20,7 @@ videoCvSample: ffmpegInterface.o videoCvSample.o
 
 
 clean:
-	rm -f *.o cameraSample videoCvSample
+	rm -f *.o *.a cameraSample videoCvSample
 
 deps.d: $(wildcard *.c *.cc *.cpp *.h *.hh)
 	@touch $@
