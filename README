@@ -1,1 +1,2 @@
-some skeleton code for an FLTK-based app to read and display frames from a camera
+A library for simple integration of FLTK, openCV and image sources such as firewire (IIDC) cameras
+and video files. Includes some sample programs that show basic usage
