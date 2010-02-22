@@ -47,23 +47,20 @@ public:
 
     void updateFrame(IplImage* image)
     {
-        unsigned char* data;
-        cvGetRawData(image, &data);
-        updateFrame(data);
+        cvCopy(image, cvImage);
+        redrawNewFrame();
     }
 
     void updateFrame(CvMat* image)
     {
-        unsigned char* data;
-        cvGetRawData(image, &data);
-        updateFrame(data);
+        cvCopy(image, cvImage);
+        redrawNewFrame();
     }
 
     void updateFrame(CvArr* image)
     {
-        unsigned char* data;
-        cvGetRawData(image, &data);
-        updateFrame(data);
+        cvCopy(image, cvImage);
+        redrawNewFrame();
     }
 
 };
