@@ -7,7 +7,7 @@
 using namespace std;
 
 #include <FL/Fl.H>
-#include <FL/Fl_Window.H>
+#include <FL/Fl_Double_Window.H>
 
 #include "flWidgetCv.hh"
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    Fl_Window window(source->w(), source->h());
+    Fl_Double_Window window(source->w(), source->h());
     widgetImage = new FlWidgetCv(0, 0, source->w(), source->h(),
                                  WIDGET_GRAYSCALE);
 
