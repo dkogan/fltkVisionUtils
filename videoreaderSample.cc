@@ -26,7 +26,7 @@ void* sourceThread(void *pArg)
     FrameSource* source = (FrameSource*)pArg;
 
     std::vector<unsigned char> frameData;
-    frameData.reserve(source->w() * source->h());
+    frameData.reserve(source->w() * source->h() * 3);
 
     while(!sourceThread_doTerminate)
     {
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    FrameSource* source = new FFmpegDecoder(argv[1]);
+    FrameSource* source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
-                                    WIDGET_GRAYSCALE, FAST_REDRAW);
+                                    WIDGET_COLOR, FAST_REDRAW);
 
     window.resizable(window);
     window.end();

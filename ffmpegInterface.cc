@@ -175,7 +175,7 @@ bool FFmpegDecoder::open(const char* filename)
     return true;
 }
 
-bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
+bool FFmpegDecoder::readFrame(unsigned char* pBuffer)
 {
     if(!m_bOpen || !m_bOK)
         return false;
@@ -199,7 +199,8 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
                 if(m_pSWSCtx == NULL)
                 {
                     m_pSWSCtx = sws_getContext(width, height, m_pCodecCtx->pix_fmt,
-                                               width, height, LOCAL_PIX_FMT,
+                                               width, height,
+                                               userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
                                                SWS_POINT, NULL, NULL, NULL);
                     if(m_pSWSCtx == NULL)
                     {
@@ -208,10 +209,16 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
                     }
                 }
 
+                int rowstride;
+                if(userColorMode == FRAMESOURCE_COLOR)
+                    rowstride = width*3;
+                else
+                    rowstride = width;
+
                 sws_scale(m_pSWSCtx,
                           m_pFrameYUV->data, m_pFrameYUV->linesize,
                           0, height,
-                          &pBuffer, (int*)&width);
+                          &pBuffer, &rowstride);
 
                 av_free_packet(&packet);
                 return true;

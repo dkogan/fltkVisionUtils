@@ -44,14 +44,14 @@ class FFmpegDecoder : public FFmpegTalker, public FrameSource
     int              m_videoStream;
 
     void reset(void);
-    bool readFrameGrayscale(unsigned char* pBuffer);
+    bool readFrame(unsigned char* pBuffer);
 
 public:
-    FFmpegDecoder()
-        : FFmpegTalker(), FrameSource(FRAMESOURCE_GRAYSCALE)
+    FFmpegDecoder(FrameSource_UserColorChoice _userColorMode)
+        : FFmpegTalker(), FrameSource(_userColorMode)
     {}
-    FFmpegDecoder(const char* filename)
-        : FFmpegTalker(), FrameSource(FRAMESOURCE_GRAYSCALE)
+    FFmpegDecoder(const char* filename, FrameSource_UserColorChoice _userColorMode)
+        : FFmpegTalker(), FrameSource(_userColorMode)
     {
         open(filename);
     }
@@ -87,7 +87,7 @@ public:
 
     bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer)
     {
-        if(!readFrameGrayscale(buffer))
+        if(!readFrame(buffer))
             return false;
 
         if(timestamp_us != NULL)
