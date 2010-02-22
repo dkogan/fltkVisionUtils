@@ -205,7 +205,7 @@ bool FFmpegDecoder::readFrameGrayscale(unsigned char* pBuffer)
 
                 sws_scale(m_pSWSCtx,
                           m_pFrameYUV->data,   m_pFrameYUV->linesize, 0, 0,
-                          &pBuffer, &width);
+                          &pBuffer, (int*)&width);
 
                 av_free_packet(&packet);
                 return true;
