@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <time.h>
 #include <string.h>
 using namespace std;
@@ -23,6 +24,9 @@ void* sourceThread(void *pArg)
 {
     FrameSource* source = (FrameSource*)pArg;
 
+    std::vector<unsigned char> frameData;
+    frameData.reserve(source->w() * source->h());
+
     while(!sourceThread_doTerminate)
     {
         struct timespec delay;
@@ -31,21 +35,18 @@ void* sourceThread(void *pArg)
         nanosleep(&delay, NULL);
 
         uint64_t timestamp_us;
-        unsigned char* frame = source->peekLatestFrame(&timestamp_us);
 
-        if(frame == NULL)
+        if( !source->getNextFrame(&timestamp_us, &frameData[0]) )
         {
             cerr << "couldn't get frame\n";
-            source->unpeekFrame();
             return NULL;
         }
 
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
 
-        widgetImage->updateFrame( frame );
+        widgetImage->updateFrame( &frameData[0] );
         Fl::unlock();
-        source->unpeekFrame();
     }
     return NULL;
 }
