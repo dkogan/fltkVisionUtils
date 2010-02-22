@@ -33,10 +33,6 @@ public:
 
     virtual bool open(const char* filename) = 0;
     virtual void close(void) = 0;
-    bool operator!()
-    {
-        return !m_bOK;
-    }
     bool isOpen(void)
     {
         return m_bOpen;
