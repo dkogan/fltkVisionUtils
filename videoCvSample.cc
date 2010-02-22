@@ -18,6 +18,7 @@ using namespace std;
 #define SOURCE_PERIOD_NS 100000000
 
 static FlWidgetCv* widgetImage;
+static FlWidgetCv* widgetImage2;
 
 static bool sourceThread_doTerminate = false;
 void* sourceThread(void *pArg)
@@ -39,12 +40,14 @@ void* sourceThread(void *pArg)
             return NULL;
         }
 
+        cvCopy( *widgetImage, *widgetImage2);
         cvCanny(*widgetImage, *widgetImage, 20, 50);
 
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
 
         widgetImage->redrawNewFrame();
+        widgetImage2->redrawNewFrame();
         Fl::unlock();
     }
     return NULL;
@@ -71,8 +74,11 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    Fl_Double_Window window(source->w(), source->h());
+    Fl_Double_Window window(source->w()*2, source->h());
     widgetImage = new FlWidgetCv(0, 0, source->w(), source->h(),
+                                 WIDGET_GRAYSCALE);
+
+    widgetImage2 = new FlWidgetCv(source->w(), 0, source->w(), source->h(),
                                  WIDGET_GRAYSCALE);
 
     window.resizable(window);
@@ -98,6 +104,7 @@ int main(int argc, char* argv[])
 
     delete source;
     delete widgetImage;
+    delete widgetImage2;
 
     return 0;
 }
