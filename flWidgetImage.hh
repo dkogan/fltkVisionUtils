@@ -63,7 +63,7 @@ public:
           colorMode(_colorMode), redrawMode(_redrawMode),
           imageData(NULL), flImage(NULL)
     {
-        unsigned int bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
+        bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
 
         if(redrawMode == NORMAL)
         {
