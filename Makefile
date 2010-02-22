@@ -4,6 +4,8 @@ LDFLAGS  += -g
 LDLIBS_CAMERASAMPLE += -lfltk -lpthread -ldc1394
 LDLIBS_VIDEOREADERSAMPLE += -lfltk -lavformat -lavcodec -lswscale -lavutil
 
+all: cameraSample videoreaderSample
+
 cameraSample: camera.o cameraSample.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS_CAMERASAMPLE) -o $@
 
