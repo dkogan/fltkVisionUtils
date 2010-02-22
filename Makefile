@@ -4,7 +4,13 @@ LDFLAGS  += -g
 LDLIBS_CAMERASAMPLE += -lfltk -lpthread -ldc1394
 LDLIBS_VIDEO_CV_SAMPLE += -lfltk -lavformat -lavcodec -lswscale -lavutil -lcv
 
-all: cameraSample videoCvSample
+all: fltkVisionUtils.a cameraSample videoCvSample
+
+# all non-sample .cc files
+LIBRARY_SOURCES = $(shell ls *.cc | grep -v -i sample)
+
+fltkVisionUtils.a: $(patsubst %.cc, %.o, $(LIBRARY_SOURCES));
+	ar rcvu $@ $^
 
 cameraSample: camera.o cameraSample.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS_CAMERASAMPLE) -o $@
