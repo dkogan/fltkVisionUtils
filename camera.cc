@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <sstream>
 #include "camera.hh"
 
 // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
@@ -145,19 +146,6 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
         return;
     }
 
-    // I use the libdc1394 function to report the information about this camera. The library can
-    // only output this to a FILE structure, so I jump through hoops a bit to get this into my C++
-    // string instead
-    char*  cameraInfoStr;
-    size_t cameraInfoSize;
-    FILE*  cameraInfo = open_memstream(&cameraInfoStr, &cameraInfoSize);
-    err = dc1394_camera_print_info(camera, cameraInfo);
-    fclose(cameraInfo);
-    DC1394_ERR_CLN(err, free(cameraInfoStr), "Couldn't get the camera information");
-    cameraDescription = cameraInfoStr;
-    cameraDescription += "\n";
-    free(cameraInfoStr);
-
     // Release the resources that could have been allocated by previous instances of a program using
     // the cameras. I don't know which channels and how much bandwidth was allocated, so release
     // EVERYTHING. This can generate bogus error messages, but these should be ignored
@@ -264,6 +252,51 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
 
     inited = true;
     numInitedCameras++;
+
+
+    // Now get the information about my camera and its setup into a string
+    std::ostringstream descriptionStream;
+
+    // I use the libdc1394 function to report the information about this camera. The library can
+    // only output this to a FILE structure, so I jump through hoops a bit to get this into my C++
+    // string instead
+    char*  cameraInfoStr;
+    size_t cameraInfoSize;
+    FILE*  cameraInfo = open_memstream(&cameraInfoStr, &cameraInfoSize);
+    err = dc1394_camera_print_info(camera, cameraInfo);
+    fclose(cameraInfo);
+    DC1394_ERR_CLN(err, free(cameraInfoStr), "Couldn't get the camera information");
+    descriptionStream << cameraInfoStr << std::endl;
+    free(cameraInfoStr);
+
+    descriptionStream << "Resolution: " << width << ' ' << height << std::endl;
+
+    float framerate;
+    dc1394_framerate_as_float(bestFramerate, &framerate);
+    descriptionStream << "Framerate: " << framerate << " frames per second" << std::endl;
+
+    descriptionStream << "Color coding: ";
+    dc1394color_coding_t color_coding;
+    dc1394_get_color_coding_from_video_mode(camera, video_mode, &color_coding);
+
+#define COLOR_CODING_SWITCH_PRINT(c) case c: descriptionStream << #c
+    switch(color_coding)
+    {
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_MONO8 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_YUV411 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_YUV422 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_YUV444 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RGB8 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_MONO16 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RGB16 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_MONO16S );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RGB16S );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RAW8 );
+        COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RAW16);
+    }
+    descriptionStream << std::endl;
+
+    cameraDescription = descriptionStream.str();
 
     fprintf(stderr, "init done\n");
 }
