@@ -2,7 +2,7 @@ CXXFLAGS += -g -Wall -Wextra -pedantic
 LDFLAGS  += -g
 
 LDLIBS_CAMERASAMPLE += -lfltk -lpthread -ldc1394
-LDLIBS_VIDEOREADERSAMPLE += -lfltk -lavformat -lavcodec -lswscale -lavutil
+LDLIBS_VIDEOREADERSAMPLE += -lfltk -lavformat -lavcodec -lswscale -lavutil -lcv
 
 all: cameraSample videoreaderSample
 

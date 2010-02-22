@@ -9,7 +9,7 @@ using namespace std;
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 
-#include "flWidgetImage.hh"
+#include "flWidgetCv.hh"
 
 #include "ffmpegInterface.hh"
 #include "pthread.h"
@@ -17,7 +17,7 @@ using namespace std;
 #define SOURCE_PERIOD_S  0
 #define SOURCE_PERIOD_NS 100000000
 
-static FlWidgetImage* widgetImage;
+static FlWidgetCv* widgetImage;
 
 static bool sourceThread_doTerminate = false;
 void* sourceThread(void *pArg)
@@ -38,6 +38,8 @@ void* sourceThread(void *pArg)
             cerr << "couldn't get frame\n";
             return NULL;
         }
+
+        cvCanny(*widgetImage, *widgetImage, 20, 50);
 
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
@@ -70,8 +72,8 @@ int main(int argc, char* argv[])
     }
 
     Fl_Window window(source->w(), source->h());
-    widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
-                                    WIDGET_COLOR, FAST_REDRAW);
+    widgetImage = new FlWidgetCv(0, 0, source->w(), source->h(),
+                                 WIDGET_COLOR);
 
     window.resizable(window);
     window.end();
