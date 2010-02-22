@@ -81,7 +81,7 @@ public:
         }
     }
 
-    ~FlWidgetImage()
+    virtual ~FlWidgetImage()
     {
         cleanup();
     }
