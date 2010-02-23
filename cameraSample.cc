@@ -57,13 +57,15 @@ int main(void)
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    FrameSource* source = new Camera(FRAMESOURCE_COLOR);
+    Camera* source = new Camera(FRAMESOURCE_COLOR);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
         delete source;
         return 0;
     }
+
+    cout << source->getDescription();
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
