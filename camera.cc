@@ -474,7 +474,7 @@ bool Camera::finishGet(unsigned char* buffer)
 
     if(err != DC1394_SUCCESS)
     {
-        fprintf(stderr, "Error ocnverting colorspaces\n");
+        fprintf(stderr, "Error converting colorspaces\n");
         return false;
     }
 
