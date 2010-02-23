@@ -279,7 +279,7 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
     dc1394color_coding_t color_coding;
     dc1394_get_color_coding_from_video_mode(camera, video_mode, &color_coding);
 
-#define COLOR_CODING_SWITCH_PRINT(c) case c: descriptionStream << #c
+#define COLOR_CODING_SWITCH_PRINT(c) case c: descriptionStream << #c; break
     switch(color_coding)
     {
         COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_MONO8 );
