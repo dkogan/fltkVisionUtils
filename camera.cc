@@ -365,6 +365,14 @@ unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
         unpeekFrame();
     }
 
+    if( (userColorMode == FRAMESOURCE_COLOR     && cameraColorCoding != DC1394_COLOR_CODING_RGB8) ||
+        (userColorMode == FRAMESOURCE_GRAYSCALE && cameraColorCoding != DC1394_COLOR_CODING_MONO8) )
+    {
+        fprintf(stderr, "Camera::peek..() can only be used if the requested color mode exactly\n"
+                "matches the color mode of the camera output. Change either of the modes, or use get() instead of peek()\n");
+        return NULL;
+    }
+
     // first, poll the buffer. If no frames are available, use the plain peekNextFrame() call to
     // wait for one
     dc1394error_t err;
