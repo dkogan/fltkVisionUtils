@@ -31,9 +31,7 @@ void* sourceThread(void *pArg)
         nanosleep(&delay, NULL);
 
         uint64_t timestamp_us;
-        unsigned char* frame = source->peekLatestFrame(&timestamp_us);
-
-        if(frame == NULL)
+        if( !source->getNextFrame(&timestamp_us, widgetImage->getBuffer()) )
         {
             cerr << "couldn't get frame\n";
             source->unpeekFrame();
@@ -43,9 +41,8 @@ void* sourceThread(void *pArg)
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
 
-        widgetImage->updateFrame( frame );
+        widgetImage->redrawNewFrame();
         Fl::unlock();
-        source->unpeekFrame();
     }
     return NULL;
 }
