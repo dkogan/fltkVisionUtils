@@ -39,6 +39,8 @@ class Camera : public FrameSource
     unsigned             cameraIndex;
     dc1394camera_t*      camera;
     dc1394video_frame_t* cameraFrame;
+    dc1394video_mode_t   cameraVideoMode;
+    dc1394color_coding_t cameraColorCoding;
 
     std::string          cameraDescription;
 

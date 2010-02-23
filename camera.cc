@@ -165,7 +165,6 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
     // Resolution. For simplicity I currently avoid mode 7 (scalable video) since it requires
     // more configuration. I will add it later when/if I need it
     dc1394video_modes_t  video_modes;
-    dc1394video_mode_t   video_mode;
 
     err = dc1394_video_get_supported_modes(camera, &video_modes);
     DC1394_ERR(err, "Can't get video modes");
@@ -198,12 +197,12 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
         fprintf(stderr, "No known resolutions/colormodes supported. Maybe this is a format7-only camera?\n");
         return;
     }
-    video_mode = video_modes.modes[bestModeIdx];
+    cameraVideoMode = video_modes.modes[bestModeIdx];
 
     // get the highest framerate
     dc1394framerates_t framerates;
     dc1394framerate_t  bestFramerate = DC1394_FRAMERATE_MIN;
-    err = dc1394_video_get_supported_framerates(camera, video_mode, &framerates);
+    err = dc1394_video_get_supported_framerates(camera, cameraVideoMode, &framerates);
     DC1394_ERR(err, "Could not get framerates");
     for(unsigned int i=0; i<framerates.num; i++)
     {
@@ -228,7 +227,7 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
         DC1394_ERR(err,"Could not set iso speed");
     }
 
-    err = dc1394_video_set_mode(camera, video_mode);
+    err = dc1394_video_set_mode(camera, cameraVideoMode);
     DC1394_ERR(err,"Could not set video mode");
 
     err = dc1394_video_set_framerate(camera, bestFramerate);
@@ -246,7 +245,7 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
     // get the dimensions of the frames. Not writing directly to width/height because I want to be
     // absolutely certain that the pointers I'm passing in are pointing to the correct data type
     uint32_t w, h;
-    dc1394_get_image_size_from_video_mode(camera, video_mode, &w, &h);
+    dc1394_get_image_size_from_video_mode(camera, cameraVideoMode, &w, &h);
     width  = w;
     height = h;
 
@@ -276,11 +275,10 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
     descriptionStream << "Framerate: " << framerate << " frames per second" << std::endl;
 
     descriptionStream << "Color coding: ";
-    dc1394color_coding_t color_coding;
-    dc1394_get_color_coding_from_video_mode(camera, video_mode, &color_coding);
+    dc1394_get_color_coding_from_video_mode(camera, cameraVideoMode, &cameraColorCoding);
 
 #define COLOR_CODING_SWITCH_PRINT(c) case c: descriptionStream << #c; break
-    switch(color_coding)
+    switch(cameraColorCoding)
     {
         COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_MONO8 );
         COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_YUV411 );
