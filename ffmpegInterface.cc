@@ -228,7 +228,7 @@ bool FFmpegDecoder::readFrame(unsigned char* pBuffer)
     return false;
 }
 
-bool FFmpegEncoder::open(const char* filename)
+bool FFmpegEncoder::open(const char* filename, int width, int height, int fps)
 {
     if(m_bOpen)
     {
@@ -274,10 +274,10 @@ bool FFmpegEncoder::open(const char* filename)
     m_pCodecCtx->flags         = OUTPUT_FLAGS;
     m_pCodecCtx->flags2        = OUTPUT_FLAGS2;
     m_pCodecCtx->thread_count  = OUTPUT_THREADS;
-    m_pCodecCtx->width         = 640;
-    m_pCodecCtx->height        = 480;
+    m_pCodecCtx->width         = width;
+    m_pCodecCtx->height        = height;
     m_pCodecCtx->time_base.num = 1;
-    m_pCodecCtx->time_base.den = 15; // frames per second
+    m_pCodecCtx->time_base.den = fps; // frames per second
     m_pCodecCtx->gop_size      = OUTPUT_GOP_SIZE;
     m_pCodecCtx->max_b_frames  = OUTPUT_MAX_B_FRAMES;
     m_pCodecCtx->pix_fmt       = OUTPUT_PIX_FMT;

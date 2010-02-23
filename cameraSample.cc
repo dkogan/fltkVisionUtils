@@ -10,6 +10,7 @@ using namespace std;
 #include <FL/Fl_Window.H>
 
 #include "flWidgetImage.hh"
+#include "ffmpegInterface.hh"
 
 #include "camera.hh"
 #include "pthread.h"
@@ -17,6 +18,7 @@ using namespace std;
 #define SOURCE_PERIOD_NS 1000000000
 
 static FlWidgetImage* widgetImage;
+static FFmpegEncoder videoEncoder;
 
 static bool sourceThread_doTerminate = false;
 void* sourceThread(void *pArg)
@@ -38,6 +40,18 @@ void* sourceThread(void *pArg)
             return NULL;
         }
 
+        if(!videoEncoder)
+        {
+            fprintf(stderr, "Couldn't encode frame!\n");
+            return NULL;
+        }
+        videoEncoder.writeFrameGrayscale(widgetImage->getBuffer());
+        if(!videoEncoder)
+        {
+            fprintf(stderr, "Couldn't encode frame!\n");
+            return NULL;
+        }
+
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
 
@@ -54,24 +68,29 @@ int main(void)
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    Camera* source = new Camera(FRAMESOURCE_COLOR);
+    Camera* source = new Camera(FRAMESOURCE_GRAYSCALE);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
         delete source;
         return 0;
     }
-
     cout << source->getDescription();
+
+    videoEncoder.open("capture.avi", source->w(), source->h(), 15);
+    if(!videoEncoder)
+    {
+        fprintf(stderr, "Couldn't initialize the video encoder\n");
+        return 0;
+    }
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
-                                  WIDGET_COLOR, FAST_DRAW);
+                                  WIDGET_GRAYSCALE, FAST_REDRAW);
 
     window.resizable(window);
     window.end();
     window.show();
-
 
     pthread_t sourceThread_id;
     if(pthread_create(&sourceThread_id, NULL, &sourceThread, source) != 0)
@@ -88,6 +107,8 @@ int main(void)
     sourceThread_doTerminate = true;
 
     pthread_join(sourceThread_id, NULL);
+
+    videoEncoder.close();
 
     delete source;
     delete widgetImage;

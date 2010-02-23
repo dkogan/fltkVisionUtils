@@ -31,7 +31,6 @@ public:
     FFmpegTalker();
     virtual ~FFmpegTalker();
 
-    virtual bool open(const char* filename) = 0;
     virtual void close(void) = 0;
     bool isOpen(void)
     {
@@ -122,10 +121,10 @@ public:
     FFmpegEncoder()
         : FFmpegTalker()
     {}
-    FFmpegEncoder(const char* filename)
+    FFmpegEncoder(const char* filename, int width, int height, int fps)
         : FFmpegTalker()
     {
-        open(filename);
+        open(filename, width, height, fps);
     }
     ~FFmpegEncoder()
     {
@@ -133,7 +132,7 @@ public:
         close();
     }
 
-    bool open(const char* filename);
+    bool open(const char* filename, int width, int height, int fps);
     bool writeFrameGrayscale(unsigned char* pBuffer);
     void close(void);
     void free(void);
@@ -141,6 +140,11 @@ public:
     bool operator<<(unsigned char* pBuffer)
     {
         return writeFrameGrayscale(pBuffer);
+    }
+
+    operator bool()
+    {
+        return m_bOpen && m_bOK;
     }
 };
 
