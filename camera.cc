@@ -293,6 +293,9 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
         COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RGB16S );
         COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RAW8 );
         COLOR_CODING_SWITCH_PRINT( DC1394_COLOR_CODING_RAW16);
+
+    default:
+        descriptionStream << "Unknown!" << std::endl;
     }
     descriptionStream << std::endl;
 
