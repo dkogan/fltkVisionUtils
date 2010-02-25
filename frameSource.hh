@@ -45,14 +45,14 @@ public:
     virtual bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer) = 0;
     virtual bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer) = 0;
 
-    bool getNextFrameCv  (uint64_t* timestamp_us, IplImage* image)
+    virtual bool getNextFrameCv  (uint64_t* timestamp_us, IplImage* image)
     {
         unsigned char* buffer;
         cvGetRawData(image, &buffer);
         return getNextFrame(timestamp_us, buffer);
     }
 
-    bool getLatestFrameCv(uint64_t* timestamp_us, IplImage* image)
+    virtual bool getLatestFrameCv(uint64_t* timestamp_us, IplImage* image)
     {
         unsigned char* buffer;
         cvGetRawData(image, &buffer);
