@@ -2,6 +2,7 @@
 #define __FRAME_SOURCE_H__
 
 #include <stdint.h>
+#include <opencv/cv.h>
 
 // user interface color choice. RGB8 or MONO8
 enum FrameSource_UserColorChoice  { FRAMESOURCE_COLOR, FRAMESOURCE_GRAYSCALE };
@@ -43,6 +44,20 @@ public:
     // data, calling unpeek() is not needed. false returned on error
     virtual bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer) = 0;
     virtual bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer) = 0;
+
+    bool getNextFrameCv  (uint64_t* timestamp_us, IplImage* image)
+    {
+        unsigned char* buffer;
+        cvGetRawData(image, &buffer);
+        return getNextFrame(timestamp_us, buffer);
+    }
+
+    bool getLatestFrameCv(uint64_t* timestamp_us, IplImage* image)
+    {
+        unsigned char* buffer;
+        cvGetRawData(image, &buffer);
+        return getNextFrame(timestamp_us, buffer);
+    }
 
     unsigned int w() { return width;  }
     unsigned int h() { return height; }
