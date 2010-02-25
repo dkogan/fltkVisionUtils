@@ -56,7 +56,7 @@ public:
     {
         unsigned char* buffer;
         cvGetRawData(image, &buffer);
-        return getNextFrame(timestamp_us, buffer);
+        return getLatestFrame(timestamp_us, buffer);
     }
 
     unsigned int w() { return width;  }
