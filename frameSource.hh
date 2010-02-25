@@ -16,6 +16,20 @@ protected:
     FrameSource_UserColorChoice userColorMode; // color (RGB8) or grayscale (MONO8)
     unsigned int                width, height;
 
+    unsigned char* getRawBuffer(IplImage* image)
+    {
+        unsigned char* buffer;
+        cvGetRawData(image, &buffer);
+        return buffer;
+    }
+    unsigned char* getRawBuffer(CvMat* image)
+    {
+        unsigned char* buffer;
+        cvGetRawData(image, &buffer);
+        return buffer;
+    }
+
+
 public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
         : userColorMode(_userColorMode) { }
@@ -47,16 +61,19 @@ public:
 
     virtual bool getNextFrameCv  (uint64_t* timestamp_us, IplImage* image)
     {
-        unsigned char* buffer;
-        cvGetRawData(image, &buffer);
-        return getNextFrame(timestamp_us, buffer);
+        return getNextFrame(timestamp_us, getRawBuffer(image));
     }
-
     virtual bool getLatestFrameCv(uint64_t* timestamp_us, IplImage* image)
     {
-        unsigned char* buffer;
-        cvGetRawData(image, &buffer);
-        return getLatestFrame(timestamp_us, buffer);
+        return getLatestFrame(timestamp_us, getRawBuffer(image));
+    }
+    virtual bool getNextFrameCv  (uint64_t* timestamp_us, CvMat* image)
+    {
+        return getNextFrame(timestamp_us, getRawBuffer(image));
+    }
+    virtual bool getLatestFrameCv(uint64_t* timestamp_us, CvMat* image)
+    {
+        return getLatestFrame(timestamp_us, getRawBuffer(image));
     }
 
     unsigned int w() { return width;  }
