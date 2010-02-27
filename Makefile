@@ -2,7 +2,7 @@ CXXFLAGS += -g -Wall -Wextra -pedantic
 LDFLAGS  += -g
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
-LDLIBS_CAMERASAMPLE += -lfltk -lpthread -ldc1394 $(FFMPEG_LIBS)
+LDLIBS_CAMERASAMPLE += -lfltk -lcv -lpthread -ldc1394 $(FFMPEG_LIBS)
 LDLIBS_VIDEO_CV_SAMPLE += -lfltk -lcv $(FFMPEG_LIBS)
 
 all: fltkVisionUtils.a cameraSample videoCvSample
