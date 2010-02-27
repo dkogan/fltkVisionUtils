@@ -1,5 +1,5 @@
 CXXFLAGS += -g -Wall -Wextra -pedantic
-LDFLAGS  += -g
+LDFLAGS  += -g -lX11 -lXft -lXinerama
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
 LDLIBS_CAMERASAMPLE += -lfltk -lcv -lpthread -ldc1394 $(FFMPEG_LIBS)
