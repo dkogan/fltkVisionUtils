@@ -90,9 +90,10 @@ public:
             return false;
 
         if(timestamp_us != NULL)
+            // I've seen m_pCodecCtx->time_base.num==0 before. In that case I treat it as 1
             *timestamp_us =
                 (uint64_t)m_pCodecCtx->frame_number *
-                (uint64_t)m_pCodecCtx->time_base.num *
+                (m_pCodecCtx->time_base.num == 0 ? 1ul : (uint64_t)m_pCodecCtx->time_base.num) *
                 (uint64_t)1000000 / m_pCodecCtx->time_base.den;
         return true;
     }
