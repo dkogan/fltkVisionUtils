@@ -7,9 +7,11 @@
 
 // user interface color choice. RGB8 or MONO8
 enum FrameSource_UserColorChoice  { FRAMESOURCE_COLOR, FRAMESOURCE_GRAYSCALE };
-typedef void (FrameSourceCallback_t)(unsigned char* buffer, uint64_t timestamp_us);
+typedef void (FrameSourceCallback_t)  (unsigned char* buffer, uint64_t timestamp_us);
+typedef void (FrameSourceCallbackCv_t)(CvMat*         buffer, uint64_t timestamp_us);
 
-static void* sourceThread_global(void *pArg);
+static void* sourceThread_global  (void *pArg);
+static void* sourceThreadCv_global(void *pArg);
 
 // This is the base class for different frame grabbers. The constructor allows color or monochrome
 // mode to be selected. For simplicity, color always means 8-bits-per-channel RGB and monochrome
@@ -21,9 +23,13 @@ protected:
     unsigned int                width, height;
 
     pthread_t              sourceThread_id;
-    FrameSourceCallback_t* sourceThread_callback;
     uint64_t               sourceThread_frameWait_us;
-    unsigned char*         sourceThread_buffer;
+
+    // The thread will use the openCV objects or the raw objects, not both
+    FrameSourceCallback_t*   sourceThread_callback;
+    unsigned char*           sourceThread_buffer;
+    FrameSourceCallbackCv_t* sourceThread_callbackCv;
+    CvMat*                   sourceThread_bufferCv;
 
     unsigned char* getRawBuffer(IplImage* image)
     {
@@ -41,7 +47,7 @@ protected:
 
 public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
-        : userColorMode(_userColorMode), sourceThread_id(0), sourceThread_callback(NULL) { }
+        : userColorMode(_userColorMode), sourceThread_id(0) { }
 
     virtual void cleanupThreads(void)
     {
@@ -110,6 +116,24 @@ public:
     // The callback is passed the buffer where the data was stored. Note that this is the same
     // buffer that was originally passed to startSourceThread. Note that this buffer is accessed
     // asynchronously, so the caller can NOT assume it contains valid data outside of the callback
+
+    void startSourceThreadCv(FrameSourceCallbackCv_t* callback, uint64_t frameWait_us,
+                             CvMat* buffer)
+    {
+        if(sourceThread_id != 0)
+            return;
+
+        sourceThread_callbackCv   = callback;
+        sourceThread_frameWait_us = frameWait_us;
+        sourceThread_bufferCv     = buffer;
+
+        if(pthread_create(&sourceThread_id, NULL, &sourceThreadCv_global, this) != 0)
+        {
+            sourceThread_id = 0;
+            fprintf(stderr, "couldn't start source thread\n");
+        }
+    }
+
     void startSourceThread(FrameSourceCallback_t* callback, uint64_t frameWait_us,
                            unsigned char* buffer)
     {
@@ -127,7 +151,7 @@ public:
         }
     }
 
-    void sourceThread(void)
+    void sourceThread(bool isCv)
     {
         while(1)
         {
@@ -142,11 +166,19 @@ public:
                 delay.tv_nsec = (sourceThread_frameWait_us - delay.tv_sec*1000000) * 1000;
                 nanosleep(&delay, NULL);
 
-                result = getLatestFrame(&timestamp_us, sourceThread_buffer);
+                if(isCv)
+                    result = getLatestFrameCv(&timestamp_us, sourceThread_bufferCv);
+                else
+                    result = getLatestFrame  (&timestamp_us, sourceThread_buffer);
             }
             else
+            {
                 // We are not limiting the framerate. Try to return ALL the available frames
-                result = getNextFrame(&timestamp_us, sourceThread_buffer);
+                if(isCv)
+                    result = getNextFrameCv(&timestamp_us, sourceThread_bufferCv);
+                else
+                    result = getNextFrame  (&timestamp_us, sourceThread_buffer);
+            }
 
             if(!result)
             {
@@ -154,7 +186,10 @@ public:
                 return;
             }
 
-            (*sourceThread_callback)(sourceThread_buffer, timestamp_us);
+            if(isCv)
+                (*sourceThread_callbackCv)(sourceThread_bufferCv, timestamp_us);
+            else
+                (*sourceThread_callback)  (sourceThread_buffer, timestamp_us);
         }
     }
 
@@ -165,7 +200,14 @@ public:
 static void* sourceThread_global(void *pArg)
 {
     FrameSource* source = (FrameSource*)pArg;
-    source->sourceThread();
+    source->sourceThread(false);
+    return NULL;
+}
+
+static void* sourceThreadCv_global(void *pArg)
+{
+    FrameSource* source = (FrameSource*)pArg;
+    source->sourceThread(true);
     return NULL;
 }
 
