@@ -57,6 +57,7 @@ public:
     ~FFmpegDecoder()
     {
         cerr << "~FFmpegDecoder" << endl;
+        cleanupThreads();
         close();
     }
 

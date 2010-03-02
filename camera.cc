@@ -304,6 +304,8 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
 
 Camera::~Camera(void)
 {
+    cleanupThreads();
+
     if (camera != NULL)
     {
         dc1394_video_set_transmission(camera, DC1394_OFF);

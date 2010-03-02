@@ -13,52 +13,31 @@ using namespace std;
 #include "ffmpegInterface.hh"
 
 #include "camera.hh"
-#include "pthread.h"
 
-#define SOURCE_PERIOD_NS 1000000000
+#define SOURCE_PERIOD_US 1000000
 
 static FlWidgetImage* widgetImage;
 static FFmpegEncoder videoEncoder;
 
-static bool sourceThread_doTerminate = false;
-void* sourceThread(void *pArg)
+void gotNewFrame(unsigned char* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
-    FrameSource* source = (FrameSource*)pArg;
-
-    while(!sourceThread_doTerminate)
+    // the buffer passed in here is the same buffer that I specified when starting the source
+    // thread. In this case this is the widget's buffer
+    if(!videoEncoder)
     {
-        struct timespec delay;
-        delay.tv_sec = 0;
-        delay.tv_nsec = SOURCE_PERIOD_NS;
-        nanosleep(&delay, NULL);
-
-        uint64_t timestamp_us;
-        if( !source->getNextFrame(&timestamp_us, widgetImage->getBuffer()) )
-        {
-            cerr << "couldn't get frame\n";
-            source->unpeekFrame();
-            return NULL;
-        }
-
-        if(!videoEncoder)
-        {
-            fprintf(stderr, "Couldn't encode frame!\n");
-            return NULL;
-        }
-        videoEncoder.writeFrameGrayscale(widgetImage->getBuffer());
-        if(!videoEncoder)
-        {
-            fprintf(stderr, "Couldn't encode frame!\n");
-            return NULL;
-        }
-
-        Fl::lock();
-        if(sourceThread_doTerminate) return NULL;
-
-        widgetImage->redrawNewFrame();
-        Fl::unlock();
+        fprintf(stderr, "Couldn't encode frame!\n");
+        return;
     }
-    return NULL;
+    videoEncoder.writeFrameGrayscale(widgetImage->getBuffer());
+    if(!videoEncoder)
+    {
+        fprintf(stderr, "Couldn't encode frame!\n");
+        return;
+    }
+
+    Fl::lock();
+    widgetImage->redrawNewFrame();
+    Fl::unlock();
 }
 
 
@@ -92,26 +71,20 @@ int main(void)
     window.end();
     window.show();
 
-    pthread_t sourceThread_id;
-    if(pthread_create(&sourceThread_id, NULL, &sourceThread, source) != 0)
-    {
-        cerr << "couldn't start source thread" << endl;
-        return 0;
-    }
+    // I'm starting a new camera-reading thread and storing the frame directly into the widget
+    // buffer
+    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, widgetImage->getBuffer());
 
     while (Fl::wait())
     {
     }
 
     Fl::unlock();
-    sourceThread_doTerminate = true;
-
-    pthread_join(sourceThread_id, NULL);
-
-    videoEncoder.close();
 
     delete source;
     delete widgetImage;
+
+    videoEncoder.close();
 
     return 0;
 }

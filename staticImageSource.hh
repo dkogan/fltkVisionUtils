@@ -62,6 +62,8 @@ public:
 
     ~StaticImageSource()
     {
+        cleanupThreads();
+
         if(image != NULL)
         {
             cvReleaseImage(&image);
