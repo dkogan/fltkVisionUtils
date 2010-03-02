@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <opencv/cv.h>
-#include <signal.h>
 
 // user interface color choice. RGB8 or MONO8
 enum FrameSource_UserColorChoice  { FRAMESOURCE_COLOR, FRAMESOURCE_GRAYSCALE };
@@ -48,7 +47,7 @@ public:
     {
         if(sourceThread_id != 0)
         {
-            pthread_kill(sourceThread_id, SIGKILL);
+            pthread_cancel(sourceThread_id);
             sourceThread_id = 0;
         }
     }
