@@ -113,6 +113,9 @@ public:
     void startSourceThread(FrameSourceCallback_t* callback, uint64_t frameWait_us,
                            unsigned char* buffer)
     {
+        if(sourceThread_id != 0)
+            return;
+
         sourceThread_callback     = callback;
         sourceThread_frameWait_us = frameWait_us;
         sourceThread_buffer       = buffer;
