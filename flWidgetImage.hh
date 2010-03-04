@@ -55,6 +55,25 @@ protected:
         }
     }
 
+    // called by FLTK to alert this widget about an event. An upper level callback can be triggered
+    // here
+    virtual int handle(int event)
+    {
+        switch(event)
+        {
+        case FL_DRAG:
+            if(!Fl::event_inside(this))
+                break;
+            // fall through if we're inside
+
+        case FL_PUSH:
+            do_callback();
+            return 1;
+        }
+
+        return Fl_Widget::handle(event);
+    }
+
 public:
     FlWidgetImage(int x, int y, int w, int h,
                   FlWidgetImage_ColorChoice  _colorMode,
