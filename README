@@ -1,2 +1,6 @@
 A library for simple integration of FLTK, openCV and image sources such as firewire (IIDC) cameras
-and video files. Includes some sample programs that show basic usage
+and video files. Includes some sample programs that show basic usage.
+
+I'm using FLTK 1.3, openCV 2.0.0, libdc1394 2.1.2 and the 2009-07-06 snapshot of FFMPEG 0.5 (the
+current packages in debian unstable). I'm developing the library as I use it, so features and the
+API are being actively updated.
