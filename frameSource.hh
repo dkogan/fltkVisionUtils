@@ -54,6 +54,7 @@ public:
         if(sourceThread_id != 0)
         {
             pthread_cancel(sourceThread_id);
+            pthread_join(sourceThread_id, NULL);
             sourceThread_id = 0;
         }
     }
