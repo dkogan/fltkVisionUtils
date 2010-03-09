@@ -30,13 +30,13 @@ public:
     {
     }
 
-    StaticImageSource(char* file, FrameSource_UserColorChoice _userColorMode)
+    StaticImageSource(const char* file, FrameSource_UserColorChoice _userColorMode)
         : FrameSource(_userColorMode), image(NULL), timestamp_now_us(0)
     {
         load(file);
     }
 
-    bool load(char* file)
+    bool load(const char* file)
     {
         if(userColorMode == FRAMESOURCE_COLOR)
             image = cvLoadImage(file, CV_LOAD_IMAGE_COLOR);
