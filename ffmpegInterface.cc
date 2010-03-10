@@ -27,11 +27,12 @@ void FFmpegTalker::reset(void)
 
 void FFmpegEncoder::reset(void)
 {
-    m_pOutputFormat   = NULL;
-    m_pStream         = NULL;
-    m_bufferYUV       = NULL;
-    m_bufferYUVSize   = -1;
-
+    m_pOutputFormat     = NULL;
+    m_pStream           = NULL;
+    m_bufferYUV         = NULL;
+    m_bufferYUVSize     = -1;
+    m_bufferEncoded     = NULL;
+    m_bufferEncodedSize = -1;
     FFmpegTalker::reset();
 }
 
@@ -80,6 +81,8 @@ void FFmpegEncoder::free(void)
 
     if(m_bufferYUV)
         av_free(m_bufferYUV);
+    if(m_bufferEncoded)
+        av_free(m_bufferEncoded);
     if(m_pStream)
         av_free(m_pStream);
     if(m_pCodecCtx)
@@ -314,6 +317,12 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps)
     }
     m_bufferYUVSize = avpicture_get_size(m_pCodecCtx->pix_fmt, m_pCodecCtx->width, m_pCodecCtx->height);
     m_bufferYUV     = (uint8_t*)av_malloc(m_bufferYUVSize * sizeof(uint8_t));
+
+    // I'm assuming the size of the encoded frame is going to be at most as big as the size or the
+    // incoming raw data
+    m_bufferEncodedSize = m_bufferYUVSize;
+    m_bufferEncoded     = (uint8_t*)av_malloc(m_bufferEncodedSize * sizeof(uint8_t));
+
     avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, m_pCodecCtx->pix_fmt,
                    m_pCodecCtx->width, m_pCodecCtx->height);
 
@@ -361,7 +370,7 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
               m_pFrameYUV->data, m_pFrameYUV->linesize);
 #endif
 
-    int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferYUV, m_bufferYUVSize, m_pFrameYUV);
+    int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferEncoded, m_bufferEncodedSize, m_pFrameYUV);
     if(outsize <= 0)
     {
         cerr << "ffmpeg: couldn't write grayscale frame" << endl;
@@ -371,7 +380,7 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
     AVPacket packet;
     av_init_packet(&packet);
     packet.stream_index = m_pStream->index;
-    packet.data         = m_bufferYUV;
+    packet.data         = m_bufferEncoded;
     packet.size         = outsize;
     av_write_frame(m_pFormatCtx, &packet);
 

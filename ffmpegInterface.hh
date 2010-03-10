@@ -116,6 +116,8 @@ class FFmpegEncoder : public FFmpegTalker
     AVStream*        m_pStream;
     uint8_t*         m_bufferYUV;
     int              m_bufferYUVSize;
+    uint8_t*         m_bufferEncoded;
+    int              m_bufferEncodedSize;
 
     void reset(void);
 
