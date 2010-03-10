@@ -83,13 +83,13 @@ public:
     //
     // The peek...Frame() functions return RAW data. No color conversion is attempted. Use with
     // caution
-    unsigned char* peekNextFrame  (uint64_t* timestamp_us)
+    unsigned char* peekNextFrame  (uint64_t* timestamp_us = NULL)
     {
         makeTimestamp(timestamp_us);
         return imageRawData;
     }
 
-    unsigned char* peekLatestFrame(uint64_t* timestamp_us)
+    unsigned char* peekLatestFrame(uint64_t* timestamp_us = NULL)
     {
         makeTimestamp(timestamp_us);
         return imageRawData;
