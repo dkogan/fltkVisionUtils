@@ -356,22 +356,9 @@ bool FFmpegEncoder::writeFrameGrayscale(unsigned char* pBuffer)
     if(!m_bOpen || !m_bOK)
         return false;
 
-#if 0
-    for(int y=0; y<m_pCodecCtx->height; y++)
-    {
-        unsigned char* pDat = m_pFrameYUV->data[0] + y*m_pFrameYUV->linesize[0];
-        for(int x=0; x<m_pCodecCtx->width; x++)
-        {
-            pDat[4*x] = pDat[4*x + 1] = pDat[4*x + 2] = *pBuffer;
-            pDat[4*x + 3] = 255;
-            pBuffer++;
-        }
-    }
-#else
     sws_scale(m_pSWSCtx,
               &pBuffer, &m_pCodecCtx->width, 0, m_pCodecCtx->height,
               m_pFrameYUV->data, m_pFrameYUV->linesize);
-#endif
 
     int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferEncoded, m_bufferEncodedSize, m_pFrameYUV);
     if(outsize <= 0)
