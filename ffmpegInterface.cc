@@ -1,8 +1,11 @@
 #include "ffmpegInterface.hh"
 
 #define LOCAL_PIX_FMT       PIX_FMT_GRAY8
-#define OUTPUT_PIX_FMT      PIX_FMT_GRAY8
-#define OUTPUT_CODEC        CODEC_ID_RAWVIDEO
+
+// I want to encode grayscale video, but the lossless codecs do not support grayscale data. I thus
+// use YUV420P with 0 for the U and V channels
+#define OUTPUT_PIX_FMT      PIX_FMT_YUV420P
+#define OUTPUT_CODEC        CODEC_ID_FFV1
 #define OUTPUT_GOP_SIZE     0
 #define OUTPUT_MAX_B_FRAMES 0
 #define OUTPUT_FLAGS        0
