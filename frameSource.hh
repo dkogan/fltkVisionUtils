@@ -80,31 +80,31 @@ public:
     //
     // The peek...Frame() functions return RAW data. No color conversion is attempted. Use with
     // caution
-    virtual unsigned char* peekNextFrame  (uint64_t* timestamp_us) = 0;
-    virtual unsigned char* peekLatestFrame(uint64_t* timestamp_us) = 0;
+    virtual unsigned char* peekNextFrame  (uint64_t* timestamp_us = NULL) = 0;
+    virtual unsigned char* peekLatestFrame(uint64_t* timestamp_us = NULL) = 0;
     virtual void unpeekFrame(void) = 0;
 
     // these are like the peek() functions, but these convert the incoming data to the desired
     // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
     // data, calling unpeek() is not needed. false returned on error
-    virtual bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer) = 0;
-    virtual bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer) = 0;
+    virtual bool getNextFrame  (unsigned char* buffer, uint64_t* timestamp_us = NULL) = 0;
+    virtual bool getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us = NULL) = 0;
 
-    virtual bool getNextFrameCv  (uint64_t* timestamp_us, IplImage* image)
+    virtual bool getNextFrameCv  (IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        return getNextFrame(timestamp_us, getRawBuffer(image));
+        return getNextFrame(getRawBuffer(image), timestamp_us);
     }
-    virtual bool getLatestFrameCv(uint64_t* timestamp_us, IplImage* image)
+    virtual bool getLatestFrameCv(IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        return getLatestFrame(timestamp_us, getRawBuffer(image));
+        return getLatestFrame(getRawBuffer(image), timestamp_us);
     }
-    virtual bool getNextFrameCv  (uint64_t* timestamp_us, CvMat* image)
+    virtual bool getNextFrameCv  (CvMat* image, uint64_t* timestamp_us = NULL)
     {
-        return getNextFrame(timestamp_us, getRawBuffer(image));
+        return getNextFrame(getRawBuffer(image), timestamp_us);
     }
-    virtual bool getLatestFrameCv(uint64_t* timestamp_us, CvMat* image)
+    virtual bool getLatestFrameCv(CvMat* image, uint64_t* timestamp_us = NULL)
     {
-        return getLatestFrame(timestamp_us, getRawBuffer(image));
+        return getLatestFrame(getRawBuffer(image), timestamp_us);
     }
 
 
@@ -168,17 +168,17 @@ public:
                 nanosleep(&delay, NULL);
 
                 if(isCv)
-                    result = getLatestFrameCv(&timestamp_us, sourceThread_bufferCv);
+                    result = getLatestFrameCv(sourceThread_bufferCv, &timestamp_us);
                 else
-                    result = getLatestFrame  (&timestamp_us, sourceThread_buffer);
+                    result = getLatestFrame  (sourceThread_buffer, &timestamp_us);
             }
             else
             {
                 // We are not limiting the framerate. Try to return ALL the available frames
                 if(isCv)
-                    result = getNextFrameCv(&timestamp_us, sourceThread_bufferCv);
+                    result = getNextFrameCv(sourceThread_bufferCv, &timestamp_us);
                 else
-                    result = getNextFrame  (&timestamp_us, sourceThread_buffer);
+                    result = getNextFrame  (sourceThread_buffer, &timestamp_us);
             }
 
             if(!result)

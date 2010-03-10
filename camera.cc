@@ -437,7 +437,7 @@ unsigned char* Camera::finishPeek(uint64_t* timestamp_us)
     return cameraFrame->image;
 }
 
-bool Camera::getNextFrame(uint64_t* timestamp_us, unsigned char* buffer)
+bool Camera::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
 {
     if(peekNextFrame(timestamp_us) == NULL)
         return false;
@@ -445,7 +445,7 @@ bool Camera::getNextFrame(uint64_t* timestamp_us, unsigned char* buffer)
     return finishGet(buffer);
 }
 
-bool Camera::getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer)
+bool Camera::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
 {
     if(peekLatestFrame(timestamp_us) == NULL)
         return false;

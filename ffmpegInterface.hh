@@ -85,7 +85,7 @@ public:
         return;
     }
 
-    bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer)
+    bool getNextFrame  (unsigned char* buffer, uint64_t* timestamp_us = NULL)
     {
         if(!readFrame(buffer))
             return false;
@@ -99,9 +99,9 @@ public:
         return true;
     }
 
-    bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer)
+    bool getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us = NULL)
     {
-        return getNextFrame(timestamp_us, buffer);
+        return getNextFrame(buffer, timestamp_us);
     }
 
     operator bool()

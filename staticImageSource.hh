@@ -102,7 +102,7 @@ public:
     // these are like the peek() functions, but these convert the incoming data to the desired
     // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
     // data, calling unpeek() is not needed. false returned on error
-    bool getNextFrame  (uint64_t* timestamp_us, unsigned char* buffer)
+    bool getNextFrame  (unsigned char* buffer, uint64_t* timestamp_us = NULL)
     {
         cvSetData(imageShell, buffer, image->widthStep);
         cvCopy(image, imageShell);
@@ -110,7 +110,7 @@ public:
         return true;
     }
 
-    bool getLatestFrame(uint64_t* timestamp_us, unsigned char* buffer)
+    bool getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us = NULL)
     {
         cvSetData(imageShell, buffer, image->widthStep);
         cvCopy(image, imageShell);
@@ -118,14 +118,14 @@ public:
         return true;
     }
 
-    bool getNextFrameCv  (uint64_t* timestamp_us, IplImage* buffer)
+    bool getNextFrameCv  (IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
         cvCopy(image, buffer);
         makeTimestamp(timestamp_us);
         return true;
     }
 
-    bool getLatestFrameCv(uint64_t* timestamp_us, IplImage* buffer)
+    bool getLatestFrameCv(IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
         cvCopy(image, buffer);
         makeTimestamp(timestamp_us);

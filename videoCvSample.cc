@@ -34,7 +34,7 @@ void* sourceThread(void *pArg)
 
         uint64_t timestamp_us;
 
-        if( !source->getNextFrame(&timestamp_us, widgetImage->getBuffer()) )
+        if( !source->getNextFrame(widgetImage->getBuffer(), &timestamp_us) )
         {
             cerr << "couldn't get frame\n";
             return NULL;
