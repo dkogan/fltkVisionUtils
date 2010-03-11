@@ -59,6 +59,13 @@ class Camera : public FrameSource
     // returns desireability of the color mode. Higher is more desireable
     colormode_t getColormodeWorth(dc1394video_mode_t mode);
 
+    // These private versions of the peek() functions contain 99% of the functionality. The public
+    // functions perform some checks to make sure it is valid to use these at all.
+    void beginPeek(void);
+    bool isOKtoPeek(void);
+    unsigned char* _peekNextFrame  (uint64_t* timestamp_us);
+    unsigned char* _peekLatestFrame(uint64_t* timestamp_us);
+
 public:
     Camera(FrameSource_UserColorChoice _userColorMode);
     ~Camera();

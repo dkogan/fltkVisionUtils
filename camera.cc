@@ -328,15 +328,9 @@ Camera::~Camera(void)
 // peekNextFrame() blocks until a frame is available. A pointer to the internal buffer is returned
 // (NULL on error). This buffer must be given back to the system by calling
 // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
-unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
+unsigned char* Camera::_peekNextFrame(uint64_t* timestamp_us)
 {
-    if(cameraFrame != NULL)
-    {
-        fprintf(stderr, "warning: peekNextFrame() before unpeekFrame()\n"
-                "Calling unpeekFrame() for you, but you should do this yourself\n"
-                "as soon as you're done with the data\n");
-        unpeekFrame();
-    }
+    beginPeek();
 
     dc1394error_t err;
     err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_WAIT, &cameraFrame);
@@ -357,23 +351,9 @@ unsigned char* Camera::peekNextFrame(uint64_t* timestamp_us)
 // returned. A pointer to the internal buffer is returned (NULL on error). This buffer must be given
 // back to the system by calling unpeekFrame(). unpeekFrame() need not be called if peekFrame()
 // failed
-unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
+unsigned char* Camera::_peekLatestFrame(uint64_t* timestamp_us)
 {
-    if(cameraFrame != NULL)
-    {
-        fprintf(stderr, "warning: peekLatestFrame() before unpeekFrame()\n"
-                "Calling unpeekFrame() for you, but you should do this yourself\n"
-                "as soon as you're done with the data\n");
-        unpeekFrame();
-    }
-
-    if( (userColorMode == FRAMESOURCE_COLOR     && cameraColorCoding != DC1394_COLOR_CODING_RGB8) ||
-        (userColorMode == FRAMESOURCE_GRAYSCALE && cameraColorCoding != DC1394_COLOR_CODING_MONO8) )
-    {
-        fprintf(stderr, "Camera::peek..() can only be used if the requested color mode exactly\n"
-                "matches the color mode of the camera output. Change either of the modes, or use get() instead of peek()\n");
-        return NULL;
-    }
+    beginPeek();
 
     // first, poll the buffer. If no frames are available, use the plain peekNextFrame() call to
     // wait for one
@@ -388,7 +368,7 @@ unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
         return NULL;
     }
     if(polledFrame == NULL)
-        return peekNextFrame(timestamp_us);
+        return _peekNextFrame(timestamp_us);
 
 
     // A frame was available, so I pull the frames off until I reach the end
@@ -429,6 +409,41 @@ unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
     return finishPeek(timestamp_us);
 }
 
+void Camera::beginPeek(void)
+{
+    if(cameraFrame != NULL)
+    {
+        fprintf(stderr, "warning: peekNextFrame() before unpeekFrame()\n"
+                "Calling unpeekFrame() for you, but you should do this yourself\n"
+                "as soon as you're done with the data\n");
+        unpeekFrame();
+    }
+}
+
+bool Camera::isOKtoPeek(void)
+{
+    if( (userColorMode == FRAMESOURCE_COLOR     && cameraColorCoding != DC1394_COLOR_CODING_RGB8) ||
+        (userColorMode == FRAMESOURCE_GRAYSCALE && cameraColorCoding != DC1394_COLOR_CODING_MONO8) )
+    {
+        fprintf(stderr, "Camera::peek..() can only be used if the requested color mode exactly\n"
+                "matches the color mode of the camera output. Change either of the modes, or use get() instead of peek()\n");
+        return false;
+    }
+    return true;
+}
+
+unsigned char* Camera::peekNextFrame  (uint64_t* timestamp_us)
+{
+    if(!isOKtoPeek()) return NULL;
+    return _peekNextFrame(timestamp_us);
+}
+
+unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
+{
+    if(!isOKtoPeek()) return NULL;
+    return _peekLatestFrame(timestamp_us);
+}
+
 unsigned char* Camera::finishPeek(uint64_t* timestamp_us)
 {
     if(timestamp_us != NULL)
@@ -439,7 +454,7 @@ unsigned char* Camera::finishPeek(uint64_t* timestamp_us)
 
 bool Camera::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
 {
-    if(peekNextFrame(timestamp_us) == NULL)
+    if(_peekNextFrame(timestamp_us) == NULL)
         return false;
 
     return finishGet(buffer);
@@ -447,7 +462,7 @@ bool Camera::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
 
 bool Camera::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
 {
-    if(peekLatestFrame(timestamp_us) == NULL)
+    if(_peekLatestFrame(timestamp_us) == NULL)
         return false;
 
     return finishGet(buffer);
