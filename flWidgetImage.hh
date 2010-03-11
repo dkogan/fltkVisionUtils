@@ -133,12 +133,7 @@ public:
         {
             memcpy(imageData, frame, frameW*frameH*bytesPerPixel);
 
-            flImage->uncache();
-            redraw();
-
-            // If we're drawing from a different thread, FLTK needs to be woken up to actually do
-            // the redraw
-            Fl::awake();
+            redrawNewFrame();
         }
         else
         {
