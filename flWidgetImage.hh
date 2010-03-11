@@ -149,7 +149,7 @@ public:
         }
     }
 
-    // Used to trigger a redraw if out drawing buffer was already updated. This functin makes sense
+    // Used to trigger a redraw if out drawing buffer was already updated. This function makes sense
     // only in the buffered 'NORMAL' redraw mode
     void redrawNewFrame(void)
     {
