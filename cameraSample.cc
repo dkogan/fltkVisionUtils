@@ -9,14 +9,14 @@ using namespace std;
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 
-#include "flWidgetImage.hh"
+#include "cvFltkWidget.hh"
 #include "ffmpegInterface.hh"
 
 #include "camera.hh"
 
 #define SOURCE_PERIOD_US 1000000
 
-static FlWidgetImage* widgetImage;
+static CvFltkWidget* widgetImage;
 static FFmpegEncoder videoEncoder;
 
 void gotNewFrame(unsigned char* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
@@ -64,8 +64,8 @@ int main(void)
     }
 
     Fl_Window window(source->w(), source->h());
-    widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
-                                  WIDGET_GRAYSCALE);
+    widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
+                                   WIDGET_GRAYSCALE);
 
     window.resizable(window);
     window.end();

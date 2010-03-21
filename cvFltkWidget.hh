@@ -1,9 +1,11 @@
-#ifndef __FL_WIDGET_IMAGE_HH__
-#define __FL_WIDGET_IMAGE_HH__
+#ifndef __CV_FLTK_WIDGET_HH__
+#define __CV_FLTK_WIDGET_HH__
 
 #include <FL/Fl.H>
 #include <FL/fl_draw.H>
 #include <FL/Fl_RGB_Image.H>
+#include <opencv/cv.h>
+
 #include <string.h>
 #include <stdio.h>
 
@@ -12,21 +14,28 @@
 
 // Both color and grayscale displays are supported. Incoming data is assumed to be of the desired
 // type
-enum FlWidgetImage_ColorChoice  { WIDGET_COLOR, WIDGET_GRAYSCALE };
+enum CvFltkWidget_ColorChoice  { WIDGET_COLOR, WIDGET_GRAYSCALE };
 
-class FlWidgetImage : public Fl_Widget
+class CvFltkWidget : public Fl_Widget
 {
 protected:
     int frameW, frameH;
 
-    FlWidgetImage_ColorChoice  colorMode;
+    CvFltkWidget_ColorChoice  colorMode;
     unsigned int bytesPerPixel;
 
     unsigned char* imageData;
     Fl_RGB_Image*  flImage;
+    IplImage*      cvImage;
 
     void cleanup(void)
     {
+        if(cvImage == NULL)
+        {
+            cvReleaseImageHeader(&cvImage);
+            cvImage = NULL;
+        }
+
         if(flImage != NULL)
         {
             delete flImage;
@@ -59,12 +68,12 @@ protected:
     }
 
 public:
-    FlWidgetImage(int x, int y, int w, int h,
-                  FlWidgetImage_ColorChoice  _colorMode)
+    CvFltkWidget(int x, int y, int w, int h,
+                 CvFltkWidget_ColorChoice  _colorMode)
         : Fl_Widget(x,y,w,h),
           frameW(w), frameH(h),
           colorMode(_colorMode),
-          imageData(NULL), flImage(NULL)
+          imageData(NULL), flImage(NULL), cvImage(NULL)
     {
         bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
 
@@ -78,11 +87,22 @@ public:
             cleanup();
             return;
         }
+
+        cvImage = cvCreateImageHeader(cvSize(w,h), IPL_DEPTH_8U, bytesPerPixel);
+        if(cvImage == NULL)
+            return;
+
+        cvSetData(cvImage, imageData, w*bytesPerPixel);
     }
 
-    virtual ~FlWidgetImage()
+    virtual ~CvFltkWidget()
     {
         cleanup();
+    }
+
+    operator IplImage*()
+    {
+        return cvImage;
     }
 
     // this can be used to render directly into the buffer
@@ -117,6 +137,24 @@ public:
         // If we're drawing from a different thread, FLTK needs to be woken up to actually do
         // the redraw
         Fl::awake();
+    }
+
+    void updateFrameCv(IplImage* image)
+    {
+        cvCopy(image, cvImage);
+        redrawNewFrame();
+    }
+
+    void updateFrameCv(CvMat* image)
+    {
+        cvCopy(image, cvImage);
+        redrawNewFrame();
+    }
+
+    void updateFrameCv(CvArr* image)
+    {
+        cvCopy(image, cvImage);
+        redrawNewFrame();
     }
 };
 

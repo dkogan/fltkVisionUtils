@@ -9,7 +9,7 @@ using namespace std;
 #include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 
-#include "flWidgetCv.hh"
+#include "cvFltkWidget.hh"
 
 #include "ffmpegInterface.hh"
 #include "pthread.h"
@@ -17,8 +17,8 @@ using namespace std;
 #define SOURCE_PERIOD_S  0
 #define SOURCE_PERIOD_NS 100000000
 
-static FlWidgetCv* widgetImage;
-static FlWidgetCv* widgetImage2;
+static CvFltkWidget* widgetImage;
+static CvFltkWidget* widgetImage2;
 
 static bool sourceThread_doTerminate = false;
 void* sourceThread(void *pArg)
@@ -75,11 +75,11 @@ int main(int argc, char* argv[])
     }
 
     Fl_Double_Window window(source->w()*2, source->h());
-    widgetImage = new FlWidgetCv(0, 0, source->w(), source->h(),
-                                 WIDGET_GRAYSCALE);
+    widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
+                                   WIDGET_GRAYSCALE);
 
-    widgetImage2 = new FlWidgetCv(source->w(), 0, source->w(), source->h(),
-                                 WIDGET_GRAYSCALE);
+    widgetImage2 = new CvFltkWidget(source->w(), 0, source->w(), source->h(),
+                                    WIDGET_GRAYSCALE);
 
     window.resizable(window);
     window.end();
