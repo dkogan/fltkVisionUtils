@@ -22,29 +22,22 @@ protected:
     int frameW, frameH;
 
     CvFltkWidget_ColorChoice  colorMode;
-    unsigned int bytesPerPixel;
 
-    unsigned char* imageData;
     Fl_RGB_Image*  flImage;
     IplImage*      cvImage;
 
     void cleanup(void)
     {
-        if(cvImage == NULL)
-        {
-            cvReleaseImageHeader(&cvImage);
-            cvImage = NULL;
-        }
-
         if(flImage != NULL)
         {
             delete flImage;
             flImage = NULL;
         }
-        if(imageData != NULL)
+
+        if(cvImage == NULL)
         {
-            delete[] imageData;
-            imageData = NULL;
+            cvReleaseImage(&cvImage);
+            cvImage = NULL;
         }
     }
 
@@ -73,26 +66,21 @@ public:
         : Fl_Widget(x,y,w,h),
           frameW(w), frameH(h),
           colorMode(_colorMode),
-          imageData(NULL), flImage(NULL), cvImage(NULL)
+          flImage(NULL), cvImage(NULL)
     {
-        bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
+        int numChannels = (colorMode == WIDGET_COLOR) ? 3 : 1;
 
-        imageData = new unsigned char[frameW * frameH * bytesPerPixel];
-        if(imageData == NULL)
+        cvImage = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, numChannels);
+        if(cvImage == NULL)
             return;
 
-        flImage = new Fl_RGB_Image(imageData, frameW, frameH, bytesPerPixel);
+        flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData,
+                                   frameW, frameH, numChannels, cvImage->widthStep);
         if(flImage == NULL)
         {
             cleanup();
             return;
         }
-
-        cvImage = cvCreateImageHeader(cvSize(w,h), IPL_DEPTH_8U, bytesPerPixel);
-        if(cvImage == NULL)
-            return;
-
-        cvSetData(cvImage, imageData, w*bytesPerPixel);
     }
 
     virtual ~CvFltkWidget()
@@ -108,7 +96,7 @@ public:
     // this can be used to render directly into the buffer
     unsigned char* getBuffer(void)
     {
-        return imageData;
+        return (unsigned char*)cvImage->imageData;
     }
 
     void draw()
