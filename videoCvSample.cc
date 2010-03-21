@@ -34,7 +34,7 @@ void* sourceThread(void *pArg)
 
         uint64_t timestamp_us;
 
-        if( !source->getNextFrame((unsigned char*)((IplImage*)(*widgetImage))->imageData, &timestamp_us) )
+        if( !source->getNextFrame(*widgetImage, &timestamp_us) )
         {
             cerr << "couldn't get frame\n";
             return NULL;
