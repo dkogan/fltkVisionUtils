@@ -2,16 +2,16 @@
 #include <stdio.h>
 #include <limits.h>
 #include <sstream>
-#include "camera.hh"
+#include "cameraSource.hh"
 
 // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
 // declaring them static members
-dc1394_t*            Camera::dc1394Context    = NULL;
-dc1394camera_list_t* Camera::cameraList       = NULL;
-unsigned int         Camera::numInitedCameras = 0;
+dc1394_t*            CameraSource::dc1394Context    = NULL;
+dc1394camera_list_t* CameraSource::cameraList       = NULL;
+unsigned int         CameraSource::numInitedCameras = 0;
 
 // returns desireability of the resolution. Higher is more desireable
-resolution_t Camera::getResolutionWorth(dc1394video_mode_t mode)
+resolution_t CameraSource::getResolutionWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -62,7 +62,7 @@ resolution_t Camera::getResolutionWorth(dc1394video_mode_t mode)
 }
 
 // returns desireability of the color mode. Higher is more desireable
-colormode_t Camera::getColormodeWorth(dc1394video_mode_t mode)
+colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -110,7 +110,7 @@ colormode_t Camera::getColormodeWorth(dc1394video_mode_t mode)
     }
 }
 
-Camera::Camera(FrameSource_UserColorChoice _userColorMode)
+CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
     if(!uninitedCamerasLeft())
@@ -302,7 +302,7 @@ Camera::Camera(FrameSource_UserColorChoice _userColorMode)
     fprintf(stderr, "init done\n");
 }
 
-Camera::~Camera(void)
+CameraSource::~CameraSource(void)
 {
     cleanupThreads();
 
@@ -328,7 +328,7 @@ Camera::~Camera(void)
 // peekNextFrame() blocks until a frame is available. A pointer to the internal buffer is returned
 // (NULL on error). This buffer must be given back to the system by calling
 // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
-unsigned char* Camera::_peekNextFrame(uint64_t* timestamp_us)
+unsigned char* CameraSource::_peekNextFrame(uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -351,7 +351,7 @@ unsigned char* Camera::_peekNextFrame(uint64_t* timestamp_us)
 // returned. A pointer to the internal buffer is returned (NULL on error). This buffer must be given
 // back to the system by calling unpeekFrame(). unpeekFrame() need not be called if peekFrame()
 // failed
-unsigned char* Camera::_peekLatestFrame(uint64_t* timestamp_us)
+unsigned char* CameraSource::_peekLatestFrame(uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -409,7 +409,7 @@ unsigned char* Camera::_peekLatestFrame(uint64_t* timestamp_us)
     return finishPeek(timestamp_us);
 }
 
-void Camera::beginPeek(void)
+void CameraSource::beginPeek(void)
 {
     if(cameraFrame != NULL)
     {
@@ -420,31 +420,31 @@ void Camera::beginPeek(void)
     }
 }
 
-bool Camera::isOKtoPeek(void)
+bool CameraSource::isOKtoPeek(void)
 {
     if( (userColorMode == FRAMESOURCE_COLOR     && cameraColorCoding != DC1394_COLOR_CODING_RGB8) ||
         (userColorMode == FRAMESOURCE_GRAYSCALE && cameraColorCoding != DC1394_COLOR_CODING_MONO8) )
     {
-        fprintf(stderr, "Camera::peek..() can only be used if the requested color mode exactly\n"
+        fprintf(stderr, "CameraSource::peek..() can only be used if the requested color mode exactly\n"
                 "matches the color mode of the camera output. Change either of the modes, or use get() instead of peek()\n");
         return false;
     }
     return true;
 }
 
-unsigned char* Camera::peekNextFrame  (uint64_t* timestamp_us)
+unsigned char* CameraSource::peekNextFrame  (uint64_t* timestamp_us)
 {
     if(!isOKtoPeek()) return NULL;
     return _peekNextFrame(timestamp_us);
 }
 
-unsigned char* Camera::peekLatestFrame(uint64_t* timestamp_us)
+unsigned char* CameraSource::peekLatestFrame(uint64_t* timestamp_us)
 {
     if(!isOKtoPeek()) return NULL;
     return _peekLatestFrame(timestamp_us);
 }
 
-unsigned char* Camera::finishPeek(uint64_t* timestamp_us)
+unsigned char* CameraSource::finishPeek(uint64_t* timestamp_us)
 {
     if(timestamp_us != NULL)
         *timestamp_us = cameraFrame->timestamp;
@@ -452,7 +452,7 @@ unsigned char* Camera::finishPeek(uint64_t* timestamp_us)
     return cameraFrame->image;
 }
 
-bool Camera::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
+bool CameraSource::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
 {
     if(_peekNextFrame(timestamp_us) == NULL)
         return false;
@@ -460,7 +460,7 @@ bool Camera::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
     return finishGet(buffer);
 }
 
-bool Camera::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
+bool CameraSource::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
 {
     if(_peekLatestFrame(timestamp_us) == NULL)
         return false;
@@ -468,7 +468,7 @@ bool Camera::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
     return finishGet(buffer);
 }
 
-bool Camera::finishGet(unsigned char* buffer)
+bool CameraSource::finishGet(unsigned char* buffer)
 {
     dc1394error_t err;
     if(userColorMode == FRAMESOURCE_COLOR)
@@ -498,7 +498,7 @@ bool Camera::finishGet(unsigned char* buffer)
     return true;
 }
 
-void Camera::unpeekFrame(void)
+void CameraSource::unpeekFrame(void)
 {
     if(cameraFrame == NULL)
         return;

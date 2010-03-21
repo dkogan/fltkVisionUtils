@@ -12,7 +12,7 @@ using namespace std;
 #include "cvFltkWidget.hh"
 #include "ffmpegInterface.hh"
 
-#include "camera.hh"
+#include "cameraSource.hh"
 
 #define SOURCE_PERIOD_US 1000000
 
@@ -47,7 +47,7 @@ int main(void)
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    Camera* source = new Camera(FRAMESOURCE_GRAYSCALE);
+    CameraSource* source = new CameraSource(FRAMESOURCE_GRAYSCALE);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");

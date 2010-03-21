@@ -13,7 +13,7 @@ LIBRARY_SOURCES = $(shell ls *.cc | grep -v -i sample)
 fltkVisionUtils.a: $(patsubst %.cc, %.o, $(LIBRARY_SOURCES));
 	ar rcvu $@ $^
 
-cameraSample: ffmpegInterface.o camera.o cameraSample.o
+cameraSample: ffmpegInterface.o cameraSource.o cameraSample.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS_CAMERASAMPLE) -o $@
 
 videoCvSample: ffmpegInterface.o videoCvSample.o

@@ -1,5 +1,5 @@
-#ifndef __CAMERA_H__
-#define __CAMERA_H__
+#ifndef __CAMERA_SOURCE_HH__
+#define __CAMERA_SOURCE_HH__
 
 #include <string>
 
@@ -32,7 +32,7 @@ enum resolution_t { MODE_UNWANTED,
                     MODE_1280x960,
                     MODE_1600x1200};
 
-class Camera : public FrameSource
+class CameraSource : public FrameSource
 {
     bool                 inited;
 
@@ -67,8 +67,8 @@ class Camera : public FrameSource
     unsigned char* _peekLatestFrame(uint64_t* timestamp_us);
 
 public:
-    Camera(FrameSource_UserColorChoice _userColorMode);
-    ~Camera();
+    CameraSource(FrameSource_UserColorChoice _userColorMode);
+    ~CameraSource();
 
     operator bool() { return inited; }
 
