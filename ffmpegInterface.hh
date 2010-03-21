@@ -43,7 +43,7 @@ class FFmpegDecoder : public FFmpegTalker, public FrameSource
     int              m_videoStream;
 
     void reset(void);
-    bool readFrame(unsigned char* pBuffer);
+    bool readFrame(IplImage* image);
 
 public:
     FFmpegDecoder(FrameSource_UserColorChoice _userColorMode)
@@ -85,9 +85,9 @@ public:
         return;
     }
 
-    bool getNextFrame  (unsigned char* buffer, uint64_t* timestamp_us = NULL)
+    bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        if(!readFrame(buffer))
+        if(!readFrame(image))
             return false;
 
         if(timestamp_us != NULL)
@@ -99,9 +99,9 @@ public:
         return true;
     }
 
-    bool getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us = NULL)
+    bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        return getNextFrame(buffer, timestamp_us);
+        return getNextFrame(image, timestamp_us);
     }
 
     operator bool()

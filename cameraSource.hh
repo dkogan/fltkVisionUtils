@@ -51,7 +51,7 @@ class CameraSource : public FrameSource
     static unsigned int         numInitedCameras;
 
     unsigned char* finishPeek(uint64_t* timestamp_us);
-    bool finishGet(unsigned char* buffer);
+    bool finishGet(IplImage* image);
 
     // returns desireability of the resolution. Higher is more desireable
     resolution_t getResolutionWorth(dc1394video_mode_t mode);
@@ -87,8 +87,8 @@ public:
     // these are like the peek() functions, but these convert the incoming data to the desired
     // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
     // data, calling unpeek() is not needed. false returned on error
-    bool getNextFrame  (unsigned char* buffer, uint64_t* timestamp_us = NULL);
-    bool getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us = NULL);
+    bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL);
+    bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL);
 
     int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }

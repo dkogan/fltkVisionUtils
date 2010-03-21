@@ -181,7 +181,7 @@ bool FFmpegDecoder::open(const char* filename)
     return true;
 }
 
-bool FFmpegDecoder::readFrame(unsigned char* pBuffer)
+bool FFmpegDecoder::readFrame(IplImage* image)
 {
     if(!m_bOpen || !m_bOK)
         return false;
@@ -215,16 +215,14 @@ bool FFmpegDecoder::readFrame(unsigned char* pBuffer)
                     }
                 }
 
-                int rowstride;
-                if(userColorMode == FRAMESOURCE_COLOR)
-                    rowstride = width*3;
-                else
-                    rowstride = width;
+                assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
+                        (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
+                assert( image->width == width && image->height == height );
 
                 sws_scale(m_pSWSCtx,
                           m_pFrameYUV->data, m_pFrameYUV->linesize,
                           0, height,
-                          &pBuffer, &rowstride);
+                          &image->imageData, &image->widthStep);
 
                 av_free_packet(&packet);
                 return true;

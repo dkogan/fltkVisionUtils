@@ -452,7 +452,7 @@ unsigned char* CameraSource::finishPeek(uint64_t* timestamp_us)
     return cameraFrame->image;
 }
 
-bool CameraSource::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
+bool CameraSource::getNextFrame(IplImage* image, uint64_t* timestamp_us)
 {
     if(_peekNextFrame(timestamp_us) == NULL)
         return false;
@@ -460,7 +460,7 @@ bool CameraSource::getNextFrame(unsigned char* buffer, uint64_t* timestamp_us)
     return finishGet(buffer);
 }
 
-bool CameraSource::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
+bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
     if(_peekLatestFrame(timestamp_us) == NULL)
         return false;
@@ -468,8 +468,9 @@ bool CameraSource::getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us)
     return finishGet(buffer);
 }
 
-bool CameraSource::finishGet(unsigned char* buffer)
+bool CameraSource::finishGet(IplImage* image)
 {
+#error use swscale here
     dc1394error_t err;
     if(userColorMode == FRAMESOURCE_COLOR)
         err = dc1394_convert_to_RGB8(cameraFrame->image,

@@ -7,12 +7,6 @@
 class StaticImageSource : public FrameSource
 {
     IplImage*            image;
-    unsigned char*       imageRawData;
-
-    // another image for which we allocate ONLY the header. We use this to copy data to non-opencv
-    // buffers
-    IplImage*            imageShell;
-
     uint64_t             timestamp_now_us;
 
     void makeTimestamp(uint64_t* timestamp_us)
@@ -51,12 +45,8 @@ public:
         if(image == NULL)
             return false;
 
-        cvGetRawData(image, &imageRawData);
         width  = image->width;
         height = image->height;
-        imageShell = cvCreateImageHeader(cvSize(width, height),
-                                         image->depth,
-                                         image->nChannels);
         return true;
     }
 
@@ -68,8 +58,6 @@ public:
         {
             cvReleaseImage(&image);
             image = NULL;
-
-            cvReleaseImageHeader(&imageShell);
         }
     }
 
@@ -86,13 +74,13 @@ public:
     unsigned char* peekNextFrame  (uint64_t* timestamp_us = NULL)
     {
         makeTimestamp(timestamp_us);
-        return imageRawData;
+        return (unsigned char*)image->imageData;
     }
 
     unsigned char* peekLatestFrame(uint64_t* timestamp_us = NULL)
     {
         makeTimestamp(timestamp_us);
-        return imageRawData;
+        return (unsigned char*)image->imageData;
     }
 
     void unpeekFrame(void)
@@ -102,30 +90,14 @@ public:
     // these are like the peek() functions, but these convert the incoming data to the desired
     // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
     // data, calling unpeek() is not needed. false returned on error
-    bool getNextFrame  (unsigned char* buffer, uint64_t* timestamp_us = NULL)
-    {
-        cvSetData(imageShell, buffer, image->widthStep);
-        cvCopy(image, imageShell);
-        makeTimestamp(timestamp_us);
-        return true;
-    }
-
-    bool getLatestFrame(unsigned char* buffer, uint64_t* timestamp_us = NULL)
-    {
-        cvSetData(imageShell, buffer, image->widthStep);
-        cvCopy(image, imageShell);
-        makeTimestamp(timestamp_us);
-        return true;
-    }
-
-    bool getNextFrameCv  (IplImage* buffer, uint64_t* timestamp_us = NULL)
+    bool getNextFrame  (IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
         cvCopy(image, buffer);
         makeTimestamp(timestamp_us);
         return true;
     }
 
-    bool getLatestFrameCv(IplImage* buffer, uint64_t* timestamp_us = NULL)
+    bool getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
         cvCopy(image, buffer);
         makeTimestamp(timestamp_us);

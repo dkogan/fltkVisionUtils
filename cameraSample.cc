@@ -19,7 +19,7 @@ using namespace std;
 static CvFltkWidget* widgetImage;
 static FFmpegEncoder videoEncoder;
 
-void gotNewFrame(unsigned char* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
+void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
     // the buffer passed in here is the same buffer that I specified when starting the source
     // thread. In this case this is the widget's buffer
@@ -73,7 +73,7 @@ int main(void)
 
     // I'm starting a new camera-reading thread and storing the frame directly into the widget
     // buffer
-    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, (unsigned char*)((IplImage*)(*widgetImage))->imageData);
+    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, *widgetImage);
 
     while (Fl::wait())
     {
