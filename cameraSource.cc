@@ -110,6 +110,30 @@ colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
     }
 }
 
+static enum PixelFormat pixfmt_dc1394ToSwscale(dc1394color_coding_t from)
+{
+    switch(from)
+    {
+    case DC1394_COLOR_CODING_MONO8:   return PIX_FMT_GRAY8;
+    case DC1394_COLOR_CODING_YUV411:  return PIX_FMT_YUV411P;
+    case DC1394_COLOR_CODING_YUV422:  return PIX_FMT_YUYV422;
+    case DC1394_COLOR_CODING_YUV444:  return PIX_FMT_YUV444P;
+    case DC1394_COLOR_CODING_RGB8:    return PIX_FMT_RGB8;
+    case DC1394_COLOR_CODING_MONO16:  return PIX_FMT_GRAY16LE;
+    case DC1394_COLOR_CODING_RGB16:   return PIX_FMT_RGB565;
+
+    case DC1394_COLOR_CODING_MONO16S:
+    case DC1394_COLOR_CODING_RGB16S:
+    case DC1394_COLOR_CODING_RAW8:
+    case DC1394_COLOR_CODING_RAW16
+    default:
+        break;
+    }
+
+    cerr << "pixfmt_dc1394ToSwscale(): I don't know the answer. Figure this out and tell me please" << endl;
+    return PIX_FMT_NONE;
+}
+
 CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
@@ -299,6 +323,15 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
 
     cameraDescription = descriptionStream.str();
 
+    m_pSWSCtx = sws_getContext(width, height, pixfmt_dc1394ToSwscale(cameraColorCoding),
+                               width, height, userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
+                               SWS_POINT, NULL, NULL, NULL);
+    if(m_pSWSCtx == NULL)
+    {
+        cerr << "couldn't create sws context" << endl;
+        return;
+    }
+
     fprintf(stderr, "init done\n");
 }
 
@@ -312,6 +345,12 @@ CameraSource::~CameraSource(void)
         dc1394_capture_stop(camera);
         dc1394_camera_free(camera);
         camera = NULL;
+
+        if(m_pSWSCtx)
+        {
+            sws_freeContext(m_pSWSCtx);
+            m_pSWSCtx = NULL;
+        }
     }
 
     if(inited)
@@ -470,24 +509,15 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 
 bool CameraSource::finishGet(IplImage* image)
 {
-#error use swscale here
-    dc1394error_t err;
-    if(userColorMode == FRAMESOURCE_COLOR)
-        err = dc1394_convert_to_RGB8(cameraFrame->image,
-                                     buffer,
-                                     cameraFrame->size[0], cameraFrame->size[1],
-                                     cameraFrame->yuv_byte_order,
-                                     cameraFrame->color_coding,
-                                     0 // supposedly useful for 16-bit formats only, so I don't care
-                                     );
-    else
-        err = dc1394_convert_to_MONO8(cameraFrame->image,
-                                      buffer,
-                                      cameraFrame->size[0], cameraFrame->size[1],
-                                      cameraFrame->yuv_byte_order,
-                                      cameraFrame->color_coding,
-                                      0 // supposedly useful for 16-bit formats only, so I don't care
-                                      );
+    assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
+            (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
+    assert( image->width == width && image->height == height );
+
+    sws_scale(m_pSWSCtx,
+              cameraFrame->image, cameraFrame->stride,
+              0, height,
+              &image->imageData, &image->widthStep);
+
     unpeekFrame();
 
     if(err != DC1394_SUCCESS)
