@@ -67,7 +67,8 @@ public:
         cleanupThreads();
     }
 
-    // I want the derived classes to override this
+    // I want the derived classes to override this. It indicates whether the class is initialized
+    // and ready to use
     virtual operator bool() = 0;
 
     // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
