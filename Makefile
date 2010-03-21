@@ -1,4 +1,4 @@
-CXXFLAGS += -g -Wall -Wextra -pedantic
+CXXFLAGS += -g -Wall -Wextra -pedantic -MMD
 LDFLAGS  += -g -lX11 -lXft -lXinerama
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
@@ -23,8 +23,4 @@ videoCvSample: ffmpegInterface.o videoCvSample.o
 clean:
 	rm -f *.o *.a cameraSample videoCvSample
 
-deps.d: $(wildcard *.c *.cc *.cpp *.h *.hh)
-	@touch $@
-	makedepend -f $@ -Y -- $(CFLAGS) $(CXXFLAGS) -- $(wildcard *.c *.cc *.cpp) 2>/dev/null
-
--include deps.d
+-include *.d
