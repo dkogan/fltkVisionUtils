@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "dc1394/dc1394.h"
+#include <dc1394/dc1394.h>
 #include "frameSource.hh"
 
 // hardware camera settings:
