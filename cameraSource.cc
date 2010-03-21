@@ -125,7 +125,7 @@ static enum PixelFormat pixfmt_dc1394ToSwscale(dc1394color_coding_t from)
     case DC1394_COLOR_CODING_MONO16S:
     case DC1394_COLOR_CODING_RGB16S:
     case DC1394_COLOR_CODING_RAW8:
-    case DC1394_COLOR_CODING_RAW16
+    case DC1394_COLOR_CODING_RAW16:
     default:
         break;
     }
