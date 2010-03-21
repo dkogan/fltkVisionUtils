@@ -68,27 +68,12 @@ class CameraSource : public FrameSource
     // These private versions of the peek() functions contain 99% of the functionality. The public
     // functions perform some checks to make sure it is valid to use these at all.
     void beginPeek(void);
-    bool isOKtoPeek(void);
-    unsigned char* _peekNextFrame  (uint64_t* timestamp_us);
-    unsigned char* _peekLatestFrame(uint64_t* timestamp_us);
 
 public:
     CameraSource(FrameSource_UserColorChoice _userColorMode);
     ~CameraSource();
 
     operator bool() { return inited; }
-
-    // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
-    // returned (NULL on error). This buffer must be given back to the system by calling
-    // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed.
-    // peekNextFrame() returns the next frame in the buffer.
-    // peekLatestFrame() purges the buffer and returns the most recent frame available
-    //
-    // The peek...Frame() functions return RAW data. No color conversion is attempted. Use with
-    // caution
-    unsigned char* peekNextFrame  (uint64_t* timestamp_us = NULL);
-    unsigned char* peekLatestFrame(uint64_t* timestamp_us = NULL);
-    void unpeekFrame(void);
 
     // these are like the peek() functions, but these convert the incoming data to the desired
     // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the

@@ -67,24 +67,6 @@ public:
 
 
     // These support the FrameSource API
-    unsigned char* peekNextFrame  (uint64_t* timestamp_us __attribute__((unused)) = NULL)
-    {
-        cerr << "The FFMPEG decoder does not yet support peeking. use get...Frame()\n";
-        return NULL;
-    }
-
-    unsigned char* peekLatestFrame(uint64_t* timestamp_us __attribute__((unused)) = NULL)
-    {
-        cerr << "The FFMPEG decoder does not yet support peeking. use get...Frame()\n";
-        return NULL;
-    }
-
-    void unpeekFrame(void)
-    {
-        cerr << "The FFMPEG decoder does not yet support peeking. use get...Frame()\n";
-        return;
-    }
-
     bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
     {
         if(!readFrame(image))

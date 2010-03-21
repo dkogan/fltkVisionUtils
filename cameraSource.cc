@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <iostream>
 #include <sstream>
 #include "cameraSource.hh"
 
@@ -130,7 +131,7 @@ static enum PixelFormat pixfmt_dc1394ToSwscale(dc1394color_coding_t from)
         break;
     }
 
-    cerr << "pixfmt_dc1394ToSwscale(): I don't know the answer. Figure this out and tell me please" << endl;
+    std::cerr << "pixfmt_dc1394ToSwscale(): I don't know the answer. Figure this out and tell me please" << endl;
     return PIX_FMT_NONE;
 }
 
@@ -328,7 +329,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
                                SWS_POINT, NULL, NULL, NULL);
     if(m_pSWSCtx == NULL)
     {
-        cerr << "couldn't create sws context" << endl;
+        std::cerr << "couldn't create sws context" << endl;
         return;
     }
 
@@ -364,10 +365,8 @@ CameraSource::~CameraSource(void)
     }
 }
 
-// peekNextFrame() blocks until a frame is available. A pointer to the internal buffer is returned
-// (NULL on error). This buffer must be given back to the system by calling
-// unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed
-unsigned char* CameraSource::_peekNextFrame(uint64_t* timestamp_us)
+// getNextFrame() blocks until a frame is available. true is returned on success.
+bool CameraSource::getNextFrame(IplImage* image, uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -379,18 +378,17 @@ unsigned char* CameraSource::_peekNextFrame(uint64_t* timestamp_us)
         dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
                            dc1394_error_get_string(err),
                            __FUNCTION__, __FILE__, __LINE__);
-        return NULL;
+        return false;
     }
 
-    return finishPeek(timestamp_us);
+    finishPeek(timestamp_us);
+    return finishGet(image);
 }
 
-// peekLatestFrame() checks the frame buffer. If there are no frames in it, it blocks until a
+// getLatestFrame() checks the frame buffer. If there are no frames in it, it blocks until a
 // frame is available. If there are frames, the buffer is purged and the most recent frame is
-// returned. A pointer to the internal buffer is returned (NULL on error). This buffer must be given
-// back to the system by calling unpeekFrame(). unpeekFrame() need not be called if peekFrame()
-// failed
-unsigned char* CameraSource::_peekLatestFrame(uint64_t* timestamp_us)
+// returned. true is returned on success.
+bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -404,10 +402,10 @@ unsigned char* CameraSource::_peekLatestFrame(uint64_t* timestamp_us)
         dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
                            dc1394_error_get_string(err),
                            __FUNCTION__, __FILE__, __LINE__);
-        return NULL;
+        return false;
     }
     if(polledFrame == NULL)
-        return _peekNextFrame(timestamp_us);
+        return getNextFrame(image, timestamp_us);
 
 
     // A frame was available, so I pull the frames off until I reach the end
@@ -445,7 +443,8 @@ unsigned char* CameraSource::_peekLatestFrame(uint64_t* timestamp_us)
         polledFrame = cameraFrame;
     }
 
-    return finishPeek(timestamp_us);
+    finishPeek(timestamp_us);
+    return finishGet(image);
 }
 
 void CameraSource::beginPeek(void)
@@ -459,52 +458,12 @@ void CameraSource::beginPeek(void)
     }
 }
 
-bool CameraSource::isOKtoPeek(void)
-{
-    if( (userColorMode == FRAMESOURCE_COLOR     && cameraColorCoding != DC1394_COLOR_CODING_RGB8) ||
-        (userColorMode == FRAMESOURCE_GRAYSCALE && cameraColorCoding != DC1394_COLOR_CODING_MONO8) )
-    {
-        fprintf(stderr, "CameraSource::peek..() can only be used if the requested color mode exactly\n"
-                "matches the color mode of the camera output. Change either of the modes, or use get() instead of peek()\n");
-        return false;
-    }
-    return true;
-}
-
-unsigned char* CameraSource::peekNextFrame  (uint64_t* timestamp_us)
-{
-    if(!isOKtoPeek()) return NULL;
-    return _peekNextFrame(timestamp_us);
-}
-
-unsigned char* CameraSource::peekLatestFrame(uint64_t* timestamp_us)
-{
-    if(!isOKtoPeek()) return NULL;
-    return _peekLatestFrame(timestamp_us);
-}
-
 unsigned char* CameraSource::finishPeek(uint64_t* timestamp_us)
 {
     if(timestamp_us != NULL)
         *timestamp_us = cameraFrame->timestamp;
 
     return cameraFrame->image;
-}
-
-bool CameraSource::getNextFrame(IplImage* image, uint64_t* timestamp_us)
-{
-    if(_peekNextFrame(timestamp_us) == NULL)
-        return false;
-
-    return finishGet(buffer);
-}
-
-bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
-{
-    if(_peekLatestFrame(timestamp_us) == NULL)
-        return false;
-
-    return finishGet(buffer);
 }
 
 bool CameraSource::finishGet(IplImage* image)

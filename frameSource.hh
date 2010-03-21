@@ -52,23 +52,10 @@ public:
     // and ready to use
     virtual operator bool() = 0;
 
-    // peek...Frame() blocks until a frame is available. A pointer to the internal buffer is
-    // returned (NULL on error). This buffer must be given back to the system by calling
-    // unpeekFrame(). unpeekFrame() need not be called if peekFrame() failed.
-    // peekNextFrame() returns the next frame in the buffer.
-    // peekLatestFrame() purges the buffer and returns the most recent frame available
-    // For non-realtime data sources, such as video files, peekNextFrame() and peekLatestFrame() are
-    // the same
-    //
-    // The peek...Frame() functions return RAW data. No color conversion is attempted. Use with
-    // caution
-    virtual unsigned char* peekNextFrame  (uint64_t* timestamp_us = NULL) = 0;
-    virtual unsigned char* peekLatestFrame(uint64_t* timestamp_us = NULL) = 0;
-    virtual void unpeekFrame(void) = 0;
-
-    // these are like the peek() functions, but these convert the incoming data to the desired
-    // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
-    // data, calling unpeek() is not needed. false returned on error
+    // getNextFrame() returns the next frame in the buffer.
+    // getLatestFrame() purges the buffer and returns the most recent frame available
+    // For non-realtime data sources, such as video files, getNextFrame() and getLatestFrame() are
+    // the same.
     virtual bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL) = 0;
     virtual bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL) = 0;
 
