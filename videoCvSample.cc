@@ -40,8 +40,10 @@ void* sourceThread(void *pArg)
             return NULL;
         }
 
+        cvSetImageCOI(*widgetImage, 1);
         cvCopy( *widgetImage, *widgetImage2);
-        cvCanny(*widgetImage, *widgetImage, 20, 50);
+        cvSetImageCOI(*widgetImage, 0);
+        cvCanny(*widgetImage2, *widgetImage2, 20, 50);
 
         Fl::lock();
         if(sourceThread_doTerminate) return NULL;
@@ -66,7 +68,7 @@ int main(int argc, char* argv[])
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    FrameSource* source = new FFmpegDecoder(argv[1], FRAMESOURCE_GRAYSCALE);
+    FrameSource* source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
@@ -76,7 +78,7 @@ int main(int argc, char* argv[])
 
     Fl_Double_Window window(source->w()*2, source->h());
     widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
-                                   WIDGET_GRAYSCALE);
+                                   WIDGET_COLOR);
 
     widgetImage2 = new CvFltkWidget(source->w(), 0, source->w(), source->h(),
                                     WIDGET_GRAYSCALE);
