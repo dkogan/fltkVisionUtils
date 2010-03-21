@@ -117,17 +117,6 @@ public:
         flImage->draw(x(), y());
     }
 
-    // this should be called from the main FLTK thread or from any other thread after obtaining an
-    // Fl::lock()
-    void updateFrame(unsigned char* frame)
-    {
-        if(!frame)
-            return;
-
-        memcpy(imageData, frame, frameW*frameH*bytesPerPixel);
-        redrawNewFrame();
-    }
-
     // Used to trigger a redraw if out drawing buffer was already updated.
     void redrawNewFrame(void)
     {
@@ -137,24 +126,6 @@ public:
         // If we're drawing from a different thread, FLTK needs to be woken up to actually do
         // the redraw
         Fl::awake();
-    }
-
-    void updateFrameCv(IplImage* image)
-    {
-        cvCopy(image, cvImage);
-        redrawNewFrame();
-    }
-
-    void updateFrameCv(CvMat* image)
-    {
-        cvCopy(image, cvImage);
-        redrawNewFrame();
-    }
-
-    void updateFrameCv(CvArr* image)
-    {
-        cvCopy(image, cvImage);
-        redrawNewFrame();
     }
 };
 
