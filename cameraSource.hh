@@ -69,6 +69,8 @@ class CameraSource : public FrameSource
     // functions perform some checks to make sure it is valid to use these at all.
     void beginPeek(void);
 
+    void unpeekFrame(void);
+
 public:
     CameraSource(FrameSource_UserColorChoice _userColorMode);
     ~CameraSource();

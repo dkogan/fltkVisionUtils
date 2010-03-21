@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -131,7 +132,7 @@ static enum PixelFormat pixfmt_dc1394ToSwscale(dc1394color_coding_t from)
         break;
     }
 
-    std::cerr << "pixfmt_dc1394ToSwscale(): I don't know the answer. Figure this out and tell me please" << endl;
+    std::cerr << "pixfmt_dc1394ToSwscale(): I don't know the answer. Figure this out and tell me please" << std::endl;
     return PIX_FMT_NONE;
 }
 
@@ -329,7 +330,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
                                SWS_POINT, NULL, NULL, NULL);
     if(m_pSWSCtx == NULL)
     {
-        std::cerr << "couldn't create sws context" << endl;
+        std::cerr << "couldn't create sws context" << std::endl;
         return;
     }
 
@@ -470,20 +471,15 @@ bool CameraSource::finishGet(IplImage* image)
 {
     assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
             (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
-    assert( image->width == width && image->height == height );
+    assert( image->width == (int)width && image->height == (int)height );
 
+    int stride = cameraFrame->stride;
     sws_scale(m_pSWSCtx,
-              cameraFrame->image, cameraFrame->stride,
+              &cameraFrame->image, &stride,
               0, height,
-              &image->imageData, &image->widthStep);
+              (unsigned char**)&image->imageData, &image->widthStep);
 
     unpeekFrame();
-
-    if(err != DC1394_SUCCESS)
-    {
-        fprintf(stderr, "Error converting colorspaces\n");
-        return false;
-    }
 
     return true;
 }

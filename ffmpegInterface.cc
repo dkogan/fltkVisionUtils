@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "ffmpegInterface.hh"
 
 #define LOCAL_PIX_FMT       PIX_FMT_GRAY8
@@ -217,12 +218,12 @@ bool FFmpegDecoder::readFrame(IplImage* image)
 
                 assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
                         (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
-                assert( image->width == width && image->height == height );
+                assert( image->width == (int)width && image->height == (int)height );
 
                 sws_scale(m_pSWSCtx,
                           m_pFrameYUV->data, m_pFrameYUV->linesize,
                           0, height,
-                          &image->imageData, &image->widthStep);
+                          (unsigned char**)&image->imageData, &image->widthStep);
 
                 av_free_packet(&packet);
                 return true;
