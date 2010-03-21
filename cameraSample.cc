@@ -28,7 +28,7 @@ void gotNewFrame(unsigned char* buffer __attribute__((unused)), uint64_t timesta
         fprintf(stderr, "Couldn't encode frame!\n");
         return;
     }
-    videoEncoder.writeFrameGrayscale(widgetImage->getBuffer());
+    videoEncoder.writeFrameGrayscale( (unsigned char*)((IplImage*)(*widgetImage))->imageData);
     if(!videoEncoder)
     {
         fprintf(stderr, "Couldn't encode frame!\n");
@@ -73,7 +73,7 @@ int main(void)
 
     // I'm starting a new camera-reading thread and storing the frame directly into the widget
     // buffer
-    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, widgetImage->getBuffer());
+    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, (unsigned char*)((IplImage*)(*widgetImage))->imageData);
 
     while (Fl::wait())
     {

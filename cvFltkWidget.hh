@@ -89,12 +89,6 @@ public:
         return cvImage;
     }
 
-    // this can be used to render directly into the buffer
-    unsigned char* getBuffer(void)
-    {
-        return (unsigned char*)cvImage->imageData;
-    }
-
     void draw()
     {
         // this is the FLTK draw-me-now callback
