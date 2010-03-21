@@ -18,7 +18,6 @@ enum CvFltkWidget_ColorChoice  { WIDGET_COLOR, WIDGET_GRAYSCALE };
 
 class CvFltkWidget : public Fl_Widget
 {
-protected:
     int frameW, frameH;
 
     CvFltkWidget_ColorChoice  colorMode;
