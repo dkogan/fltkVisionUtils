@@ -18,8 +18,6 @@ enum CvFltkWidget_ColorChoice  { WIDGET_COLOR, WIDGET_GRAYSCALE };
 
 class CvFltkWidget : public Fl_Widget
 {
-    int frameW, frameH;
-
     CvFltkWidget_ColorChoice  colorMode;
 
     Fl_RGB_Image*  flImage;
@@ -63,7 +61,6 @@ public:
     CvFltkWidget(int x, int y, int w, int h,
                  CvFltkWidget_ColorChoice  _colorMode)
         : Fl_Widget(x,y,w,h),
-          frameW(w), frameH(h),
           colorMode(_colorMode),
           flImage(NULL), cvImage(NULL)
     {
@@ -74,7 +71,7 @@ public:
             return;
 
         flImage = new Fl_RGB_Image((unsigned char*)cvImage->imageData,
-                                   frameW, frameH, numChannels, cvImage->widthStep);
+                                   w, h, numChannels, cvImage->widthStep);
         if(flImage == NULL)
         {
             cleanup();
