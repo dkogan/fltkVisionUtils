@@ -25,7 +25,7 @@ class FlWidgetCv : public FlWidgetImage
 public:
     FlWidgetCv(int x, int y, int w, int h,
                FlWidgetImage_ColorChoice  _colorMode)
-        : FlWidgetImage(x,y,w,h, _colorMode, FAST_REDRAW),
+        : FlWidgetImage(x,y,w,h, _colorMode),
           cvImage(NULL)
     {
         cvImage = cvCreateImageHeader(cvSize(w,h), IPL_DEPTH_8U, bytesPerPixel);

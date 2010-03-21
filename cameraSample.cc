@@ -65,7 +65,7 @@ int main(void)
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new FlWidgetImage(0, 0, source->w(), source->h(),
-                                  WIDGET_GRAYSCALE, FAST_REDRAW);
+                                  WIDGET_GRAYSCALE);
 
     window.resizable(window);
     window.end();

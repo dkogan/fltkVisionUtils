@@ -14,30 +14,14 @@
 // type
 enum FlWidgetImage_ColorChoice  { WIDGET_COLOR, WIDGET_GRAYSCALE };
 
-// Two drawing modes are supported:
-
-// 1. Normal drawing using an Fl_Image object. This mode requires a bit of overhead for the initial
-// drawing operation, but redraws are very fast. This is the mode to use most of the time
-//
-// 2. Direct drawing mode. This modes makes an assumption that new frames are constantly arriving,
-// thus it draws DIRECTLY into the widget without creating an Fl_Image. This makes the drawing
-// faster, but breaks redrawing. This mode assumes that we're constantly getting new data so
-// intelligent redrawing is not needed. At some point in the distant future this should be changed
-// to use hardware acceleration designed for this purpose, like Xv. This mode can be used to display
-// data coming from a video camera, for example
-enum FlWidgetImage_RedrawChoice { NORMAL, FAST_REDRAW = NORMAL,
-                                  DIRECT, FAST_DRAW   = DIRECT};
-
 class FlWidgetImage : public Fl_Widget
 {
 protected:
     int frameW, frameH;
 
     FlWidgetImage_ColorChoice  colorMode;
-    FlWidgetImage_RedrawChoice redrawMode;
     unsigned int bytesPerPixel;
 
-    // these are only used for FAST_REDRAW
     unsigned char* imageData;
     Fl_RGB_Image*  flImage;
 
@@ -76,27 +60,23 @@ protected:
 
 public:
     FlWidgetImage(int x, int y, int w, int h,
-                  FlWidgetImage_ColorChoice  _colorMode,
-                  FlWidgetImage_RedrawChoice _redrawMode)
+                  FlWidgetImage_ColorChoice  _colorMode)
         : Fl_Widget(x,y,w,h),
           frameW(w), frameH(h),
-          colorMode(_colorMode), redrawMode(_redrawMode),
+          colorMode(_colorMode),
           imageData(NULL), flImage(NULL)
     {
         bytesPerPixel = (colorMode == WIDGET_COLOR) ? 3 : 1;
 
-        if(redrawMode == NORMAL)
-        {
-            imageData = new unsigned char[frameW * frameH * bytesPerPixel];
-            if(imageData == NULL)
-                return;
+        imageData = new unsigned char[frameW * frameH * bytesPerPixel];
+        if(imageData == NULL)
+            return;
 
-            flImage = new Fl_RGB_Image(imageData, frameW, frameH, bytesPerPixel);
-            if(flImage == NULL)
-            {
-                cleanup();
-                return;
-            }
+        flImage = new Fl_RGB_Image(imageData, frameW, frameH, bytesPerPixel);
+        if(flImage == NULL)
+        {
+            cleanup();
+            return;
         }
     }
 
@@ -108,18 +88,13 @@ public:
     // this can be used to render directly into the buffer
     unsigned char* getBuffer(void)
     {
-        if(redrawMode != NORMAL)
-            fprintf(stderr, "FlWidgetImage::getBuffer() while redrawMode != NORMAL.\n"
-                    "This mode doesn't use a buffer\n");
-
         return imageData;
     }
 
     void draw()
     {
-        // this is the FLTK draw-me-now callback. Draw the image if we're not direct drawing
-        if(redrawMode == NORMAL)
-            flImage->draw(x(), y());
+        // this is the FLTK draw-me-now callback
+        flImage->draw(x(), y());
     }
 
     // this should be called from the main FLTK thread or from any other thread after obtaining an
@@ -129,36 +104,19 @@ public:
         if(!frame)
             return;
 
-        if(redrawMode == NORMAL)
-        {
-            memcpy(imageData, frame, frameW*frameH*bytesPerPixel);
-
-            redrawNewFrame();
-        }
-        else
-        {
-            if(colorMode == WIDGET_COLOR)
-                fl_draw_image(frame, x(), y(), frameW, frameH, 3);
-            else
-                fl_draw_image_mono(frame, x(), y(), frameW, frameH);
-        }
+        memcpy(imageData, frame, frameW*frameH*bytesPerPixel);
+        redrawNewFrame();
     }
 
-    // Used to trigger a redraw if out drawing buffer was already updated. This function makes sense
-    // only in the buffered 'NORMAL' redraw mode
+    // Used to trigger a redraw if out drawing buffer was already updated.
     void redrawNewFrame(void)
     {
-        if(redrawMode == NORMAL)
-        {
-            flImage->uncache();
-            redraw();
+        flImage->uncache();
+        redraw();
 
-            // If we're drawing from a different thread, FLTK needs to be woken up to actually do
-            // the redraw
-            Fl::awake();
-        }
-        else
-            fprintf(stderr, "redrawNewFrame() doesn't make sense in an unbuffered redraw mode\n");
+        // If we're drawing from a different thread, FLTK needs to be woken up to actually do
+        // the redraw
+        Fl::awake();
     }
 };
 
