@@ -112,30 +112,6 @@ colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
     }
 }
 
-static enum PixelFormat pixfmt_dc1394ToSwscale(dc1394color_coding_t from)
-{
-    switch(from)
-    {
-    case DC1394_COLOR_CODING_MONO8:   return PIX_FMT_GRAY8;
-    case DC1394_COLOR_CODING_YUV411:  return PIX_FMT_UYYVYY411;
-    case DC1394_COLOR_CODING_YUV422:  return PIX_FMT_UYVY422;
-    case DC1394_COLOR_CODING_YUV444:  return PIX_FMT_YUV444P;
-    case DC1394_COLOR_CODING_RGB8:    return PIX_FMT_RGB8;
-    case DC1394_COLOR_CODING_MONO16:  return PIX_FMT_GRAY16LE;
-    case DC1394_COLOR_CODING_RGB16:   return PIX_FMT_RGB565;
-
-    case DC1394_COLOR_CODING_MONO16S:
-    case DC1394_COLOR_CODING_RGB16S:
-    case DC1394_COLOR_CODING_RAW8:
-    case DC1394_COLOR_CODING_RAW16:
-    default:
-        break;
-    }
-
-    std::cerr << "pixfmt_dc1394ToSwscale(): I don't know the answer. Figure this out and tell me please" << std::endl;
-    return PIX_FMT_NONE;
-}
-
 CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
@@ -321,15 +297,6 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
 
     cameraDescription = descriptionStream.str();
 
-    m_pSWSCtx = sws_getContext(width, height, pixfmt_dc1394ToSwscale(cameraColorCoding),
-                               width, height, userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
-                               SWS_POINT, NULL, NULL, NULL);
-    if(m_pSWSCtx == NULL)
-    {
-        std::cerr << "couldn't create sws context" << std::endl;
-        return;
-    }
-
     inited = true;
     numInitedCameras++;
 
@@ -346,12 +313,6 @@ CameraSource::~CameraSource(void)
         dc1394_capture_stop(camera);
         dc1394_camera_free(camera);
         camera = NULL;
-
-        if(m_pSWSCtx)
-        {
-            sws_freeContext(m_pSWSCtx);
-            m_pSWSCtx = NULL;
-        }
     }
 
     if(inited)
@@ -468,15 +429,52 @@ unsigned char* CameraSource::finishPeek(uint64_t* timestamp_us)
 
 bool CameraSource::finishGet(IplImage* image)
 {
-    assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
-            (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
-    assert( image->width == (int)width && image->height == (int)height );
+    // These convert the data to my desired colorspace from the raw format of the camera. These
+    // functions have a few drawbacks:
+    //
+    // 1. They will convert grayscale data into color data, if asked, but will NOT throw away data
+    //    by converting color data into grayscale. This means that with this setup a color camera
+    //    will not work with userColorMode == FRAMESOURCE_GRAYSCALE, unless it supports a grayscale
+    //    mode in hardware.
+    // 2. These function assume a default stride in both the input and output data. This is likely
+    //    OK for the input, since the cameras will not output anything weird, but the image we're
+    //    writing into may have unusual padding. For now, I assert that this is not the case.
+    //
+    // To address these shortcomings I wanted to use the ffmpeg scaler (sws_scale) to perform these
+    // conversions instead. That works great EXCEPT, a packed YUV411 mode is not currently supported
+    // there, and this is a mode I explicitly need right now. I just removed the sws_scale
+    // implementation of these conversions, so it can be accessed from the version control. I will
+    // add that mode to sws_scale if the above shortcomings prove overly-problematic
 
-    int stride = cameraFrame->stride;
-    sws_scale(m_pSWSCtx,
-              &cameraFrame->image, &stride,
-              0, height,
-              (unsigned char**)&image->imageData, &image->widthStep);
+    dc1394error_t err;
+    if(userColorMode == FRAMESOURCE_COLOR)
+    {
+        // these assertions are explained in the long comment above
+        assert(image->widthStep == image->width * 3);
+
+        err = dc1394_convert_to_RGB8(cameraFrame->image,
+                                     (unsigned char*)image->imageData,
+                                     cameraFrame->size[0], cameraFrame->size[1],
+                                     cameraFrame->yuv_byte_order,
+                                     cameraFrame->color_coding,
+                                     0 // supposedly useful for 16-bit formats only, so I don't care
+                                     );
+    }
+    else
+    {
+        // these assertions are explained in the long comment above
+        assert(image->widthStep == image->width);
+        assert(cameraFrame->color_coding == DC1394_COLOR_CODING_MONO8 ||
+               cameraFrame->color_coding == DC1394_COLOR_CODING_MONO16);
+
+        err = dc1394_convert_to_MONO8(cameraFrame->image,
+                                      (unsigned char*)image->imageData,
+                                      cameraFrame->size[0], cameraFrame->size[1],
+                                      cameraFrame->yuv_byte_order,
+                                      cameraFrame->color_coding,
+                                      0 // supposedly useful for 16-bit formats only, so I don't care
+                                      );
+    }
 
     unpeekFrame();
 

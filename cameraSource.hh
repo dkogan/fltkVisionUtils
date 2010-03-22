@@ -2,10 +2,6 @@
 #define __CAMERA_SOURCE_HH__
 
 #include <string>
-extern "C"
-{
-#include <libswscale/swscale.h>
-}
 #include <dc1394/dc1394.h>
 #include "frameSource.hh"
 
@@ -52,9 +48,6 @@ class CameraSource : public FrameSource
     static dc1394_t*            dc1394Context;
     static dc1394camera_list_t* cameraList;
     static unsigned int         numInitedCameras;
-
-    // The scaling context used to convert the frame into an unpacked color format
-    SwsContext*          m_pSWSCtx;
 
     unsigned char* finishPeek(uint64_t* timestamp_us);
     bool finishGet(IplImage* image);
