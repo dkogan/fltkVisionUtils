@@ -275,10 +275,6 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     width  = w;
     height = h;
 
-    inited = true;
-    numInitedCameras++;
-
-
     // Now get the information about my camera and its setup into a string
     std::ostringstream descriptionStream;
 
@@ -333,6 +329,9 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
         std::cerr << "couldn't create sws context" << std::endl;
         return;
     }
+
+    inited = true;
+    numInitedCameras++;
 
     fprintf(stderr, "init done\n");
 }
