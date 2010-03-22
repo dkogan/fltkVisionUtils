@@ -117,8 +117,8 @@ static enum PixelFormat pixfmt_dc1394ToSwscale(dc1394color_coding_t from)
     switch(from)
     {
     case DC1394_COLOR_CODING_MONO8:   return PIX_FMT_GRAY8;
-    case DC1394_COLOR_CODING_YUV411:  return PIX_FMT_YUV411P;
-    case DC1394_COLOR_CODING_YUV422:  return PIX_FMT_YUYV422;
+    case DC1394_COLOR_CODING_YUV411:  return PIX_FMT_UYYVYY411;
+    case DC1394_COLOR_CODING_YUV422:  return PIX_FMT_UYVY422;
     case DC1394_COLOR_CODING_YUV444:  return PIX_FMT_YUV444P;
     case DC1394_COLOR_CODING_RGB8:    return PIX_FMT_RGB8;
     case DC1394_COLOR_CODING_MONO16:  return PIX_FMT_GRAY16LE;
