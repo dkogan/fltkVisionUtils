@@ -47,7 +47,7 @@ int main(void)
     Fl::visual(FL_RGB);
 
     // open the first source. request color
-    CameraSource* source = new CameraSource(FRAMESOURCE_GRAYSCALE);
+    CameraSource* source = new CameraSource(FRAMESOURCE_COLOR);
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
@@ -65,7 +65,7 @@ int main(void)
 
     Fl_Window window(source->w(), source->h());
     widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
-                                   WIDGET_GRAYSCALE);
+                                   WIDGET_COLOR);
 
     window.resizable(window);
     window.end();
