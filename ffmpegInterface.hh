@@ -107,10 +107,10 @@ public:
     FFmpegEncoder()
         : FFmpegTalker()
     {}
-    FFmpegEncoder(const char* filename, int width, int height, int fps)
+    FFmpegEncoder(const char* filename, int width, int height, int fps, enum FrameSource_UserColorChoice sourceColormode)
         : FFmpegTalker()
     {
-        open(filename, width, height, fps);
+        open(filename, width, height, fps, sourceColormode);
     }
     ~FFmpegEncoder()
     {
@@ -118,15 +118,10 @@ public:
         close();
     }
 
-    bool open(const char* filename, int width, int height, int fps);
-    bool writeFrameGrayscale(unsigned char* pBuffer);
+    bool open(const char* filename, int width, int height, int fps, enum FrameSource_UserColorChoice sourceColormode);
+    bool writeFrameGrayscale(IplImage* image);
     void close(void);
     void free(void);
-
-    bool operator<<(unsigned char* pBuffer)
-    {
-        return writeFrameGrayscale(pBuffer);
-    }
 
     operator bool()
     {

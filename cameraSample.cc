@@ -28,7 +28,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
         fprintf(stderr, "Couldn't encode frame!\n");
         return;
     }
-    videoEncoder.writeFrameGrayscale( (unsigned char*)((IplImage*)(*widgetImage))->imageData);
+    videoEncoder.writeFrameGrayscale(*widgetImage);
     if(!videoEncoder)
     {
         fprintf(stderr, "Couldn't encode frame!\n");
@@ -56,7 +56,7 @@ int main(void)
     }
     cout << source->getDescription();
 
-    videoEncoder.open("capture.avi", source->w(), source->h(), 15);
+    videoEncoder.open("capture.avi", source->w(), source->h(), 15, FRAMESOURCE_COLOR);
     if(!videoEncoder)
     {
         fprintf(stderr, "Couldn't initialize the video encoder\n");
