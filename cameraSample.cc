@@ -36,6 +36,7 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     }
 
     Fl::lock();
+    cvCanny(*widgetImage, *widgetImage, 20, 50);
     widgetImage->redrawNewFrame();
     Fl::unlock();
 }
