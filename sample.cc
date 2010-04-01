@@ -41,21 +41,23 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     Fl::unlock();
 }
 
-
-int main(void)
+int main(int argc, char* argv[])
 {
     Fl::lock();
     Fl::visual(FL_RGB);
 
-    // open the first source. request color
-    CameraSource* source = new CameraSource(FRAMESOURCE_COLOR);
+    // open the first source. If there's an argument, assume it's an input video. Otherwise, try
+    // reading a camera
+    FrameSource* source;
+    if(argc >= 2) source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR);
+    else          source = new CameraSource(FRAMESOURCE_COLOR);
+
     if(! *source)
     {
         fprintf(stderr, "couldn't open source\n");
         delete source;
         return 0;
     }
-    cout << source->getDescription();
 
     videoEncoder.open("capture.avi", source->w(), source->h(), 15, FRAMESOURCE_COLOR);
     if(!videoEncoder)
