@@ -18,6 +18,7 @@ using namespace std;
 
 static CvFltkWidget* widgetImage;
 static FFmpegEncoder videoEncoder;
+static CvMat         edges;
 
 void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
@@ -36,7 +37,11 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     }
 
     Fl::lock();
-    cvCanny(*widgetImage, *widgetImage, 20, 50);
+    cvSetImageCOI(*widgetImage, 1);
+    cvCopy(*widgetImage, &edges);
+    cvCanny(&edges, &edges, 20, 50);
+    cvCopy(&edges, *widgetImage);
+    cvSetImageCOI(*widgetImage, 0);
     widgetImage->redrawNewFrame();
     Fl::unlock();
 }
@@ -58,6 +63,9 @@ int main(int argc, char* argv[])
         delete source;
         return 0;
     }
+
+    cvInitMatHeader(&edges, source->h(), source->w(), CV_8UC1);
+    cvCreateData(&edges);
 
     videoEncoder.open("capture.avi", source->w(), source->h(), 15, FRAMESOURCE_COLOR);
     if(!videoEncoder)
@@ -88,6 +96,8 @@ int main(int argc, char* argv[])
     delete widgetImage;
 
     videoEncoder.close();
+
+    cvReleaseData(&edges);
 
     return 0;
 }
