@@ -17,6 +17,6 @@ sample: ffmpegInterface.o cameraSource.o sample.o
 
 
 clean:
-	rm -f *.o *.a sample
+	rm -f *.o *.a *.d sample
 
 -include *.d
