@@ -68,7 +68,8 @@ public:
     CameraSource(FrameSource_UserColorChoice _userColorMode);
     ~CameraSource();
 
-    operator bool() { return inited; }
+    operator bool            () { return inited; }
+    operator dc1394camera_t* () { return camera; }
 
     // these are like the peek() functions, but these convert the incoming data to the desired
     // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
