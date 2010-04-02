@@ -356,8 +356,7 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
     // first, poll the buffer. If no frames are available, use the plain peekNextFrame() call to
     // wait for one
     dc1394error_t err;
-    dc1394video_frame_t* polledFrame;
-    err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &polledFrame);
+    err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
     if( err != DC1394_SUCCESS )
     {
         dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
@@ -365,35 +364,16 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
                            __FUNCTION__, __FILE__, __LINE__);
         return false;
     }
-    if(polledFrame == NULL)
+    if(cameraFrame == NULL)
         return getNextFrame(image, timestamp_us);
 
 
-    // A frame was available, so I pull the frames off until I reach the end
-    while(true)
+    // A frame was available. When the buffer fills up, newest incoming frames are thrown
+    // away. Thus, I purge the buffer and get a fresh new frame
+    do
     {
-        // at this point we have one dequeued frame and it's in polledFrame. I try to dequeue one
-        // more to see if it's the last
-
-        err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
-        if( err != DC1394_SUCCESS )
-        {
-            dc1394_capture_enqueue(camera, polledFrame);
-            dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
-                               dc1394_error_get_string(err),
-                               __FUNCTION__, __FILE__, __LINE__);
-            return NULL;
-        }
-        if(cameraFrame == NULL)
-        {
-            // no new frame, so polledFrame is the last
-            cameraFrame = polledFrame;
-            break;
-        }
-
-        // I just dequeued a frame, so polledFrame wasn't the last. I enqueue the polledFrame, and
-        // point it to my new most-recent frame
-        err = dc1394_capture_enqueue(camera, polledFrame);
+        // I just dequeued a frame, so I enqueue it back
+        err = dc1394_capture_enqueue(camera, cameraFrame);
         if( err != DC1394_SUCCESS )
         {
             dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
@@ -401,11 +381,19 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
                                __FUNCTION__, __FILE__, __LINE__);
             return NULL;
         }
-        polledFrame = cameraFrame;
-    }
 
-    finishPeek(timestamp_us);
-    return finishGet(image);
+        err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
+        if( err != DC1394_SUCCESS )
+        {
+            dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
+                               dc1394_error_get_string(err),
+                               __FUNCTION__, __FILE__, __LINE__);
+            return NULL;
+        }
+    } while(cameraFrame != NULL);
+
+    // flushed the queue now, so grab the next frame
+    return getNextFrame(image, timestamp_us);
 }
 
 void CameraSource::beginPeek(void)
