@@ -64,6 +64,8 @@ class CameraSource : public FrameSource
 
     void unpeekFrame(void);
 
+    bool purgeBuffer(void);
+
 public:
     CameraSource(FrameSource_UserColorChoice _userColorMode);
     ~CameraSource();

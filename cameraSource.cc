@@ -370,6 +370,16 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 
     // A frame was available. When the buffer fills up, newest incoming frames are thrown
     // away. Thus, I purge the buffer and get a fresh new frame
+    if(!purgeBuffer())
+        return NULL;
+
+    // flushed the queue now, so grab the next frame
+    return getNextFrame(image, timestamp_us);
+}
+
+bool CameraSource::purgeBuffer(void)
+{
+    dc1394error_t err;
     do
     {
         // I just dequeued a frame, so I enqueue it back
@@ -379,7 +389,7 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
             dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
                                dc1394_error_get_string(err),
                                __FUNCTION__, __FILE__, __LINE__);
-            return NULL;
+            return false;
         }
 
         err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
@@ -388,12 +398,11 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
             dc1394_log_warning("%s: in %s (%s, line %d): Could not capture a frame\n",
                                dc1394_error_get_string(err),
                                __FUNCTION__, __FILE__, __LINE__);
-            return NULL;
+            return false;
         }
     } while(cameraFrame != NULL);
 
-    // flushed the queue now, so grab the next frame
-    return getNextFrame(image, timestamp_us);
+    return true;
 }
 
 void CameraSource::beginPeek(void)
