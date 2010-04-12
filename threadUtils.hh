@@ -132,3 +132,5 @@ public:
         return bCond;
     }
 };
+
+#endif
