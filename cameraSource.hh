@@ -73,12 +73,6 @@ public:
     operator bool            () { return inited; }
     operator dc1394camera_t* () { return camera; }
 
-    // these are like the peek() functions, but these convert the incoming data to the desired
-    // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
-    // data, calling unpeek() is not needed. false returned on error
-    bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL);
-    bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL);
-
     int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }
 
@@ -87,6 +81,29 @@ public:
         // if we don't yet have a camera list, say there are cameras left to try to open them
         return cameraList == NULL ||
             numInitedCameras < cameraList->num;
+    }
+
+private:
+    // these are like the peek() functions, but these convert the incoming data to the desired
+    // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
+    // data, calling unpeek() is not needed. false returned on error
+    bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL);
+    bool _getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL);
+
+    void _stopStream   (void)
+    {
+        dc1394_video_set_transmission(camera, DC1394_OFF);
+        purgeBuffer();
+    }
+    void _resumeStream (void)
+    {
+        dc1394_video_set_transmission(camera, DC1394_ON);
+    }
+
+    // There's no concept of rewinding in a real camera, so restart == resume
+    void _restartStream(void)
+    {
+        _resumeStream();
     }
 };
 

@@ -99,6 +99,8 @@ void FFmpegDecoder::close(void)
 {
     cerr << "FFmpegDecoder::close(void)" << endl;
     free();
+
+    isRunningNowMutex.lock();
 }
 void FFmpegEncoder::close(void)
 {
@@ -176,6 +178,8 @@ bool FFmpegDecoder::open(const char* filename)
 
     width  = m_pCodecCtx->width;
     height = m_pCodecCtx->height;
+
+    isRunningNowMutex.unlock();
 
     return true;
 }

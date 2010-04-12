@@ -300,6 +300,8 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     inited = true;
     numInitedCameras++;
 
+    isRunningNowMutex.unlock();
+
     fprintf(stderr, "init done\n");
 }
 
@@ -326,8 +328,8 @@ CameraSource::~CameraSource(void)
     }
 }
 
-// getNextFrame() blocks until a frame is available. true is returned on success.
-bool CameraSource::getNextFrame(IplImage* image, uint64_t* timestamp_us)
+// _getNextFrame() blocks until a frame is available. true is returned on success.
+bool CameraSource::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -346,10 +348,10 @@ bool CameraSource::getNextFrame(IplImage* image, uint64_t* timestamp_us)
     return finishGet(image);
 }
 
-// getLatestFrame() checks the frame buffer. If there are no frames in it, it blocks until a
+// _getLatestFrame() checks the frame buffer. If there are no frames in it, it blocks until a
 // frame is available. If there are frames, the buffer is purged and the most recent frame is
 // returned. true is returned on success.
-bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
+bool CameraSource::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -365,7 +367,7 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
         return false;
     }
     if(cameraFrame == NULL)
-        return getNextFrame(image, timestamp_us);
+        return _getNextFrame(image, timestamp_us);
 
 
     // A frame was available. When the buffer fills up, newest incoming frames are thrown
@@ -374,7 +376,7 @@ bool CameraSource::getLatestFrame(IplImage* image, uint64_t* timestamp_us)
         return NULL;
 
     // flushed the queue now, so grab the next frame
-    return getNextFrame(image, timestamp_us);
+    return _getNextFrame(image, timestamp_us);
 }
 
 bool CameraSource::purgeBuffer(void)

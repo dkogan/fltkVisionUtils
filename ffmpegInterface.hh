@@ -65,9 +65,14 @@ public:
     void close(void);
     void free(void);
 
+    operator bool()
+    {
+        return m_bOpen && m_bOK;
+    }
 
+private:
     // These support the FrameSource API
-    bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
+    bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
     {
         if(!readFrame(image))
             return false;
@@ -81,14 +86,25 @@ public:
         return true;
     }
 
-    bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
+    // _getLatestFrame() and _getNextFrame() are identical here since I pull off the frames when
+    // asked, without regard to the actual framerate
+    bool _getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        return getNextFrame(image, timestamp_us);
+        return _getNextFrame(image, timestamp_us);
     }
 
-    operator bool()
+    // static images don't have any hardware on/off switch. Thus these functions are stubs
+    void _stopStream   (void) {}
+    void _resumeStream (void) {}
+
+    void _restartStream(void)
     {
-        return m_bOpen && m_bOK;
+        // I rewind to the start of the file
+        if(0 > av_seek_frame(m_pFormatCtx, m_videoStream,
+                             0, AVSEEK_FLAG_BYTE))
+        {
+            cerr << "_restartStream(): ffmpeg couldn't rewind to the start of the file" << endl;
+        }
     }
 };
 

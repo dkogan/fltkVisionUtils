@@ -47,6 +47,9 @@ public:
 
         width  = image->width;
         height = image->height;
+
+        isRunningNowMutex.unlock();
+
         return true;
     }
 
@@ -63,7 +66,8 @@ public:
 
     operator bool() { return image != NULL; }
 
-    bool getNextFrame  (IplImage* buffer, uint64_t* timestamp_us = NULL)
+private:
+    bool _getNextFrame  (IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
         if(!(*this))
             return false;
@@ -73,13 +77,17 @@ public:
         return true;
     }
 
-    // for static images, getNextFrame() is the same as getLatestFrame()
-    bool getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL)
+    // for static images, _getNextFrame() is the same as _getLatestFrame()
+    bool _getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
-        return getNextFrame(buffer, timestamp_us);
-
+        return _getNextFrame(buffer, timestamp_us);
     }
 
+    // static images don't have any hardware on/off switch, nor is there anything to rewind. Thus
+    // these functions are all stubs
+    void _stopStream   (void) {}
+    void _resumeStream (void) {}
+    void _restartStream(void) {}
 };
 
 #endif

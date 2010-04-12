@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <opencv/cv.h>
+#include "threadUtils.hh"
 
 // user interface color choice. RGB8 or MONO8
 enum FrameSource_UserColorChoice  { FRAMESOURCE_COLOR, FRAMESOURCE_GRAYSCALE };
@@ -26,9 +27,28 @@ protected:
     FrameSourceCallback_t* sourceThread_callback;
     IplImage*              sourceThread_buffer;
 
+    // I use a mutex to control the "running" state of the frame source. Any time a get..Frame()
+    // call is made, we lock this mutex. If we're not supposed to be receiving data, the mutex is
+    // locked externally and the lock call in get..Frame() blocks. The block ends when we resume
+    // operation and the external lock is released
+    MTmutex                isRunningNowMutex;
+
+private:
+    // These are the internal APIs called only by the external function definitions below
+    virtual void _restartStream(void) = 0;
+    virtual void _resumeStream (void) = 0;
+    virtual bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL) = 0;
+    virtual bool _getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL) = 0;
+    virtual void _stopStream(void) = 0;
+
 public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
-        : userColorMode(_userColorMode), sourceThread_id(0) { }
+        : userColorMode(_userColorMode), sourceThread_id(0)
+    {
+        // we're not yet initialized and thus not able to serve data. I thus lock the mutex. When we
+        // are ready to serve data, this lock is released
+        isRunningNowMutex.lock();
+    }
 
     virtual void cleanupThreads(void)
     {
@@ -56,8 +76,42 @@ public:
     // getLatestFrame() purges the buffer and returns the most recent frame available
     // For non-realtime data sources, such as video files, getNextFrame() and getLatestFrame() are
     // the same.
-    virtual bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL) = 0;
-    virtual bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL) = 0;
+    bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
+    {
+        isRunningNowMutex.lock();
+        bool res = _getNextFrame(image, timestamp_us);
+        isRunningNowMutex.unlock();
+        return res;
+    }
+    bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
+    {
+        isRunningNowMutex.lock();
+        bool res = _getNextFrame(image, timestamp_us);
+        isRunningNowMutex.unlock();
+        return res;
+    }
+
+
+    // tell the source to stop sending data. Any queued, but not processed frames are discarded
+    void stopStream(void)
+    {
+        isRunningNowMutex.lock();
+        _stopStream();
+    }
+
+    // re-activate the stream, rewinding to the beginning if asked (restart) and if possible. This
+    // is context-dependent. Video sources can rewind, but cameras cannot, for instance
+    void resumeStream (void)
+    {
+        _resumeStream();
+        isRunningNowMutex.unlock();
+    }
+
+    void restartStream(void)
+    {
+        _restartStream();
+        isRunningNowMutex.unlock();
+    }
 
     // Instead of accessing the frame with blocking I/O, the frame source can spawn a thread to wait
     // for the frames, and callback when a new frame is available. The thread can optionally wait
