@@ -65,6 +65,9 @@ public:
 
     bool getNextFrame  (IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
+        if(!(*this))
+            return false;
+
         cvCopy(image, buffer);
         makeTimestamp(timestamp_us);
         return true;
@@ -72,6 +75,9 @@ public:
 
     bool getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
+        if(!(*this))
+            return false;
+
         cvCopy(image, buffer);
         makeTimestamp(timestamp_us);
         return true;
