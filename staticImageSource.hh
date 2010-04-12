@@ -73,14 +73,11 @@ public:
         return true;
     }
 
+    // for static images, getNextFrame() is the same as getLatestFrame()
     bool getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL)
     {
-        if(!(*this))
-            return false;
+        return getNextFrame(buffer, timestamp_us);
 
-        cvCopy(image, buffer);
-        makeTimestamp(timestamp_us);
-        return true;
     }
 
 };
