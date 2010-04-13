@@ -55,6 +55,9 @@ public:
         if(sourceThread_id != 0)
         {
             pthread_cancel(sourceThread_id);
+
+            // The thread will not exit until this mutex is released, so I release it
+            isRunningNowMutex.unlock();
             pthread_join(sourceThread_id, NULL);
             sourceThread_id = 0;
         }
