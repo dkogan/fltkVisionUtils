@@ -99,6 +99,10 @@ public:
                       << "Tried to wait for an un-inited condition" << std::endl;
             return false;
         }
+
+        if(bCond)
+            return true;
+
         mutex.lock();
         while(!bCond)
             pthread_cond_wait(&cond, &(pthread_mutex_t&)mutex);
