@@ -48,7 +48,7 @@ public:
         width  = image->width;
         height = image->height;
 
-        isRunningNowMutex.unlock();
+        isRunningNow.setTrue();
 
         return true;
     }

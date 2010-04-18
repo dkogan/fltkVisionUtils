@@ -300,7 +300,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     inited = true;
     numInitedCameras++;
 
-    isRunningNowMutex.unlock();
+    isRunningNow.setTrue();
 
     fprintf(stderr, "init done\n");
 }

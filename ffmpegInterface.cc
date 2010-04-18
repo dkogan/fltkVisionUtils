@@ -100,7 +100,7 @@ void FFmpegDecoder::close(void)
     cerr << "FFmpegDecoder::close(void)" << endl;
     free();
 
-    isRunningNowMutex.lock();
+    isRunningNow.reset();
 }
 void FFmpegEncoder::close(void)
 {
@@ -179,7 +179,7 @@ bool FFmpegDecoder::open(const char* filename)
     width  = m_pCodecCtx->width;
     height = m_pCodecCtx->height;
 
-    isRunningNowMutex.unlock();
+    isRunningNow.setTrue();
 
     return true;
 }

@@ -27,11 +27,9 @@ protected:
     FrameSourceCallback_t* sourceThread_callback;
     IplImage*              sourceThread_buffer;
 
-    // I use a mutex to control the "running" state of the frame source. Any time a get..Frame()
-    // call is made, we lock this mutex. If we're not supposed to be receiving data, the mutex is
-    // locked externally and the lock call in get..Frame() blocks. The block ends when we resume
-    // operation and the external lock is released
-    MTmutex                isRunningNowMutex;
+    // I use a condition to control the "running" state of the frame source. Every get..Frame() call
+    // checks this conditon and waits for it to trigger, if necessary
+    MTcondition isRunningNow;
 
 private:
     // These are the internal APIs called only by the external function definitions below
@@ -45,9 +43,8 @@ public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
         : userColorMode(_userColorMode), sourceThread_id(0)
     {
-        // we're not yet initialized and thus not able to serve data. I thus lock the mutex. When we
-        // are ready to serve data, this lock is released
-        isRunningNowMutex.lock();
+        // we're not yet initialized and thus not able to serve data
+        isRunningNow.reset();
     }
 
     virtual void cleanupThreads(void)
@@ -56,8 +53,10 @@ public:
         {
             pthread_cancel(sourceThread_id);
 
-            // The thread will not exit until this mutex is released, so I release it
-            isRunningNowMutex.unlock();
+            // If the other thread is waiting on this condition, the thread will not exit until this
+            // condition is triggered, so I do it
+            isRunningNow.setTrue();
+
             pthread_join(sourceThread_id, NULL);
             sourceThread_id = 0;
         }
@@ -81,24 +80,21 @@ public:
     // the same.
     bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        isRunningNowMutex.lock();
+        isRunningNow.waitForTrue();
         bool res = _getNextFrame(image, timestamp_us);
-        isRunningNowMutex.unlock();
         return res;
     }
     bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
     {
-        isRunningNowMutex.lock();
+        isRunningNow.waitForTrue();
         bool res = _getNextFrame(image, timestamp_us);
-        isRunningNowMutex.unlock();
         return res;
     }
-
 
     // tell the source to stop sending data. Any queued, but not processed frames are discarded
     void stopStream(void)
     {
-        isRunningNowMutex.lock();
+        isRunningNow.reset();
         _stopStream();
     }
 
@@ -107,13 +103,13 @@ public:
     void resumeStream (void)
     {
         _resumeStream();
-        isRunningNowMutex.unlock();
+        isRunningNow.setTrue();
     }
 
     void restartStream(void)
     {
         _restartStream();
-        isRunningNowMutex.unlock();
+        isRunningNow.setTrue();
     }
 
     // Instead of accessing the frame with blocking I/O, the frame source can spawn a thread to wait
