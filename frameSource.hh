@@ -81,14 +81,12 @@ public:
     bool getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
     {
         isRunningNow.waitForTrue();
-        bool res = _getNextFrame(image, timestamp_us);
-        return res;
+        return _getNextFrame(image, timestamp_us);
     }
     bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
     {
         isRunningNow.waitForTrue();
-        bool res = _getNextFrame(image, timestamp_us);
-        return res;
+        return _getNextFrame(image, timestamp_us);
     }
 
     // tell the source to stop sending data. Any queued, but not processed frames are discarded
