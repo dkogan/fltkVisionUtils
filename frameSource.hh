@@ -52,11 +52,6 @@ public:
         if(sourceThread_id != 0)
         {
             pthread_cancel(sourceThread_id);
-
-            // If the other thread is waiting on this condition, the thread will not exit until this
-            // condition is triggered, so I do it
-            isRunningNow.setTrue();
-
             pthread_join(sourceThread_id, NULL);
             sourceThread_id = 0;
         }
