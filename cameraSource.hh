@@ -97,6 +97,7 @@ private:
     }
     void _resumeStream (void)
     {
+        purgeBuffer();
         dc1394_video_set_transmission(camera, DC1394_ON);
     }
 
