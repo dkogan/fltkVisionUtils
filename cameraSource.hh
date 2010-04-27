@@ -35,7 +35,6 @@ class CameraSource : public FrameSource
 {
     bool                 inited;
 
-    unsigned             cameraIndex;
     dc1394camera_t*      camera;
     dc1394video_frame_t* cameraFrame;
     dc1394video_mode_t   cameraVideoMode;
@@ -73,14 +72,14 @@ public:
     // the bus at the same time (even if it's reading a different camera) that program will stop
     // working.
     CameraSource(FrameSource_UserColorChoice _userColorMode,
-                 bool resetbus = false);
+                 bool resetbus = false,
+                 uint64_t guid = 0); // guid == 0 -> find the next available camera
 
     ~CameraSource();
 
     operator bool            () { return inited; }
     operator dc1394camera_t* () { return camera; }
 
-    int getCameraIndex(void)                { return cameraIndex;       }
     const std::string& getDescription(void) { return cameraDescription; }
 
     static bool uninitedCamerasLeft(void)

@@ -113,7 +113,7 @@ colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
 }
 
 CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
-                           bool resetbus)
+                           bool resetbus, uint64_t guid)
 
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
@@ -122,8 +122,6 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
         fprintf(stderr, "no more cameras left to init\n");
         return;
     }
-
-    cameraIndex = numInitedCameras;
 
     dc1394error_t err;
 
@@ -143,10 +141,23 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
         }
     }
 
-    camera = dc1394_camera_new(dc1394Context, cameraList->ids[cameraIndex].guid);
+    if(guid == 0)
+    {
+        // We're not looking for any particular camera, so open them one at a time until we find
+        // one that works
+        for(unsigned int i=0; i<cameraList->num; i++)
+        {
+            camera = dc1394_camera_new(dc1394Context, cameraList->ids[i].guid);
+            if (camera)
+                break;
+        }
+    }
+    else
+        camera = dc1394_camera_new(dc1394Context, guid);
+
     if (!camera)
     {
-        dc1394_log_error("Failed to initialize camera with guid %ld", cameraList->ids[cameraIndex].guid);
+        dc1394_log_error("Failed to initialize a camera");
         return;
     }
 
