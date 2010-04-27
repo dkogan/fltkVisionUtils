@@ -67,7 +67,14 @@ class CameraSource : public FrameSource
     bool purgeBuffer(void);
 
 public:
-    CameraSource(FrameSource_UserColorChoice _userColorMode);
+    // The firewire stack may still have resources allocated from previous usage. I have no way to
+    // tell zombie resources from legitimate ones. If resetbus==true, I clear out all the existing
+    // firewire resources. This will make room for this app, but if there's another program reading
+    // the bus at the same time (even if it's reading a different camera) that program will stop
+    // working.
+    CameraSource(FrameSource_UserColorChoice _userColorMode,
+                 bool resetbus = false);
+
     ~CameraSource();
 
     operator bool            () { return inited; }

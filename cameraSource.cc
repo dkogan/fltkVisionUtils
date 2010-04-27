@@ -112,7 +112,9 @@ colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
     }
 }
 
-CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
+CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
+                           bool resetbus)
+
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
     if(!uninitedCamerasLeft())
@@ -152,7 +154,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode)
     // the cameras. I don't know which channels and how much bandwidth was allocated, so release
     // EVERYTHING. This can generate bogus error messages, but these should be ignored
     static bool doneOnce = false;
-    if(!doneOnce)
+    if(resetbus && !doneOnce)
     {
         doneOnce = true;
         fprintf(stderr, "cleaning up ieee1394 stack. This may cause error messages...\n");
