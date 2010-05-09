@@ -81,7 +81,7 @@ public:
     bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
     {
         isRunningNow.waitForTrue();
-        return _getNextFrame(image, timestamp_us);
+        return _getLatestFrame(image, timestamp_us);
     }
 
     // tell the source to stop sending data. Any queued, but not processed frames are discarded
