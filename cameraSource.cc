@@ -397,14 +397,17 @@ bool CameraSource::purgeBuffer(void)
     dc1394error_t err;
     do
     {
-        // I just dequeued a frame, so I enqueue it back
-        err = dc1394_capture_enqueue(camera, cameraFrame);
-        if( err != DC1394_SUCCESS )
+        // If I have a dequeued frame, give it back to the OS.
+        if(cameraFrame != NULL)
         {
-            dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
-                               dc1394_error_get_string(err),
-                               __FUNCTION__, __FILE__, __LINE__);
-            return false;
+            err = dc1394_capture_enqueue(camera, cameraFrame);
+            if( err != DC1394_SUCCESS )
+            {
+                dc1394_log_warning("%s: in %s (%s, line %d): Could not enqueue\n",
+                                   dc1394_error_get_string(err),
+                                   __FUNCTION__, __FILE__, __LINE__);
+                return false;
+            }
         }
 
         err = dc1394_capture_dequeue(camera, DC1394_CAPTURE_POLICY_POLL, &cameraFrame);
