@@ -78,6 +78,7 @@ public:
         isRunningNow.waitForTrue();
         return _getNextFrame(image, timestamp_us);
     }
+
     bool getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
     {
         isRunningNow.waitForTrue();
