@@ -202,7 +202,9 @@ bool FFmpegDecoder::readFrame(IplImage* image)
     AVPacket packet;
     int frameFinished;
 
-    while(av_read_frame(m_pFormatCtx, &packet) >= 0)
+    // I keep reading frames as long as I can. If asked, I start over from the beginning when I
+    // reach the end
+    while(av_read_frame(m_pFormatCtx, &packet) >= 0 || (m_loopAtEnd &&_restartStream()))
     {
         if(packet.stream_index == m_videoStream)
         {

@@ -41,16 +41,18 @@ public:
 class FFmpegDecoder : public FFmpegTalker, public FrameSource
 {
     int              m_videoStream;
+    bool             m_loopAtEnd;
 
     void reset(void);
     bool readFrame(IplImage* image);
 
 public:
-    FFmpegDecoder(FrameSource_UserColorChoice _userColorMode)
-        : FFmpegTalker(), FrameSource(_userColorMode)
+    FFmpegDecoder(FrameSource_UserColorChoice _userColorMode, bool loopAtEnd = false)
+        : FFmpegTalker(), FrameSource(_userColorMode), m_loopAtEnd(loopAtEnd)
     {}
-    FFmpegDecoder(const char* filename, FrameSource_UserColorChoice _userColorMode)
-        : FFmpegTalker(), FrameSource(_userColorMode)
+    FFmpegDecoder(const char* filename, FrameSource_UserColorChoice _userColorMode,
+                  bool loopAtEnd = false)
+        : FFmpegTalker(), FrameSource(_userColorMode), m_loopAtEnd(loopAtEnd)
     {
         open(filename);
     }
