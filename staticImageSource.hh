@@ -85,9 +85,9 @@ private:
 
     // static images don't have any hardware on/off switch, nor is there anything to rewind. Thus
     // these functions are all stubs
-    void _stopStream   (void) {}
-    void _resumeStream (void) {}
-    void _restartStream(void) {}
+    bool _stopStream   (void) { return true; }
+    bool _resumeStream (void) { return true; }
+    bool _restartStream(void) { return true; }
 };
 
 #endif

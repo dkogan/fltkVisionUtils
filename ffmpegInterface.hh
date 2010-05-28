@@ -94,17 +94,19 @@ private:
     }
 
     // static images don't have any hardware on/off switch. Thus these functions are stubs
-    void _stopStream   (void) {}
-    void _resumeStream (void) {}
+    bool _stopStream   (void) { return true; }
+    bool _resumeStream (void) { return true; }
 
-    void _restartStream(void)
+    bool _restartStream(void)
     {
         // I rewind to the start of the file
         if(0 > av_seek_frame(m_pFormatCtx, m_videoStream,
                              0, AVSEEK_FLAG_BYTE))
         {
             cerr << "_restartStream(): ffmpeg couldn't rewind to the start of the file" << endl;
+            return false;
         }
+        return true;
     }
 };
 

@@ -96,21 +96,25 @@ private:
     bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL);
     bool _getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL);
 
-    void _stopStream   (void)
+    bool _stopStream   (void)
     {
-        dc1394_video_set_transmission(camera, DC1394_OFF);
-        purgeBuffer();
+        if(DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_OFF))
+        {
+            purgeBuffer();
+            return true;
+        }
+        return false;
     }
-    void _resumeStream (void)
+    bool _resumeStream (void)
     {
         purgeBuffer();
-        dc1394_video_set_transmission(camera, DC1394_ON);
+        return DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_ON);
     }
 
     // There's no concept of rewinding in a real camera, so restart == resume
-    void _restartStream(void)
+    bool _restartStream(void)
     {
-        _resumeStream();
+        return _resumeStream();
     }
 };
 

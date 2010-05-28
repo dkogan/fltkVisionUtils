@@ -33,11 +33,11 @@ protected:
 
 private:
     // These are the internal APIs called only by the external function definitions below
-    virtual void _restartStream(void) = 0;
-    virtual void _resumeStream (void) = 0;
+    virtual bool _restartStream(void) = 0;
+    virtual bool _resumeStream (void) = 0;
     virtual bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL) = 0;
     virtual bool _getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL) = 0;
-    virtual void _stopStream(void) = 0;
+    virtual bool _stopStream(void) = 0;
 
 public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
@@ -86,24 +86,32 @@ public:
     }
 
     // tell the source to stop sending data. Any queued, but not processed frames are discarded
-    void stopStream(void)
+    bool stopStream(void)
     {
         isRunningNow.reset();
-        _stopStream();
+        return _stopStream();
     }
 
     // re-activate the stream, rewinding to the beginning if asked (restart) and if possible. This
     // is context-dependent. Video sources can rewind, but cameras cannot, for instance
-    void resumeStream (void)
+    bool resumeStream (void)
     {
-        _resumeStream();
-        isRunningNow.setTrue();
+        if(_resumeStream())
+        {
+            isRunningNow.setTrue();
+            return true;
+        }
+        return false;
     }
 
-    void restartStream(void)
+    bool restartStream(void)
     {
-        _restartStream();
-        isRunningNow.setTrue();
+        if(_restartStream())
+        {
+            isRunningNow.setTrue();
+            return true;
+        }
+        return false;
     }
 
     // Instead of accessing the frame with blocking I/O, the frame source can spawn a thread to wait
