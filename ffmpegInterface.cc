@@ -172,22 +172,12 @@ bool FFmpegDecoder::open(const char* filename)
         return false;
     }
 
-    width  = m_pCodecCtx->width;
-    height = m_pCodecCtx->height;
-
-    m_pSWSCtx = sws_getContext(width, height, m_pCodecCtx->pix_fmt,
-                               width, height,
-                               userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
-                               SWS_POINT, NULL, NULL, NULL);
-    if(m_pSWSCtx == NULL)
-    {
-        cerr << "ffmpeg: couldn't create sws context" << endl;
-        return false;
-    }
-
     m_pFrameYUV = avcodec_alloc_frame();
 
     m_bOpen = m_bOK = true;
+
+    width  = m_pCodecCtx->width;
+    height = m_pCodecCtx->height;
 
     isRunningNow.setTrue();
 
@@ -217,6 +207,23 @@ bool FFmpegDecoder::readFrame(IplImage* image)
 
             if(frameFinished)
             {
+                if(m_pSWSCtx == NULL)
+                {
+                    // I do this here instead of in the constructor because I was seeing the codec
+                    // pixel format not being defined at the time the constructor runs. Maybe it
+                    // needs to read at least one frame to figure it out. If we can, this SHOULD go
+                    // to the constructor
+                    m_pSWSCtx = sws_getContext(width, height, m_pCodecCtx->pix_fmt,
+                                               width, height,
+                                               userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
+                                               SWS_POINT, NULL, NULL, NULL);
+                    if(m_pSWSCtx == NULL)
+                    {
+                        cerr << "ffmpeg: couldn't create sws context" << endl;
+                        return false;
+                    }
+                }
+
                 assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
                         (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
                 assert( image->width == (int)width && image->height == (int)height );
