@@ -1,4 +1,4 @@
-CXXFLAGS += -g -Wall -Wextra -pedantic -MMD
+CXXFLAGS += -g -O3 -Wall -Wextra -pedantic -MMD
 LDFLAGS  += -g -lX11 -lXft -lXinerama
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
