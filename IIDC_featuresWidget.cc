@@ -114,8 +114,12 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                 featureUIs.back()->modes   = modes;
                 featureUIs.back()->setting = setting;
 
-                modes  ->user_data((void*)featureUIs.back());
-                setting->user_data((void*)featureUIs.back());
+                // I pass "this" to the widget callbacks, but I would like to have another "user
+                // data" area for the featureUI structure. I store it in the user data area of the
+                // parent of my widgets. This has an additional advantage in that both the slider
+                // and the selector have the same parent, so they should both reference this same
+                // memory
+                modes->parent()->user_data((void*)featureUIs.back());
             }
             featureGroup->end();
         }
@@ -194,8 +198,7 @@ void IIDC_featuresWidget::syncControls(void)
 
 void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
 {
-    featureUI_t* feature = (featureUI_t*)widget->user_data();
-
+    featureUI_t* feature = (featureUI_t*)widget->parent()->user_data();
     modeSelection_t mode = feature->modeChoices[ feature->modes->value() ];
 
     switch(mode)
@@ -223,7 +226,7 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
 
 void IIDC_featuresWidget::modeChanged(Fl_Widget* widget)
 {
-    featureUI_t* feature = (featureUI_t*)widget->user_data();
+    featureUI_t* feature = (featureUI_t*)widget->parent()->user_data();
     modeSelection_t mode = feature->modeChoices[ feature->modes->value() ];
 
     switch(mode)
