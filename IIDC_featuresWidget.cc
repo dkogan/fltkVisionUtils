@@ -13,6 +13,25 @@ using namespace std;
 #define MODE_BOX_WIDTH 180
 #define SETTING_WIDTH  200
 
+static void settingChanged(Fl_Widget* widget, void* cookie)
+{
+    ((IIDC_featuresWidget*)cookie)->settingsChanged(widget);
+}
+
+static void modeChanged(Fl_Widget* widget, void* cookie)
+{
+    ((IIDC_featuresWidget*)cookie)->modeChanged(widget);
+}
+
+void IIDC_featuresWidget::addModeUI(Fl_Choice* modes,
+                                    map<modeSelection_t, const char*>& modeStrings,
+                                    modeSelection_t modeChoice)
+{
+    modes->add(modeStrings[ modeChoice ]);
+    featureUIs.back()->choiceIndices[modeChoice] = featureUIs.back()->modeChoices.size();
+    featureUIs.back()->modeChoices.push_back(modeChoice);
+}
+
 IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                                          int X,int Y,int W,int H,const char*l)
     : Fl_Scroll(X, Y, W, H, l), camera(_camera)
@@ -70,45 +89,33 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
             Fl_Group* featureGroup = new Fl_Group(X, Y, W, FEATURE_HEIGHT);
             {
-                featureUI_t featureUI;
+                featureUIs.push_back(new featureUI_t);
 
                 Fl_Box* label = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT, featureNames[ featureSet.feature[i].id ]);
                 label->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 
                 Fl_Choice* modes = new Fl_Choice(Xmode, Y, MODE_BOX_WIDTH, FEATURE_HEIGHT);
+                modes->callback(&::modeChanged, this);
 
                 for(unsigned int m=0; m<featureSet.feature[i].modes.num; m++)
-                {
-                    modeSelection_t modeChoice = modeMapping[ featureSet.feature[i].modes.modes[m] ];
-                    modes->add(modeStrings[ modeChoice ]);
-                    featureUI.choiceIndices[modeChoice] = featureUI.modeChoices.size();
-                    featureUI.modeChoices.push_back(modeChoice);
-                }
+                    addModeUI(modes, modeStrings, modeMapping[ featureSet.feature[i].modes.modes[m] ]);
 
                 if(featureSet.feature[i].on_off_capable == DC1394_TRUE)
-                {
-                    modeSelection_t modeChoice = OFF;
-                    modes->add(modeStrings[ modeChoice ]);
-                    featureUI.choiceIndices[modeChoice] = featureUI.modeChoices.size();
-                    featureUI.modeChoices.push_back(modeChoice);
-                }
+                    addModeUI(modes, modeStrings, OFF);
 
                 if(featureSet.feature[i].absolute_capable == DC1394_TRUE)
-                {
-                    modeSelection_t modeChoice = MAN_ABSOLUTE;
-                    modes->add(modeStrings[ modeChoice ]);
-                    featureUI.choiceIndices[modeChoice] = featureUI.modeChoices.size();
-                    featureUI.modeChoices.push_back(modeChoice);
-                }
+                    addModeUI(modes, modeStrings, MAN_ABSOLUTE);
 
                 Fl_Value_Slider* setting = new Fl_Value_Slider(Xslider, Y, SETTING_WIDTH, FEATURE_HEIGHT);
                 setting->type(FL_HOR_SLIDER);
-                setting->deactivate();
+                setting->callback(&::settingChanged, this);
 
-                featureUI.id      = featureSet.feature[i].id;
-                featureUI.modes   = modes;
-                featureUI.setting = setting;
-                featureUIs.push_back(featureUI);
+                featureUIs.back()->id      = featureSet.feature[i].id;
+                featureUIs.back()->modes   = modes;
+                featureUIs.back()->setting = setting;
+
+                modes  ->user_data((void*)featureUIs.back());
+                setting->user_data((void*)featureUIs.back());
             }
             featureGroup->end();
         }
@@ -120,51 +127,61 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
     syncControls();
 }
 
+IIDC_featuresWidget::~IIDC_featuresWidget()
+{
+    for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
+        itr != featureUIs.end();
+        itr++)
+    {
+        delete *itr;
+    }
+}
+
 void IIDC_featuresWidget::syncControls(void)
 {
-    for(vector<featureUI_t>::iterator itr = featureUIs.begin();
+    for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
         itr != featureUIs.end();
         itr++)
     {
         dc1394feature_info_t feature;
-        feature.id = (*itr).id;
+        feature.id = (*itr)->id;
         dc1394_feature_get(camera, &feature);
 
         if(feature.on_off_capable && feature.is_on == DC1394_OFF)
         {
-            (*itr).modes->value( (*itr).choiceIndices[OFF] );
-            (*itr).setting->deactivate();
+            (*itr)->modes->value( (*itr)->choiceIndices[OFF] );
+            (*itr)->setting->deactivate();
         }
         else if(feature.current_mode == DC1394_FEATURE_MODE_AUTO)
         {
-            (*itr).modes->value( (*itr).choiceIndices[AUTO] );
-            (*itr).setting->deactivate();
+            (*itr)->modes->value( (*itr)->choiceIndices[AUTO] );
+            (*itr)->setting->deactivate();
         }
         else if(feature.current_mode == DC1394_FEATURE_MODE_ONE_PUSH_AUTO)
         {
-            (*itr).modes->value( (*itr).choiceIndices[AUTO_SINGLE] );
-            (*itr).setting->deactivate();
+            (*itr)->modes->value( (*itr)->choiceIndices[AUTO_SINGLE] );
+            (*itr)->setting->deactivate();
         }
         else if(feature.current_mode == DC1394_FEATURE_MODE_MANUAL)
         {
-            (*itr).setting->activate();
+            (*itr)->setting->activate();
 
             if(feature.absolute_capable == DC1394_TRUE && feature.abs_control == DC1394_ON)
             {
-                (*itr).modes->value( (*itr).choiceIndices[MAN_ABSOLUTE] );
-                (*itr).setting->bounds(feature.abs_min, feature.abs_max);
-                (*itr).setting->value(feature.abs_value);
+                (*itr)->modes->value( (*itr)->choiceIndices[MAN_ABSOLUTE] );
+                (*itr)->setting->bounds(feature.abs_min, feature.abs_max);
+                (*itr)->setting->value(feature.abs_value);
 
                 double range = feature.abs_max - feature.abs_min;
                 double minstep = range / 10000.0;
-                (*itr).setting->precision(floor(log(10) / log(minstep)));
+                (*itr)->setting->precision(floor(log(10) / log(minstep)));
             }
             else
             {
-                (*itr).modes->value( (*itr).choiceIndices[MAN_RELATIVE] );
-                (*itr).setting->bounds(feature.min, feature.max);
-                (*itr).setting->value(feature.value);
-                (*itr).setting->precision(0); // integers
+                (*itr)->modes->value( (*itr)->choiceIndices[MAN_RELATIVE] );
+                (*itr)->setting->bounds(feature.min, feature.max);
+                (*itr)->setting->value(feature.value);
+                (*itr)->setting->precision(0); // integers
             }
         }
         else
@@ -174,3 +191,74 @@ void IIDC_featuresWidget::syncControls(void)
         }
     }
 }
+
+void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
+{
+    featureUI_t* feature = (featureUI_t*)widget->user_data();
+
+    modeSelection_t mode = feature->modeChoices[ feature->modes->value() ];
+
+    switch(mode)
+    {
+    case MAN_RELATIVE:
+        dc1394_feature_set_value(camera, feature->id, (uint32_t)feature->setting->value());
+        return;
+
+    case MAN_ABSOLUTE:
+        dc1394switch_t absPwr;
+        dc1394_feature_get_absolute_control(camera, feature->id, &absPwr);
+        if(absPwr != DC1394_ON)
+        {
+            fprintf(stderr, "IIDC_featuresWidget: setting changed while not in absolute mode\n");
+            return;
+        }
+        dc1394_feature_set_absolute_value(camera, feature->id, (float)feature->setting->value());
+        return;
+
+    default: ;
+    }
+
+    fprintf(stderr, "IIDC_featuresWidget::settingsChanged(): not in manual mode...\n");
+}
+
+void IIDC_featuresWidget::modeChanged(Fl_Widget* widget)
+{
+    featureUI_t* feature = (featureUI_t*)widget->user_data();
+    modeSelection_t mode = feature->modeChoices[ feature->modes->value() ];
+
+    switch(mode)
+    {
+    case OFF:
+        dc1394_feature_set_power(camera, feature->id, DC1394_OFF);
+        break;
+
+    case AUTO:
+        dc1394_feature_set_power(camera, feature->id, DC1394_ON);
+        dc1394_feature_set_mode(camera, feature->id, DC1394_FEATURE_MODE_AUTO);
+        break;
+
+    case AUTO_SINGLE:
+        dc1394_feature_set_power(camera, feature->id, DC1394_ON);
+        dc1394_feature_set_mode(camera, feature->id, DC1394_FEATURE_MODE_ONE_PUSH_AUTO);
+        break;
+
+    case MAN_RELATIVE:
+        dc1394_feature_set_power(camera, feature->id, DC1394_ON);
+        dc1394_feature_set_mode(camera, feature->id, DC1394_FEATURE_MODE_MANUAL);
+        dc1394_feature_set_absolute_control(camera, feature->id, DC1394_OFF);
+        break;
+
+    case MAN_ABSOLUTE:
+        dc1394_feature_set_power(camera, feature->id, DC1394_ON);
+        dc1394_feature_set_mode(camera, feature->id, DC1394_FEATURE_MODE_MANUAL);
+        dc1394_feature_set_absolute_control(camera, feature->id, DC1394_ON);
+        break;
+
+    default:
+        fprintf(stderr, "IIDC_featuresWidget::modeChanged(): unhandled switch...\n");
+        break;
+    }
+
+    syncControls();
+}
+
