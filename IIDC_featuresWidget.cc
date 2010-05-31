@@ -171,6 +171,10 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
     // Now that I added all of the widgets, I know how wide the widest labels need to be, and can
     // resize everything accordingly
+    for(int i=0; i<pack->children(); i++)
+        pack->child(i)->size(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH, FEATURE_HEIGHT);
+    pack->size(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH, h());
+
     for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
         itr != featureUIs.end();
         itr++)
@@ -179,10 +183,10 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
         featureLabel->size(widestFeatureLabel, FEATURE_HEIGHT);
 
         Fl_Choice* modes = (*itr)->modes;
-        modes->position(widestFeatureLabel, 0);
+        modes->resize(widestFeatureLabel, 0, MODE_BOX_WIDTH, FEATURE_HEIGHT);
 
         Fl_Value_Slider* setting = (*itr)->setting;
-        setting->position(widestFeatureLabel + MODE_BOX_WIDTH, 0);
+        setting->resize(widestFeatureLabel + MODE_BOX_WIDTH, 0, SETTING_WIDTH, FEATURE_HEIGHT);
 
         // I hide the units widget until I know that I need it
         Fl_Box* unitsWidget = (*itr)->unitsWidget;
