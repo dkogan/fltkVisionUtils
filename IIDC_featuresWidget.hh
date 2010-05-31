@@ -8,6 +8,7 @@
 #include <FL/Fl_Value_Slider.H>
 #include <vector>
 #include <map>
+using namespace std;
 
 class IIDC_featuresWidget : public Fl_Scroll
 {
@@ -19,13 +20,13 @@ class IIDC_featuresWidget : public Fl_Scroll
         dc1394feature_t                id;
         Fl_Choice*                     modes;
         Fl_Value_Slider*               setting;
-        std::vector<modeSelection_t>   modeChoices;
-        std::map<modeSelection_t, int> choiceIndices;
+        vector<modeSelection_t>   modeChoices;
+        map<modeSelection_t, int> choiceIndices;
     };
-    std::vector<featureUI_t*>          featureUIs;
+    vector<featureUI_t*>          featureUIs;
 
     void addModeUI(Fl_Choice* modes,
-                   std::map<modeSelection_t, const char*>& modeStrings,
+                   map<modeSelection_t, const char*>& modeStrings,
                    modeSelection_t modeChoice);
 
 public:
