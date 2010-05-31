@@ -28,6 +28,10 @@ class IIDC_featuresWidget : public Fl_Scroll
     void addModeUI(Fl_Choice* modes,
                    map<modeSelection_t, const char*>& modeStrings,
                    modeSelection_t modeChoice);
+    void initMappings(map<modeSelection_t, const char*>&          modeStrings,
+                      map<dc1394feature_mode_t, modeSelection_t>& modeMapping,
+                      map<dc1394feature_t, const char*>&          featureNames,
+                      map<dc1394feature_t, const char*>&          absUnits);
 
 public:
     IIDC_featuresWidget(dc1394camera_t *_camera,

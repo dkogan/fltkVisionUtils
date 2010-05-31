@@ -32,10 +32,10 @@ void IIDC_featuresWidget::addModeUI(Fl_Choice* modes,
     featureUIs.back()->modeChoices.push_back(modeChoice);
 }
 
-static void initMappings(map<modeSelection_t, const char*>&          modeStrings,
-                         map<dc1394feature_mode_t, modeSelection_t>& modeMapping,
-                         map<dc1394feature_t, const char*>&          featureNames,
-                         map<dc1394feature_t, const char*>&          absUnits)
+void IIDC_featuresWidget::initMappings(map<modeSelection_t, const char*>&          modeStrings,
+                                       map<dc1394feature_mode_t, modeSelection_t>& modeMapping,
+                                       map<dc1394feature_t, const char*>&          featureNames,
+                                       map<dc1394feature_t, const char*>&          absUnits)
 {
     featureNames[DC1394_FEATURE_BRIGHTNESS]      = "Brightness";
     featureNames[DC1394_FEATURE_EXPOSURE]        = "Exposure";
