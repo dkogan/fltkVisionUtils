@@ -11,6 +11,7 @@ using namespace std;
 #define LABEL_SPACE    120
 #define MODE_BOX_WIDTH 180
 #define SETTING_WIDTH  200
+#define UNITS_WIDTH    70
 
 static void settingChanged(Fl_Widget* widget, void* cookie)
 {
@@ -185,6 +186,8 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
         // I hide the units widget until I know that I need it
         Fl_Box* unitsWidget = (*itr)->unitsWidget;
+        unitsWidget->resize(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH - widestUnitLabel, 0,
+                            widestUnitLabel, FEATURE_HEIGHT);
         unitsWidget->hide();
     }
 
@@ -239,6 +242,11 @@ void IIDC_featuresWidget::syncControls(void)
                 double range = feature.abs_max - feature.abs_min;
                 double minstep = range / 10000.0;
                 (*itr)->setting->precision(floor(log(10) / log(minstep)));
+
+                // show the units
+                (*itr)->setting->size(SETTING_WIDTH - widestUnitLabel, FEATURE_HEIGHT);
+                (*itr)->unitsWidget->show();
+                continue;
             }
             else
             {
@@ -252,7 +260,12 @@ void IIDC_featuresWidget::syncControls(void)
         {
             fprintf(stderr, "IIDC_featuresWidget can't syncControls():\n");
             dc1394_feature_print(&feature, stderr);
+            continue;
         }
+
+        // we get here only if we do not need to show the absolute units. Hide that widget
+        (*itr)->setting->size(SETTING_WIDTH, FEATURE_HEIGHT);
+        (*itr)->unitsWidget->hide();
     }
 }
 
