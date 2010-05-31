@@ -34,7 +34,8 @@ void IIDC_featuresWidget::addModeUI(Fl_Choice* modes,
 
 static void initMappings(map<modeSelection_t, const char*>&          modeStrings,
                          map<dc1394feature_mode_t, modeSelection_t>& modeMapping,
-                         map<dc1394feature_t, const char*>&          featureNames)
+                         map<dc1394feature_t, const char*>&          featureNames,
+                         map<dc1394feature_t, const char*>&          absUnits)
 {
     featureNames[DC1394_FEATURE_BRIGHTNESS]      = "Brightness";
     featureNames[DC1394_FEATURE_EXPOSURE]        = "Exposure";
@@ -59,6 +60,23 @@ static void initMappings(map<modeSelection_t, const char*>&          modeStrings
     featureNames[DC1394_FEATURE_CAPTURE_SIZE]    = "Capture size";
     featureNames[DC1394_FEATURE_CAPTURE_QUALITY] = "Capture quality";
 
+    // These are from the IIDC spec. Tables B.1 and B.2 on TA document 2003017
+    absUnits[DC1394_FEATURE_BRIGHTNESS]          = "%";
+    absUnits[DC1394_FEATURE_EXPOSURE]            = "EV";
+    absUnits[DC1394_FEATURE_WHITE_BALANCE]       = "K";
+    absUnits[DC1394_FEATURE_HUE]                 = "deg";
+    absUnits[DC1394_FEATURE_SATURATION]          = "%";
+    absUnits[DC1394_FEATURE_SHUTTER]             = "sec";
+    absUnits[DC1394_FEATURE_GAIN]                = "dB";
+    absUnits[DC1394_FEATURE_IRIS]                = "F";
+    absUnits[DC1394_FEATURE_FOCUS]               = "m";
+    absUnits[DC1394_FEATURE_TRIGGER]             = "times";
+    absUnits[DC1394_FEATURE_TRIGGER_DELAY]       = "sec";
+    absUnits[DC1394_FEATURE_FRAME_RATE]          = "fps";
+    absUnits[DC1394_FEATURE_ZOOM]                = "power";
+    absUnits[DC1394_FEATURE_PAN]                 = "deg";
+    absUnits[DC1394_FEATURE_TILT]                = "deg";
+
     modeMapping[DC1394_FEATURE_MODE_MANUAL]        = MAN_RELATIVE;
     modeMapping[DC1394_FEATURE_MODE_AUTO]          = AUTO;
     modeMapping[DC1394_FEATURE_MODE_ONE_PUSH_AUTO] = AUTO_SINGLE;
@@ -77,8 +95,9 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
     map<modeSelection_t, const char*>          modeStrings;
     map<dc1394feature_mode_t, modeSelection_t> modeMapping;
     map<dc1394feature_t, const char*>          featureNames;
+    map<dc1394feature_t, const char*>          absUnits;
 
-    initMappings(modeStrings, modeMapping, featureNames);
+    initMappings(modeStrings, modeMapping, featureNames, absUnits);
 
     box(FL_FLAT_BOX);
 
