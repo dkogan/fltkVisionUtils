@@ -106,6 +106,7 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
     Fl_Pack* pack = new Fl_Pack(X, Y, W, H);
     pack->spacing(PACK_SPACING);
+    pack->resizable(NULL);
     {
         dc1394featureset_t featureSet;
         dc1394_feature_get_all(camera, &featureSet);
@@ -118,6 +119,7 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                 continue;
 
             Fl_Group* featureGroup = new Fl_Group(X, Y, W, FEATURE_HEIGHT);
+            featureGroup->resizable(NULL);
             {
                 featureUIs.push_back(new featureUI_t);
 
