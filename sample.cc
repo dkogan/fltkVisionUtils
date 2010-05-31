@@ -98,7 +98,6 @@ int main(int argc, char* argv[])
     Fl::unlock();
 
     delete source;
-    delete widgetImage;
 
     videoEncoder.close();
 
