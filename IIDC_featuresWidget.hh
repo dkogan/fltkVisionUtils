@@ -6,6 +6,7 @@
 #include <FL/Fl_Scroll.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Value_Slider.H>
+#include <FL/Fl_Box.H>
 #include <vector>
 #include <map>
 using namespace std;
@@ -13,13 +14,17 @@ using namespace std;
 class IIDC_featuresWidget : public Fl_Scroll
 {
     dc1394camera_t* camera;
+    int             widestFeatureLabel;
+    int             widestUnitLabel;
 
     enum modeSelection_t { OFF, AUTO, AUTO_SINGLE, MAN_RELATIVE, MAN_ABSOLUTE };
     struct featureUI_t
     {
-        dc1394feature_t                id;
-        Fl_Choice*                     modes;
-        Fl_Value_Slider*               setting;
+        dc1394feature_t           id;
+        Fl_Box*                   featureLabel;
+        Fl_Choice*                modes;
+        Fl_Value_Slider*          setting;
+        Fl_Box*                   unitsWidget;
         vector<modeSelection_t>   modeChoices;
         map<modeSelection_t, int> choiceIndices;
     };

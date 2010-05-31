@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <FL/Fl_Pack.H>
-#include <FL/Fl_Box.H>
 #include <map>
 using namespace std;
 
@@ -90,8 +89,11 @@ void IIDC_featuresWidget::initMappings(map<modeSelection_t, const char*>&       
 
 IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                                          int X,int Y,int W,int H,const char*l)
-    : Fl_Scroll(X, Y, W, H, l), camera(_camera)
+    : Fl_Scroll(X, Y, W, H, l), camera(_camera),
+      widestFeatureLabel(0), widestUnitLabel(0)
 {
+    int ww, hh;
+
     map<modeSelection_t, const char*>          modeStrings;
     map<dc1394feature_mode_t, modeSelection_t> modeMapping;
     map<dc1394feature_t, const char*>          featureNames;
@@ -118,9 +120,11 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
             {
                 featureUIs.push_back(new featureUI_t);
 
-                Fl_Box* label = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT,
-                                           featureNames[ featureSet.feature[i].id ]);
-                label->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+                Fl_Box* featureLabel = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT,
+                                                  featureNames[ featureSet.feature[i].id ]);
+                featureLabel->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+                featureLabel->measure_label(ww, hh);
+                if(ww > widestFeatureLabel) widestFeatureLabel = ww;
 
                 Fl_Choice* modes = new Fl_Choice(Xmode, Y, MODE_BOX_WIDTH, FEATURE_HEIGHT);
                 modes->callback(&::modeChanged, this);
@@ -138,9 +142,17 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                 setting->type(FL_HOR_SLIDER);
                 setting->callback(&::settingChanged, this);
 
-                featureUIs.back()->id      = featureSet.feature[i].id;
-                featureUIs.back()->modes   = modes;
-                featureUIs.back()->setting = setting;
+                Fl_Box* unitsWidget = new Fl_Box(Xslider, Y, UNITS_WIDTH, FEATURE_HEIGHT,
+                                                 absUnits[ featureSet.feature[i].id ]);
+                unitsWidget->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+                unitsWidget->measure_label(ww, hh);
+                if(ww > widestUnitLabel) widestUnitLabel = ww;
+
+                featureUIs.back()->id           = featureSet.feature[i].id;
+                featureUIs.back()->featureLabel = featureLabel;
+                featureUIs.back()->modes        = modes;
+                featureUIs.back()->setting      = setting;
+                featureUIs.back()->unitsWidget  = unitsWidget;
 
                 // I pass "this" to the widget callbacks, but I would like to have another "user
                 // data" area for the featureUI structure. I store it in the user data area of the
@@ -155,6 +167,26 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
     pack->end();
 
     end();
+
+    // Now that I added all of the widgets, I know how wide the widest labels need to be, and can
+    // resize everything accordingly
+    for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
+        itr != featureUIs.end();
+        itr++)
+    {
+        Fl_Box* featureLabel = (*itr)->featureLabel;
+        featureLabel->size(widestFeatureLabel, FEATURE_HEIGHT);
+
+        Fl_Choice* modes = (*itr)->modes;
+        modes->position(widestFeatureLabel, 0);
+
+        Fl_Value_Slider* setting = (*itr)->setting;
+        setting->position(widestFeatureLabel + MODE_BOX_WIDTH, 0);
+
+        // I hide the units widget until I know that I need it
+        Fl_Box* unitsWidget = (*itr)->unitsWidget;
+        unitsWidget->hide();
+    }
 
     syncControls();
 }
