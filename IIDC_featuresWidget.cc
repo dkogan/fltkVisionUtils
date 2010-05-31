@@ -118,7 +118,8 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
             {
                 featureUIs.push_back(new featureUI_t);
 
-                Fl_Box* label = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT, featureNames[ featureSet.feature[i].id ]);
+                Fl_Box* label = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT,
+                                           featureNames[ featureSet.feature[i].id ]);
                 label->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
 
                 Fl_Choice* modes = new Fl_Choice(Xmode, Y, MODE_BOX_WIDTH, FEATURE_HEIGHT);
