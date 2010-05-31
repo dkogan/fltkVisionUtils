@@ -32,23 +32,10 @@ void IIDC_featuresWidget::addModeUI(Fl_Choice* modes,
     featureUIs.back()->modeChoices.push_back(modeChoice);
 }
 
-IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
-                                         int X,int Y,int W,int H,const char*l)
-    : Fl_Scroll(X, Y, W, H, l), camera(_camera)
+static void initMappings(map<modeSelection_t, const char*>&          modeStrings,
+                         map<dc1394feature_mode_t, modeSelection_t>& modeMapping,
+                         map<dc1394feature_t, const char*>&          featureNames)
 {
-    map<modeSelection_t, const char*> modeStrings;
-    modeStrings[OFF]          = "Off";
-    modeStrings[AUTO]         = "Auto";
-    modeStrings[AUTO_SINGLE]  = "One-push auto";
-    modeStrings[MAN_RELATIVE] = "Manual in relative coordinates";
-    modeStrings[MAN_ABSOLUTE] = "Manual in absolute coordinates";
-
-    map<dc1394feature_mode_t, modeSelection_t> modeMapping;
-    modeMapping[DC1394_FEATURE_MODE_MANUAL]        = MAN_RELATIVE;
-    modeMapping[DC1394_FEATURE_MODE_AUTO]          = AUTO;
-    modeMapping[DC1394_FEATURE_MODE_ONE_PUSH_AUTO] = AUTO_SINGLE;
-
-    map<dc1394feature_t, const char*> featureNames;
     featureNames[DC1394_FEATURE_BRIGHTNESS]      = "Brightness";
     featureNames[DC1394_FEATURE_EXPOSURE]        = "Exposure";
     featureNames[DC1394_FEATURE_SHARPNESS]       = "Sharpness";
@@ -71,6 +58,27 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
     featureNames[DC1394_FEATURE_OPTICAL_FILTER]  = "Optical filter";
     featureNames[DC1394_FEATURE_CAPTURE_SIZE]    = "Capture size";
     featureNames[DC1394_FEATURE_CAPTURE_QUALITY] = "Capture quality";
+
+    modeMapping[DC1394_FEATURE_MODE_MANUAL]        = MAN_RELATIVE;
+    modeMapping[DC1394_FEATURE_MODE_AUTO]          = AUTO;
+    modeMapping[DC1394_FEATURE_MODE_ONE_PUSH_AUTO] = AUTO_SINGLE;
+
+    modeStrings[OFF]          = "Off";
+    modeStrings[AUTO]         = "Auto";
+    modeStrings[AUTO_SINGLE]  = "One-push auto";
+    modeStrings[MAN_RELATIVE] = "Manual in relative coordinates";
+    modeStrings[MAN_ABSOLUTE] = "Manual in absolute coordinates";
+}
+
+IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
+                                         int X,int Y,int W,int H,const char*l)
+    : Fl_Scroll(X, Y, W, H, l), camera(_camera)
+{
+    map<modeSelection_t, const char*>          modeStrings;
+    map<dc1394feature_mode_t, modeSelection_t> modeMapping;
+    map<dc1394feature_t, const char*>          featureNames;
+
+    initMappings(modeStrings, modeMapping, featureNames);
 
     box(FL_FLAT_BOX);
 
