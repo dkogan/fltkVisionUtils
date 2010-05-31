@@ -13,6 +13,7 @@ using namespace std;
 #include "ffmpegInterface.hh"
 
 #include "cameraSource.hh"
+#include "IIDC_featuresWidget.hh"
 
 #define SOURCE_PERIOD_US 1000000
 
@@ -79,9 +80,16 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    Fl_Window window(source->w(), source->h());
+    Fl_Window window(source->w(), source->h() + 400);
     widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                    WIDGET_COLOR);
+
+    if(dynamic_cast<CameraSource*>(source) != NULL)
+    {
+        IIDC_featuresWidget* features = new IIDC_featuresWidget(*(CameraSource*)source,
+                                                                0, source->h(),
+                                                                800, 400);
+    }
 
     window.resizable(window);
     window.end();
