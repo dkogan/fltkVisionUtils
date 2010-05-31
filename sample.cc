@@ -86,9 +86,10 @@ int main(int argc, char* argv[])
 
     if(dynamic_cast<CameraSource*>(source) != NULL)
     {
-        IIDC_featuresWidget* features = new IIDC_featuresWidget(*(CameraSource*)source,
-                                                                0, source->h(),
-                                                                800, 400);
+        IIDC_featuresWidget* features __attribute__((unused)) =
+            new IIDC_featuresWidget(*(CameraSource*)source,
+                                    0, source->h(),
+                                    800, 400);
     }
 
     window.resizable(window);
