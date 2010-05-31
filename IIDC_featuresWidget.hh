@@ -11,7 +11,7 @@
 
 class IIDC_featuresWidget : public Fl_Scroll
 {
-    dc1394camera_t *camera;
+    dc1394camera_t* camera;
 
     enum modeSelection_t { OFF, AUTO, AUTO_SINGLE, MAN_RELATIVE, MAN_ABSOLUTE };
     struct featureUI_t
