@@ -103,65 +103,64 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
     spacing(PACK_SPACING);
     resizable(NULL);
+
+    dc1394featureset_t featureSet;
+    dc1394_feature_get_all(camera, &featureSet);
+
+    int Xmode   = X + LABEL_SPACE;
+    int Xslider = X + LABEL_SPACE + MODE_BOX_WIDTH;
+    for(int i=0; i<DC1394_FEATURE_NUM; i++)
     {
-        dc1394featureset_t featureSet;
-        dc1394_feature_get_all(camera, &featureSet);
+        if(!featureSet.feature[i].available)
+            continue;
 
-        int Xmode   = X + LABEL_SPACE;
-        int Xslider = X + LABEL_SPACE + MODE_BOX_WIDTH;
-        for(int i=0; i<DC1394_FEATURE_NUM; i++)
+        Fl_Group* featureGroup = new Fl_Group(X, Y, W, FEATURE_HEIGHT);
+        featureGroup->resizable(NULL);
         {
-            if(!featureSet.feature[i].available)
-                continue;
+            featureUIs.push_back(new featureUI_t);
 
-            Fl_Group* featureGroup = new Fl_Group(X, Y, W, FEATURE_HEIGHT);
-            featureGroup->resizable(NULL);
-            {
-                featureUIs.push_back(new featureUI_t);
+            Fl_Box* featureLabel = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT,
+                                              featureNames[ featureSet.feature[i].id ]);
+            featureLabel->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
+            featureLabel->measure_label(ww, hh);
+            if(ww > widestFeatureLabel) widestFeatureLabel = ww;
 
-                Fl_Box* featureLabel = new Fl_Box(X, Y, LABEL_SPACE, FEATURE_HEIGHT,
-                                                  featureNames[ featureSet.feature[i].id ]);
-                featureLabel->align(FL_ALIGN_RIGHT | FL_ALIGN_INSIDE);
-                featureLabel->measure_label(ww, hh);
-                if(ww > widestFeatureLabel) widestFeatureLabel = ww;
+            Fl_Choice* modes = new Fl_Choice(Xmode, Y, MODE_BOX_WIDTH, FEATURE_HEIGHT);
+            modes->callback(&::modeChanged, this);
 
-                Fl_Choice* modes = new Fl_Choice(Xmode, Y, MODE_BOX_WIDTH, FEATURE_HEIGHT);
-                modes->callback(&::modeChanged, this);
+            for(unsigned int m=0; m<featureSet.feature[i].modes.num; m++)
+                addModeUI(modes, modeStrings, modeMapping[ featureSet.feature[i].modes.modes[m] ]);
 
-                for(unsigned int m=0; m<featureSet.feature[i].modes.num; m++)
-                    addModeUI(modes, modeStrings, modeMapping[ featureSet.feature[i].modes.modes[m] ]);
+            if(featureSet.feature[i].on_off_capable == DC1394_TRUE)
+                addModeUI(modes, modeStrings, OFF);
 
-                if(featureSet.feature[i].on_off_capable == DC1394_TRUE)
-                    addModeUI(modes, modeStrings, OFF);
+            if(featureSet.feature[i].absolute_capable == DC1394_TRUE)
+                addModeUI(modes, modeStrings, MAN_ABSOLUTE);
 
-                if(featureSet.feature[i].absolute_capable == DC1394_TRUE)
-                    addModeUI(modes, modeStrings, MAN_ABSOLUTE);
+            Fl_Value_Slider* setting = new Fl_Value_Slider(Xslider, Y, SETTING_WIDTH, FEATURE_HEIGHT);
+            setting->type(FL_HOR_SLIDER);
+            setting->callback(&::settingChanged, this);
 
-                Fl_Value_Slider* setting = new Fl_Value_Slider(Xslider, Y, SETTING_WIDTH, FEATURE_HEIGHT);
-                setting->type(FL_HOR_SLIDER);
-                setting->callback(&::settingChanged, this);
+            Fl_Box* unitsWidget = new Fl_Box(Xslider, Y, UNITS_WIDTH, FEATURE_HEIGHT,
+                                             absUnits[ featureSet.feature[i].id ]);
+            unitsWidget->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
+            unitsWidget->measure_label(ww, hh);
+            if(ww > widestUnitLabel) widestUnitLabel = ww;
 
-                Fl_Box* unitsWidget = new Fl_Box(Xslider, Y, UNITS_WIDTH, FEATURE_HEIGHT,
-                                                 absUnits[ featureSet.feature[i].id ]);
-                unitsWidget->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-                unitsWidget->measure_label(ww, hh);
-                if(ww > widestUnitLabel) widestUnitLabel = ww;
+            featureUIs.back()->id           = featureSet.feature[i].id;
+            featureUIs.back()->featureLabel = featureLabel;
+            featureUIs.back()->modes        = modes;
+            featureUIs.back()->setting      = setting;
+            featureUIs.back()->unitsWidget  = unitsWidget;
 
-                featureUIs.back()->id           = featureSet.feature[i].id;
-                featureUIs.back()->featureLabel = featureLabel;
-                featureUIs.back()->modes        = modes;
-                featureUIs.back()->setting      = setting;
-                featureUIs.back()->unitsWidget  = unitsWidget;
-
-                // I pass "this" to the widget callbacks, but I would like to have another "user
-                // data" area for the featureUI structure. I store it in the user data area of the
-                // parent of my widgets. This has an additional advantage in that both the slider
-                // and the selector have the same parent, so they should both reference this same
-                // memory
-                modes->parent()->user_data((void*)featureUIs.back());
-            }
-            featureGroup->end();
+            // I pass "this" to the widget callbacks, but I would like to have another "user
+            // data" area for the featureUI structure. I store it in the user data area of the
+            // parent of my widgets. This has an additional advantage in that both the slider
+            // and the selector have the same parent, so they should both reference this same
+            // memory
+            modes->parent()->user_data((void*)featureUIs.back());
         }
+        featureGroup->end();
     }
 
     end();
