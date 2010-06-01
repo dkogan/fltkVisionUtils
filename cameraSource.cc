@@ -450,7 +450,8 @@ bool CameraSource::finishGet(IplImage* image)
     // 1. They will convert grayscale data into color data, if asked, but will NOT throw away data
     //    by converting color data into grayscale. This means that with this setup a color camera
     //    will not work with userColorMode == FRAMESOURCE_GRAYSCALE, unless it supports a grayscale
-    //    mode in hardware.
+    //    mode in hardware. I tried to get around this by using libswscale to perform the conversion
+    //    but it didn't support all the color modes I needed for IIDC cameras.
     // 2. These function assume a default stride in both the input and output data. This is likely
     //    OK for the input, since the cameras will not output anything weird, but the image we're
     //    writing into may have unusual padding. For now, I assert that this is not the case.
