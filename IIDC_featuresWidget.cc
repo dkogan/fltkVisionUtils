@@ -194,6 +194,12 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
     syncControls();
 }
 
+void IIDC_featuresWidget::getNaturalSize(int* ww, int* hh)
+{
+    *ww = widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH;
+    *hh = (children() - 1) * (FEATURE_HEIGHT + PACK_SPACING) + FEATURE_HEIGHT;
+}
+
 IIDC_featuresWidget::~IIDC_featuresWidget()
 {
     for(vector<featureUI_t*>::iterator itr = featureUIs.begin();

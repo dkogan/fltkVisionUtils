@@ -44,6 +44,7 @@ public:
     ~IIDC_featuresWidget();
 
     void syncControls(void);
+    void getNaturalSize(int* ww, int* hh);
 
     // These are widget callbacks. They are called from globals and thus must be public
     void settingsChanged(Fl_Widget* widget);
