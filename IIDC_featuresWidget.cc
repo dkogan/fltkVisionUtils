@@ -88,7 +88,8 @@ void IIDC_featuresWidget::initMappings(map<modeSelection_t, const char*>&       
 }
 
 IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
-                                         int X,int Y,int W,int H,const char*l)
+                                         int X,int Y,int W,int H,const char*l,
+                                         bool doResizeNatural)
     : Fl_Pack(X, Y, W, H, l), camera(_camera),
       widestFeatureLabel(0), widestUnitLabel(0)
 {
@@ -167,10 +168,6 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
     // Now that I added all of the widgets, I know how wide the widest labels need to be, and can
     // resize everything accordingly
-    for(int i=0; i<children(); i++)
-        child(i)->size(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH, FEATURE_HEIGHT);
-    size(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH, h());
-
     for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
         itr != featureUIs.end();
         itr++)
@@ -190,6 +187,17 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                             widestUnitLabel, FEATURE_HEIGHT);
         unitsWidget->hide();
     }
+    for(int i=0; i<children(); i++)
+        child(i)->size(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH, FEATURE_HEIGHT);
+
+    if(doResizeNatural)
+    {
+        int ww, hh;
+        getNaturalSize(&ww, &hh);
+        size(ww, hh);
+    }
+    parent()->init_sizes();
+
 
     syncControls();
 }

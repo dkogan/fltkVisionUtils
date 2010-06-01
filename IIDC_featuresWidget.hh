@@ -40,7 +40,8 @@ class IIDC_featuresWidget : public Fl_Pack
 
 public:
     IIDC_featuresWidget(dc1394camera_t *_camera,
-                        int X,int Y,int W,int H,const char*l=0);
+                        int X,int Y,int W,int H,const char*l=0,
+                        bool doResizeNatural = false);
     ~IIDC_featuresWidget();
 
     void syncControls(void);

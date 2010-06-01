@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         IIDC_featuresWidget* features __attribute__((unused)) =
             new IIDC_featuresWidget(*(CameraSource*)source,
                                     0, source->h(),
-                                    800, 400);
+                                    800, 100, NULL, true);
     }
 
     window.resizable(window);
