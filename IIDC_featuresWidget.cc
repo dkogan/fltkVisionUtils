@@ -176,14 +176,14 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
         featureLabel->size(widestFeatureLabel, FEATURE_HEIGHT);
 
         Fl_Choice* modes = (*itr)->modes;
-        modes->position(widestFeatureLabel, Y);
+        modes->position(X + widestFeatureLabel, Y);
 
         Fl_Value_Slider* setting = (*itr)->setting;
-        setting->position(widestFeatureLabel + MODE_BOX_WIDTH, Y);
+        setting->position(X + widestFeatureLabel + MODE_BOX_WIDTH, Y);
 
         // I hide the units widget until I know that I need it
         Fl_Box* unitsWidget = (*itr)->unitsWidget;
-        unitsWidget->resize(widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH - widestUnitLabel, Y,
+        unitsWidget->resize(X + widestFeatureLabel + MODE_BOX_WIDTH + SETTING_WIDTH - widestUnitLabel, Y,
                             widestUnitLabel, FEATURE_HEIGHT);
         unitsWidget->hide();
     }
