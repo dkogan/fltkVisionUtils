@@ -3,7 +3,6 @@
 
 #include <dc1394/dc1394.h>
 #include <FL/Fl.H>
-#include <FL/Fl_Scroll.H>
 #include <FL/Fl_Choice.H>
 #include <FL/Fl_Value_Slider.H>
 #include <FL/Fl_Box.H>
@@ -12,12 +11,11 @@
 #include <map>
 using namespace std;
 
-class IIDC_featuresWidget : public Fl_Scroll
+class IIDC_featuresWidget : public Fl_Pack
 {
     dc1394camera_t* camera;
     int             widestFeatureLabel;
     int             widestUnitLabel;
-    Fl_Pack*        toplevelPack;
 
     enum modeSelection_t { OFF, AUTO, AUTO_SINGLE, MAN_RELATIVE, MAN_ABSOLUTE };
     struct featureUI_t
@@ -46,7 +44,6 @@ public:
     ~IIDC_featuresWidget();
 
     void syncControls(void);
-    void getNaturalSize(int& ww, int& hh);
 
     // These are widget callbacks. They are called from globals and thus must be public
     void settingsChanged(Fl_Widget* widget);
