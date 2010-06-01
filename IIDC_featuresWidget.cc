@@ -101,7 +101,7 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
     initMappings(modeStrings, modeMapping, featureNames, absUnits);
 
-    Fl_Pack* toplevelPack = new Fl_Pack(X, Y, W, H);
+    toplevelPack = new Fl_Pack(X, Y, W, H);
     toplevelPack->spacing(PACK_SPACING);
     toplevelPack->resizable(NULL);
     {
