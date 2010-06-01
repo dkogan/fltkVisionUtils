@@ -255,7 +255,7 @@ void IIDC_featuresWidget::syncControls(void)
 
                 double range = feature.abs_max - feature.abs_min;
                 double minstep = range / 10000.0;
-                (*itr)->setting->precision(floor(log(10) / log(minstep)));
+                (*itr)->setting->precision(ceil(-log(minstep) / log(10)));
 
                 // show the units
                 (*itr)->setting->size(SETTING_WIDTH - widestUnitLabel, FEATURE_HEIGHT);
