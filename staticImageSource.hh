@@ -2,7 +2,7 @@
 #define __STATIC_IMAGE_SOURCE_HH__
 
 #include "frameSource.hh"
-#include <opencv/highgui.h>
+#include "cvlib.hh"
 
 class StaticImageSource : public FrameSource
 {
