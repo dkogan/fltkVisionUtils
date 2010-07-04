@@ -57,10 +57,9 @@ public:
             numInitedCameras < cameraList->num;
     }
 
+    // These functions implement the FrameSource virtuals, and are the main differentiators between
+    // the various frame sources, along with the constructor and destructor
 private:
-    // these are like the peek() functions, but these convert the incoming data to the desired
-    // colorspace (RGB8 or MONO8 depending on the userColorMode). Since these make a copy of the
-    // data, calling unpeek() is not needed. false returned on error
     bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL);
     bool _getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL);
 
