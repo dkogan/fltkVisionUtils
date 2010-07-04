@@ -12,8 +12,18 @@ dc1394_t*            CameraSource::dc1394Context    = NULL;
 dc1394camera_list_t* CameraSource::cameraList       = NULL;
 unsigned int         CameraSource::numInitedCameras = 0;
 
+// hardware camera settings:
+// The resolutions that I know about. These are listed in order from least to most desireable
+enum resolution_t { MODE_UNWANTED,
+                    MODE_160x120,
+                    MODE_320x240,
+                    MODE_640x480,
+                    MODE_800x600,
+                    MODE_1024x768,
+                    MODE_1280x960,
+                    MODE_1600x1200};
 // returns desireability of the resolution. Higher is more desireable
-resolution_t CameraSource::getResolutionWorth(dc1394video_mode_t mode)
+static resolution_t getResolutionWorth(dc1394video_mode_t mode)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -63,8 +73,22 @@ resolution_t CameraSource::getResolutionWorth(dc1394video_mode_t mode)
     }
 }
 
+// hardware camera settings:
+// The colormodes that I know about. These are listed in order from least to most desireable
+enum colormode_t { COLORMODE_UNWANTED,
+                   COLORMODE_MONO16, // FrameSource always uses 8bits per channel, so mono16 does
+                                     // nothing for me. Thus it's least desireable
+                   COLORMODE_MONO8,
+                   COLORMODE_YUV411,
+                   COLORMODE_YUV422,
+                   COLORMODE_YUV444,
+                   COLORMODE_RGB8,
+
+                   // if we wanted grayscale output, then it is more desireable still
+                   COLORMODE_MONO8_REQUESTED
+};
 // returns desireability of the color mode. Higher is more desireable
-colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
+static colormode_t getColormodeWorth(dc1394video_mode_t mode, bool wantColor)
 {
     // I only look at the modes that were defined in libdc1394 as of version 2.1.2-1 of the
     // libdc1394-22 debian package (~ 2/2010). I explicitly ignore format 7 since I don't want to
@@ -77,7 +101,7 @@ colormode_t CameraSource::getColormodeWorth(dc1394video_mode_t mode)
     case DC1394_VIDEO_MODE_1024x768_MONO8:
     case DC1394_VIDEO_MODE_1280x960_MONO8:
     case DC1394_VIDEO_MODE_1600x1200_MONO8:
-        return userColorMode==FRAMESOURCE_COLOR ? COLORMODE_MONO8 : COLORMODE_MONO8_REQUESTED;
+        return wantColor ? COLORMODE_MONO8 : COLORMODE_MONO8_REQUESTED;
 
     case DC1394_VIDEO_MODE_640x480_MONO16:
     case DC1394_VIDEO_MODE_800x600_MONO16:
@@ -190,7 +214,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
     for (unsigned int i=0; i<video_modes.num; i++)
     {
         resolution_t res = getResolutionWorth(video_modes.modes[i]);
-        colormode_t colormode = getColormodeWorth(video_modes.modes[i]);
+        colormode_t colormode = getColormodeWorth(video_modes.modes[i], userColorMode==FRAMESOURCE_COLOR);
         if(res > bestRes)
         {
             if(colormode != COLORMODE_UNWANTED)
