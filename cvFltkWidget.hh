@@ -42,7 +42,12 @@ class CvFltkWidget : public Fl_Widget
     // here
     virtual int handle(int event)
     {
-        if(Fl::event_inside(this))
+        // I ignore this event if the mouse is not in the image window. I ask FLTK and ALSO, look at
+        // the image dimensions. I do both of those because FLTK may resize the widget, but the
+        // rendering of the widget does not respect that resizing
+        if(Fl::event_inside(this) &&
+           Fl::event_x() >= x() && Fl::event_x() < x() + cvImage->width &&
+           Fl::event_y() >= y() && Fl::event_y() < y() + cvImage->height )
         {
             switch(event)
             {
