@@ -51,8 +51,11 @@ class CvFltkWidget : public Fl_Widget
             case FL_RELEASE:
             case FL_MOVE:
             case FL_MOUSEWHEEL:
-            case FL_ENTER:
                 do_callback();
+                return 1;
+
+            case FL_ENTER:
+                // I handle FL_ENTER to get FL_MOVE reports
                 return 1;
 
             default: ;
