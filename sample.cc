@@ -56,7 +56,8 @@ int main(int argc, char* argv[])
     // reading a camera
     FrameSource* source;
     if(argc >= 2)
-        source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR, true);
+        source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR, true,
+                                   cvRect(0, 0, 320, 480), 1.5);
     else
     {
         source = new CameraSource(FRAMESOURCE_COLOR);
