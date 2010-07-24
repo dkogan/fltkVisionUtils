@@ -42,6 +42,12 @@ class CvFltkWidget : public Fl_Widget
     // here
     virtual int handle(int event)
     {
+        // I handle FL_LEAVE even if the mouse isn't in the window right now because I want to make
+        // absolutely sure I don't miss this event. Missing it could mean wrongly latching in the
+        // mouse-over-widget state
+        if(event == FL_LEAVE)
+            return 1;
+
         // I ignore this event if the mouse is not in the image window. I ask FLTK and ALSO, look at
         // the image dimensions. I do both of those because FLTK may resize the widget, but the
         // rendering of the widget does not respect that resizing
