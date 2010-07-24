@@ -41,7 +41,9 @@ public:
     // working.
     CameraSource(FrameSource_UserColorChoice _userColorMode,
                  bool resetbus = false,
-                 uint64_t guid = 0); // guid == 0 -> find the next available camera
+                 uint64_t guid = 0, // guid == 0 -> find the next available camera
+                 CvRect _cropRect = cvRect(-1, -1, -1, -1),
+                 double scale = 1.0);
 
     ~CameraSource();
 

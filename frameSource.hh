@@ -19,7 +19,15 @@ class FrameSource
 {
 protected:
     FrameSource_UserColorChoice userColorMode; // color (RGB8) or grayscale (MONO8)
-    unsigned int                width, height;
+
+    // the dimensions of the returned data. Post cropping and scaling
+    unsigned int width, height;
+
+    // I'm cropping to this rect. If cropRect.width < 0, I don't crop at all
+    CvRect    cropRect;
+    // The raw frame goes here, then this gets cropped and scaled. Frame sources can bypass this
+    // image to gain efficiency.
+    IplImage* preCropScaleBuffer;
 
     pthread_t              sourceThread_id;
     uint64_t               sourceThread_frameWait_us;
@@ -41,12 +49,52 @@ private:
 
 public:
     FrameSource (FrameSource_UserColorChoice _userColorMode = FRAMESOURCE_COLOR)
-        : userColorMode(_userColorMode), sourceThread_id(0)
+        : userColorMode(_userColorMode),
+          cropRect( cvRect(-1, -1, -1, -1) ),
+          preCropScaleBuffer(NULL),
+          sourceThread_id(0)
     {
         // we're not yet initialized and thus not able to serve data
         isRunningNow.reset();
     }
 
+protected:
+    void setupCroppingScaling(CvRect _cropRect, double scale)
+    {
+        cropRect = _cropRect;
+
+        if( (cropRect.width > 0 && cropRect.height > 0) ||
+            scale != 1.0 )
+        {
+            // if we're cropping or scaling (or both), set up the temporary buffer image
+            preCropScaleBuffer = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U,
+                                               userColorMode == FRAMESOURCE_COLOR ? 3 : 1);
+        }
+
+        if(cropRect.width > 0 && cropRect.height > 0)
+        {
+            width  = lround(scale * (double)cropRect.width);
+            height = lround(scale * (double)cropRect.height);
+        }
+        else
+        {
+            width  = lround(scale * (double)width);
+            height = lround(scale * (double)height);
+        }
+    }
+
+    void applyCroppingScaling(IplImage* src, IplImage* dst)
+    {
+        if(cropRect.width > 0 && cropRect.height > 0)
+            cvSetImageROI(src, cropRect);
+
+#warning can swscale do this faster? I dont completely trust opencv to do this optimally
+        cvResize(src, dst, CV_INTER_CUBIC);
+
+        cvResetImageROI(src);
+    }
+
+public:
     virtual void cleanupThreads(void)
     {
         if(sourceThread_id != 0)
@@ -63,6 +111,12 @@ public:
         // function. Just in case we call it here also. This will do nothing if the derived class
         // already did this, but may crash if it didn't
         cleanupThreads();
+
+        if(preCropScaleBuffer != NULL)
+        {
+            cvReleaseImage(&preCropScaleBuffer);
+            preCropScaleBuffer = NULL;
+        }
     }
 
     // I want the derived classes to override this. It indicates whether the class is initialized

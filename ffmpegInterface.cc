@@ -114,7 +114,8 @@ void FFmpegEncoder::close(void)
 }
 
 
-bool FFmpegDecoder::open(const char* filename)
+bool FFmpegDecoder::open(const char* filename,
+                         CvRect _cropRect, double scale)
 {
     if(m_bOpen)
     {
@@ -179,6 +180,8 @@ bool FFmpegDecoder::open(const char* filename)
     width  = m_pCodecCtx->width;
     height = m_pCodecCtx->height;
 
+    setupCroppingScaling(_cropRect, scale);
+
     isRunningNow.setTrue();
 
     return true;
@@ -214,8 +217,8 @@ bool FFmpegDecoder::readFrame(IplImage* image)
                     // pixel format not being defined at the time the constructor runs. Maybe it
                     // needs to read at least one frame to figure it out. If we can, this SHOULD go
                     // to the constructor
-                    m_pSWSCtx = sws_getContext(width, height, m_pCodecCtx->pix_fmt,
-                                               width, height,
+                    m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
+                                               m_pCodecCtx->width, m_pCodecCtx->height,
                                                userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
                                                SWS_POINT, NULL, NULL, NULL);
                     if(m_pSWSCtx == NULL)
@@ -225,14 +228,24 @@ bool FFmpegDecoder::readFrame(IplImage* image)
                     }
                 }
 
-                assert( (userColorMode == FRAMESOURCE_COLOR     && image->nChannels == 3) ||
-                        (userColorMode == FRAMESOURCE_GRAYSCALE && image->nChannels == 1) );
-                assert( image->width == (int)width && image->height == (int)height );
+                IplImage* buffer;
+                if(preCropScaleBuffer == NULL) buffer = image;
+                else                           buffer = preCropScaleBuffer;
+
+                assert( (userColorMode == FRAMESOURCE_COLOR     && buffer->nChannels == 3) ||
+                        (userColorMode == FRAMESOURCE_GRAYSCALE && buffer->nChannels == 1) );
+                assert( buffer->width == (int)m_pCodecCtx->width && buffer->height == (int)m_pCodecCtx->height );
 
                 sws_scale(m_pSWSCtx,
                           m_pFrameYUV->data, m_pFrameYUV->linesize,
-                          0, height,
-                          (unsigned char**)&image->imageData, &image->widthStep);
+                          0, m_pCodecCtx->height,
+                          (unsigned char**)&buffer->imageData, &buffer->widthStep);
+
+                if(preCropScaleBuffer != NULL)
+                {
+#warning this isnt very efficient. The cropping and scaling should be a part of the ffmpeg calls above. av_picture_crop looks promising
+                    applyCroppingScaling(preCropScaleBuffer, image);
+                }
 
                 av_free_packet(&packet);
                 return true;

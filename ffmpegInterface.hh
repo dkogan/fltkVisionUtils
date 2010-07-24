@@ -51,10 +51,12 @@ public:
         : FFmpegTalker(), FrameSource(_userColorMode), m_loopAtEnd(loopAtEnd)
     {}
     FFmpegDecoder(const char* filename, FrameSource_UserColorChoice _userColorMode,
-                  bool loopAtEnd = false)
+                  bool loopAtEnd = false,
+                  CvRect _cropRect = cvRect(-1, -1, -1, -1),
+                  double scale = 1.0)
         : FFmpegTalker(), FrameSource(_userColorMode), m_loopAtEnd(loopAtEnd)
     {
-        open(filename);
+        open(filename, _cropRect, scale);
     }
     ~FFmpegDecoder()
     {
@@ -63,7 +65,9 @@ public:
         close();
     }
 
-    bool open(const char* filename);
+    bool open(const char* filename,
+              CvRect _cropRect = cvRect(-1, -1, -1, -1),
+              double scale = 1.0);
     void close(void);
     void free(void);
 

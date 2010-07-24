@@ -137,8 +137,9 @@ static colormode_t getColormodeWorth(dc1394video_mode_t mode, bool wantColor)
 }
 
 CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
-                           bool resetbus, uint64_t guid)
-
+                           bool resetbus, uint64_t guid,
+                           CvRect _cropRect,
+                           double scale)
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
     if(!uninitedCamerasLeft())
@@ -337,6 +338,8 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
     inited = true;
     numInitedCameras++;
 
+    setupCroppingScaling(_cropRect, scale);
+
     isRunningNow.setTrue();
 
     fprintf(stderr, "init done\n");
@@ -486,14 +489,18 @@ bool CameraSource::finishGet(IplImage* image)
     // implementation of these conversions, so it can be accessed from the version control. I will
     // add that mode to sws_scale if the above shortcomings prove overly-problematic
 
+    IplImage* buffer;
+    if(preCropScaleBuffer == NULL) buffer = image;
+    else                           buffer = preCropScaleBuffer;
+
     dc1394error_t err;
     if(userColorMode == FRAMESOURCE_COLOR)
     {
         // these assertions are explained in the long comment above
-        assert(image->widthStep == image->width * 3);
+        assert(buffer->widthStep == buffer->width * 3);
 
         err = dc1394_convert_to_RGB8(cameraFrame->image,
-                                     (unsigned char*)image->imageData,
+                                     (unsigned char*)buffer->imageData,
                                      cameraFrame->size[0], cameraFrame->size[1],
                                      cameraFrame->yuv_byte_order,
                                      cameraFrame->color_coding,
@@ -503,17 +510,23 @@ bool CameraSource::finishGet(IplImage* image)
     else
     {
         // these assertions are explained in the long comment above
-        assert(image->widthStep == image->width);
+        assert(buffer->widthStep == buffer->width);
         assert(cameraFrame->color_coding == DC1394_COLOR_CODING_MONO8 ||
                cameraFrame->color_coding == DC1394_COLOR_CODING_MONO16);
 
         err = dc1394_convert_to_MONO8(cameraFrame->image,
-                                      (unsigned char*)image->imageData,
+                                      (unsigned char*)buffer->imageData,
                                       cameraFrame->size[0], cameraFrame->size[1],
                                       cameraFrame->yuv_byte_order,
                                       cameraFrame->color_coding,
                                       0 // supposedly useful for 16-bit formats only, so I don't care
                                       );
+    }
+
+    if(preCropScaleBuffer != NULL)
+    {
+#warning this isnt very efficient. The cropping and scaling should be a part of the conversion functions above
+        applyCroppingScaling(preCropScaleBuffer, image);
     }
 
     unpeekFrame();

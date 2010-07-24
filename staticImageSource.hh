@@ -24,13 +24,19 @@ public:
     {
     }
 
-    StaticImageSource(const char* file, FrameSource_UserColorChoice _userColorMode)
+    StaticImageSource(const char* file, FrameSource_UserColorChoice _userColorMode,
+                      CvRect _cropRect = cvRect(-1, -1, -1, -1),
+                      double scale = 1.0)
+        // constructor optionally takes in cropping window and post-cropping scale factor
         : FrameSource(_userColorMode), image(NULL), timestamp_now_us(0)
     {
-        load(file);
+        load(file, _cropRect, scale);
     }
 
-    bool load(const char* file)
+    bool load(const char* file,
+              CvRect _cropRect = cvRect(-1, -1, -1, -1),
+              double scale = 1.0)
+
     {
         if(userColorMode == FRAMESOURCE_COLOR)
             image = cvLoadImage(file, CV_LOAD_IMAGE_COLOR);
@@ -47,6 +53,8 @@ public:
 
         width  = image->width;
         height = image->height;
+
+        setupCroppingScaling(_cropRect, scale);
 
         isRunningNow.setTrue();
 
@@ -72,8 +80,9 @@ private:
         if(!(*this))
             return false;
 
-        cvCopy(image, buffer);
+        applyCroppingScaling(image, buffer);
         makeTimestamp(timestamp_us);
+
         return true;
     }
 
