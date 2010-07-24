@@ -18,11 +18,11 @@ all: fltkVisionUtils.a sample
 
 # all non-sample .cc files
 LIBRARY_SOURCES = $(shell ls *.cc | grep -v -i sample)
-
-fltkVisionUtils.a: $(patsubst %.cc, %.o, $(LIBRARY_SOURCES));
+LIBRARY_OBJECTS = $(patsubst %.cc, %.o, $(LIBRARY_SOURCES))
+fltkVisionUtils.a: $(LIBRARY_OBJECTS)
 	ar rcvu $@ $^
 
-sample: ffmpegInterface.o cameraSource.o IIDC_featuresWidget.o sample.o
+sample: $(LIBRARY_OBJECTS) sample.o
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 
