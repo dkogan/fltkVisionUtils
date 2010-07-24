@@ -3,7 +3,8 @@ OPENCV_VERSION = 200
 
 CXXFLAGS += -g -O3 -Wall -Wextra -pedantic -MMD
 CXXFLAGS += -DOPENCV_VERSION=$(OPENCV_VERSION)
-LDFLAGS  += -g -lX11 -lXft -lXinerama
+LDFLAGS  += -g
+LDLIBS   += -lX11 -lXft -lXinerama
 
 ifeq ($(OPENCV_VERSION), 210)
   OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
