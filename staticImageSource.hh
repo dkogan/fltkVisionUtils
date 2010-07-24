@@ -26,71 +26,19 @@ public:
 
     StaticImageSource(const char* file, FrameSource_UserColorChoice _userColorMode,
                       CvRect _cropRect = cvRect(-1, -1, -1, -1),
-                      double scale = 1.0)
-        // constructor optionally takes in cropping window and post-cropping scale factor
-        : FrameSource(_userColorMode), image(NULL), timestamp_now_us(0)
-    {
-        load(file, _cropRect, scale);
-    }
+                      double scale = 1.0);
 
     bool load(const char* file,
               CvRect _cropRect = cvRect(-1, -1, -1, -1),
-              double scale = 1.0)
+              double scale = 1.0);
 
-    {
-        if(userColorMode == FRAMESOURCE_COLOR)
-            image = cvLoadImage(file, CV_LOAD_IMAGE_COLOR);
-        else if(userColorMode == FRAMESOURCE_GRAYSCALE)
-            image = cvLoadImage(file, CV_LOAD_IMAGE_GRAYSCALE);
-        else
-        {
-            fprintf(stderr, "StaticImageSource::load(): unknown color mode\n");
-            return false;
-        }
+    ~StaticImageSource();
 
-        if(image == NULL)
-            return false;
-
-        width  = image->width;
-        height = image->height;
-
-        setupCroppingScaling(_cropRect, scale);
-
-        isRunningNow.setTrue();
-
-        return true;
-    }
-
-    ~StaticImageSource()
-    {
-        cleanupThreads();
-
-        if(image != NULL)
-        {
-            cvReleaseImage(&image);
-            image = NULL;
-        }
-    }
-
-    operator bool() { return image != NULL; }
+    operator bool();
 
 private:
-    bool _getNextFrame  (IplImage* buffer, uint64_t* timestamp_us = NULL)
-    {
-        if(!(*this))
-            return false;
-
-        applyCroppingScaling(image, buffer);
-        makeTimestamp(timestamp_us);
-
-        return true;
-    }
-
-    // for static images, _getNextFrame() is the same as _getLatestFrame()
-    bool _getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL)
-    {
-        return _getNextFrame(buffer, timestamp_us);
-    }
+    bool _getNextFrame  (IplImage* buffer, uint64_t* timestamp_us = NULL);
+    bool _getLatestFrame(IplImage* buffer, uint64_t* timestamp_us = NULL);
 
     // static images don't have any hardware on/off switch, nor is there anything to rewind. Thus
     // these functions are all stubs
