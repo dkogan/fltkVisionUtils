@@ -42,16 +42,21 @@ class CvFltkWidget : public Fl_Widget
     // here
     virtual int handle(int event)
     {
-        switch(event)
+        if(Fl::event_inside(this))
         {
-        case FL_DRAG:
-            if(!Fl::event_inside(this))
-                break;
-            // fall through if we're inside
+            switch(event)
+            {
+            case FL_PUSH:
+            case FL_DRAG:
+            case FL_RELEASE:
+            case FL_MOVE:
+            case FL_MOUSEWHEEL:
+            case FL_ENTER:
+                do_callback();
+                return 1;
 
-        case FL_PUSH:
-            do_callback();
-            return 1;
+            default: ;
+            }
         }
 
         return Fl_Widget::handle(event);
