@@ -6,7 +6,7 @@ CXXFLAGS += -DOPENCV_VERSION=$(OPENCV_VERSION)
 LDFLAGS  += -g -lX11 -lXft -lXinerama
 
 ifeq ($(OPENCV_VERSION), 210)
-  OPENCV_LIBS = -lopencv_core -lopencv_imgproc
+  OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
 else
   OPENCV_LIBS = -lcv
 endif
