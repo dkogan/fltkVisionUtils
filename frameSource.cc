@@ -1,6 +1,7 @@
 #include <time.h>
-#include <stdio.h>
+#include <iostream>
 #include "frameSource.hh"
+using namespace std;
 
 FrameSource::FrameSource (FrameSource_UserColorChoice _userColorMode)
     : userColorMode(_userColorMode),
@@ -142,7 +143,7 @@ void FrameSource::startSourceThread(FrameSourceCallback_t* callback, uint64_t fr
     if(pthread_create(&sourceThread_id, NULL, &sourceThread_global, this) != 0)
     {
         sourceThread_id = 0;
-        fprintf(stderr, "couldn't start source thread\n");
+        cerr << "couldn't start source thread" << endl;
     }
 }
 
@@ -171,7 +172,7 @@ void FrameSource::sourceThread(void)
 
         if(!result)
         {
-            fprintf(stderr, "thread couldn't get frame\n");
+            cerr << "thread couldn't get frame" << endl;
             return;
         }
 

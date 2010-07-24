@@ -8,7 +8,6 @@
 #include "cvlib.hh"
 
 #include <string.h>
-#include <stdio.h>
 
 // this class is designed for simple visualization of data passed into the class from the
 // outside. Examples of data sources are cameras, video files, still images, processed data, etc.

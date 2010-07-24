@@ -1,8 +1,8 @@
 #include "IIDC_featuresWidget.hh"
 
-#include <stdio.h>
 #include <math.h>
 #include <map>
+#include <iostream>
 using namespace std;
 
 #define FEATURE_HEIGHT 20
@@ -272,7 +272,7 @@ void IIDC_featuresWidget::syncControls(void)
         }
         else
         {
-            fprintf(stderr, "IIDC_featuresWidget can't syncControls():\n");
+            cerr << "IIDC_featuresWidget can't syncControls():" << endl;
             dc1394_feature_print(&feature, stderr);
             continue;
         }
@@ -299,7 +299,7 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
         dc1394_feature_get_absolute_control(camera, feature->id, &absPwr);
         if(absPwr != DC1394_ON)
         {
-            fprintf(stderr, "IIDC_featuresWidget: setting changed while not in absolute mode\n");
+            cerr << "IIDC_featuresWidget: setting changed while not in absolute mode" << endl;
             return;
         }
         dc1394_feature_set_absolute_value(camera, feature->id, (float)feature->setting->value());
@@ -308,7 +308,7 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
     default: ;
     }
 
-    fprintf(stderr, "IIDC_featuresWidget::settingsChanged(): not in manual mode...\n");
+    cerr << "IIDC_featuresWidget::settingsChanged(): not in manual mode..." << endl;
 }
 
 void IIDC_featuresWidget::modeChanged(Fl_Widget* widget)
@@ -345,7 +345,7 @@ void IIDC_featuresWidget::modeChanged(Fl_Widget* widget)
         break;
 
     default:
-        fprintf(stderr, "IIDC_featuresWidget::modeChanged(): unhandled switch...\n");
+        cerr << "IIDC_featuresWidget::modeChanged(): unhandled switch..." << endl;
         break;
     }
 

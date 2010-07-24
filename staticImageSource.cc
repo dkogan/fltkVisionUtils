@@ -1,5 +1,6 @@
-#include <stdio.h>
 #include "staticImageSource.hh"
+#include <iostream>
+using namespace std;
 
 StaticImageSource::StaticImageSource(const char* file, FrameSource_UserColorChoice _userColorMode,
                                      CvRect _cropRect, double scale)
@@ -19,7 +20,7 @@ bool StaticImageSource::load(const char* file,
         image = cvLoadImage(file, CV_LOAD_IMAGE_GRAYSCALE);
     else
     {
-        fprintf(stderr, "StaticImageSource::load(): unknown color mode\n");
+        cerr << "StaticImageSource::load(): unknown color mode" << endl;
         return false;
     }
 

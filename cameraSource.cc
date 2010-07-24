@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <limits.h>
 #include <iostream>
 #include <sstream>
 #include "cameraSource.hh"
+using namespace std;
 
 // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
 // declaring them static members
@@ -144,7 +144,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
 {
     if(!uninitedCamerasLeft())
     {
-        fprintf(stderr, "no more cameras left to init\n");
+        cerr << "no more cameras left to init" << endl;
         return;
     }
 
@@ -193,7 +193,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
     if(resetbus && !doneOnce)
     {
         doneOnce = true;
-        fprintf(stderr, "cleaning up ieee1394 stack. This may cause error messages...\n");
+        cerr << "cleaning up ieee1394 stack. This may cause error messages..." << endl;
         dc1394_iso_release_bandwidth(camera, INT_MAX);
         for (int channel = 0; channel < 64; channel++)
             dc1394_iso_release_channel(camera, channel);
@@ -234,7 +234,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
     }
     if(bestModeIdx == -1)
     {
-        fprintf(stderr, "No known resolutions/colormodes supported. Maybe this is a format7-only camera?\n");
+        cerr << "No known resolutions/colormodes supported. Maybe this is a format7-only camera?" << endl;
         return;
     }
     cameraVideoMode = video_modes.modes[bestModeIdx];
@@ -342,7 +342,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
 
     isRunningNow.setTrue();
 
-    fprintf(stderr, "init done\n");
+    cerr << "init done" << endl;
 }
 
 CameraSource::~CameraSource(void)
@@ -454,9 +454,9 @@ void CameraSource::beginPeek(void)
 {
     if(cameraFrame != NULL)
     {
-        fprintf(stderr, "warning: peekNextFrame() before unpeekFrame()\n"
-                "Calling unpeekFrame() for you, but you should do this yourself\n"
-                "as soon as you're done with the data\n");
+        cerr << "warning: peekNextFrame() before unpeekFrame()\n"
+            "Calling unpeekFrame() for you, but you should do this yourself\n"
+            "as soon as you're done with the data" << endl;
         unpeekFrame();
     }
 }

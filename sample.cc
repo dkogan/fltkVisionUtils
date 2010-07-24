@@ -27,13 +27,13 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     // thread. In this case this is the widget's buffer
     if(!videoEncoder)
     {
-        fprintf(stderr, "Couldn't encode frame!\n");
+        cerr << "Couldn't encode frame!" << endl;
         return;
     }
     videoEncoder.writeFrameGrayscale(*widgetImage);
     if(!videoEncoder)
     {
-        fprintf(stderr, "Couldn't encode frame!\n");
+        cerr << "Couldn't encode frame!" << endl;
         return;
     }
 
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 
     if(! *source)
     {
-        fprintf(stderr, "couldn't open source\n");
+        cerr << "couldn't open source" << endl;
         delete source;
         return 0;
     }
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
     videoEncoder.open("capture.avi", source->w(), source->h(), 15, FRAMESOURCE_COLOR);
     if(!videoEncoder)
     {
-        fprintf(stderr, "Couldn't initialize the video encoder\n");
+        cerr << "Couldn't initialize the video encoder" << endl;
         return 0;
     }
 
