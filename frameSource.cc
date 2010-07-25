@@ -120,8 +120,9 @@ bool FrameSource::restartStream(void)
 //
 // The callback is passed the buffer where the data was stored. Note that this is the same
 // buffer that was originally passed to startSourceThread. Note that this buffer is accessed
-// asynchronously, so the caller can NOT assume it contains valid data outside of the callback
-
+// asynchronously, so the caller can NOT assume it contains valid data outside of the callback.
+//
+// If there was an error reading the frame, I call-back ONCE with buffer==NULL, and exit the thread
 
 static void* sourceThread_global(void *pArg)
 {
@@ -173,6 +174,7 @@ void FrameSource::sourceThread(void)
         if(!result)
         {
             cerr << "thread couldn't get frame" << endl;
+            (*sourceThread_callback)(NULL, timestamp_us);
             return;
         }
 
