@@ -46,7 +46,10 @@ class CvFltkWidget : public Fl_Widget
         // absolutely sure I don't miss this event. Missing it could mean wrongly latching in the
         // mouse-over-widget state
         if(event == FL_LEAVE)
+        {
+            do_callback();
             return 1;
+        }
 
         // I ignore this event if the mouse is not in the image window. I ask FLTK and ALSO, look at
         // the image dimensions. I do both of those because FLTK may resize the widget, but the
@@ -62,11 +65,8 @@ class CvFltkWidget : public Fl_Widget
             case FL_RELEASE:
             case FL_MOVE:
             case FL_MOUSEWHEEL:
-                do_callback();
-                return 1;
-
             case FL_ENTER:
-                // I handle FL_ENTER to get FL_MOVE reports
+                do_callback();
                 return 1;
 
             default: ;
