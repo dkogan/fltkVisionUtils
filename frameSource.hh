@@ -8,7 +8,7 @@
 // user interface color choice. RGB8 or MONO8
 enum FrameSource_UserColorChoice  { FRAMESOURCE_COLOR, FRAMESOURCE_GRAYSCALE };
 
-typedef void (FrameSourceCallback_t)(IplImage* buffer, uint64_t timestamp_us);
+typedef bool (FrameSourceCallback_t)(IplImage* buffer, uint64_t timestamp_us);
 
 // This is the base class for different frame grabbers. The constructor allows color or monochrome
 // mode to be selected. For simplicity, color always means 8-bits-per-channel RGB and monochrome

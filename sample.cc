@@ -21,20 +21,20 @@ static CvFltkWidget* widgetImage;
 static FFmpegEncoder videoEncoder;
 static CvMat         edges;
 
-void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
+bool gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
 {
     // the buffer passed in here is the same buffer that I specified when starting the source
     // thread. In this case this is the widget's buffer
     if(!videoEncoder)
     {
         cerr << "Couldn't encode frame!" << endl;
-        return;
+        return false;
     }
     videoEncoder.writeFrameGrayscale(*widgetImage);
     if(!videoEncoder)
     {
         cerr << "Couldn't encode frame!" << endl;
-        return;
+        return false;
     }
 
     Fl::lock();
@@ -45,6 +45,8 @@ void gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
     cvSetImageCOI(*widgetImage, 0);
     widgetImage->redrawNewFrame();
     Fl::unlock();
+
+    return true;
 }
 
 int main(int argc, char* argv[])
