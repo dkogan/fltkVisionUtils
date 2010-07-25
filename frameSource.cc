@@ -171,13 +171,16 @@ void FrameSource::sourceThread(void)
             result = getNextFrame(sourceThread_buffer, &timestamp_us);
         }
 
-        if(!result)
+        if(result)
         {
-            cerr << "thread couldn't get frame" << endl;
-            (*sourceThread_callback)(NULL, timestamp_us);
-            return;
+            (*sourceThread_callback)(sourceThread_buffer, timestamp_us);
+            continue;
         }
 
-        (*sourceThread_callback)(sourceThread_buffer, timestamp_us);
+        // There was an error reading the frame. Alert the application and, if it tells us to, exit
+        // the thread
+        cerr << "thread couldn't get frame" << endl;
+        if( !(*sourceThread_callback)(NULL, timestamp_us) )
+            return;
     }
 }
