@@ -9,7 +9,7 @@ LDLIBS   += -lX11 -lXft -lXinerama
 ifeq ($(OPENCV_VERSION), 210)
   OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
 else
-  OPENCV_LIBS = -lcv
+  OPENCV_LIBS = -lcv -lhighgui
 endif
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil

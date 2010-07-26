@@ -8,6 +8,7 @@
   #include <opencv2/highgui/highgui_c.h>
 #else
   #include <opencv/cv.h>
+  #include <opencv/highgui.h>
 #endif
 
 #endif
