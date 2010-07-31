@@ -38,7 +38,8 @@ protected:
     MTcondition isRunningNow;
 
 private:
-    // These are the internal APIs called only by the external function definitions below
+    // These are the internal APIs called only by the external function definitions below.
+    // To impleement new frame sources, these MUST be overridden
     virtual bool _restartStream(void) = 0;
     virtual bool _resumeStream (void) = 0;
     virtual bool _getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL) = 0;
