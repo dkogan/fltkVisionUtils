@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -18,7 +19,7 @@
 
 #include "cameraSource_v4l2.hh"
 
-static int ioctl_persistent( int fd, int request, void* arg)
+static int ioctl_persistent( int fd, unsigned long request, void* arg)
 {
     int r;
 
@@ -30,7 +31,7 @@ static int ioctl_persistent( int fd, int request, void* arg)
     return r;
 }
 
-static int getPixfmtCost(uint32_t pixfmt)
+static unsigned int getPixfmtCost(uint32_t pixfmt)
 {
     // pixel formats in order of decreasing desireability. Sorta arbitrary. I favor colors, higher
     // bitrates and lower compression
@@ -119,7 +120,7 @@ static int getPixfmtCost(uint32_t pixfmt)
             V4L2_PIX_FMT_GREY, /*  8  Greyscale     */
         };
 
-    for(int i=0; i<sizeof(pixfmts) / sizeof(pixfmts[0]); i++)
+    for(unsigned int i=0; i<sizeof(pixfmts) / sizeof(pixfmts[0]); i++)
         if(pixfmts[i] == pixfmt)
             return i;
 
@@ -127,15 +128,12 @@ static int getPixfmtCost(uint32_t pixfmt)
 }
 
 CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
-                                     char* device,
+                                     const char* device,
                                      CvRect _cropRect,
                                      double scale)
     : camera_fd(-1),
-      numBuffers(0),
-      buffers(NULL)
+      buffer(NULL)
 {
-    struct stat st; 
-
     camera_fd = open( device, O_RDWR, 0);
     if( camera_fd < 0)
     {
@@ -184,8 +182,8 @@ do {                                            \
     }
 
     // Now find the best pixel format
-    int      bestPixfmtCost = INT_MAX;
-    uint32_t bestPixfmt;
+    unsigned int        bestPixfmtCost = INT_MAX;
+    uint32_t            bestPixfmt;
     struct v4l2_fmtdesc fmtdesc;
     memset(&fmtdesc, 0, sizeof(fmtdesc));
 
@@ -206,7 +204,7 @@ do {                                            \
             return;
         }
 
-        int cost = getPixfmtCost(fmtdesc.pixelformat);
+        unsigned int cost = getPixfmtCost(fmtdesc.pixelformat);
         if(cost < bestPixfmtCost)
         {
             bestPixfmtCost = cost;
@@ -249,43 +247,27 @@ do {                                            \
         uninit();
         return;
     }
-    if( fmt.fmt.pix.sizeimage < fmt.fmt.pix.bytesperline * fmt.fmt.pix.height)
-    {
-        fprintf(stderr, "sizeimage < bytesperline * height. This can't be right. Driver bug?\n");
-        uninit();
-        return;
-    }
 
-    buffers = calloc( 1, sizeof (*buffers));
-    if( buffers == NULL )
-    {
-        fprintf( stderr, "Out of memory for buffers\n");
-        uninit();
-        return;
-    }
+    buffer = new unsigned char[fmt.fmt.pix.sizeimage];
 
-    buffers->length = fmt.fmt.pix.sizeimage;
-    buffers->start  = malloc( fmt.fmt.pix.sizeimage);
-
-    if( buffers->start == NULL)
+    if( buffer == NULL)
     {
-        fprintf( stderr, "Out of memory for buffers->start\n");
+        fprintf( stderr, "Out of memory\n");
         uninit();
         return;
     }
 
     width  = fmt.fmt.pix.width;
     height = fmt.fmt.pix.height;
+    pixfmt = fmt.fmt.pix;
 }
 
 void CameraSource_V4L2::uninit(void)
 {
-    if(buffers)
+    if(buffer)
     {
-        if( buffers->start )
-            free( buffers->start );
-        free( buffers );
-        buffers = NULL;
+        delete[] buffer;
+        buffer = NULL;
     }
 
     if( camera_fd > 0 )

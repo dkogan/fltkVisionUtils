@@ -1,23 +1,23 @@
 #ifndef __CAMERA_SOURCE_HH__
 #define __CAMERA_SOURCE_HH__
 
+#include <asm/types.h>
+#include <linux/videodev2.h>
+
 #include <string>
 #include "frameSource.hh"
 
 class CameraSource_V4L2 : public FrameSource
 {
-    struct
-    {
-        void*  start;
-        size_t length;
-    }* buffers;
-
     int      camera_fd;
-    unsigned numBuffers;
+
+    v4l2_pix_format pixfmt;
+
+    unsigned char*  buffer;
 
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
-                      char* device,
+                      const char* device,
                       CvRect _cropRect = cvRect(-1, -1, -1, -1),
                       double scale = 1.0);
 
