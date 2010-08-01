@@ -268,6 +268,10 @@ do {                                            \
     width  = fmt.fmt.pix.width;
     height = fmt.fmt.pix.height;
     pixfmt = fmt.fmt.pix;
+
+#warning maybe I should implement this inside v4l VIDIOC_S_CROP
+    setupCroppingScaling(_cropRect, scale);
+    isRunningNow.setTrue();
 }
 
 void CameraSource_V4L2::uninit(void)
