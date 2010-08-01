@@ -131,7 +131,8 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                                      const char* device,
                                      CvRect _cropRect,
                                      double scale)
-    : camera_fd(-1),
+    : FrameSource(_userColorMode),
+      camera_fd(-1),
       buffer(NULL)
 {
     camera_fd = open( device, O_RDWR, 0);
