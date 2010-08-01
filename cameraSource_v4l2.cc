@@ -248,16 +248,24 @@ do {                                            \
         return;
     }
 
+    pixfmt = fmt.fmt.pix;
+
+    if(pixfmt.field != V4L2_FIELD_NONE)
+    {
+        fprintf(stderr, "V4L2 interlacing not yet supported\n");
+        unint();
+        return;
+    }
+
     /* Buggy driver paranoia. */
-    if(fmt.fmt.pix.bytesperline < fmt.fmt.pix.width)
+    if(pixfmt.bytesperline < pixfmt.width)
     {
         fprintf(stderr, "bytesperline < width. This can't be right. Driver bug?\n");
         uninit();
         return;
     }
 
-    buffer = new unsigned char[fmt.fmt.pix.sizeimage];
-
+    buffer = new unsigned char[pixfmt.sizeimage];
     if( buffer == NULL)
     {
         fprintf( stderr, "Out of memory\n");
@@ -265,9 +273,8 @@ do {                                            \
         return;
     }
 
-    width  = fmt.fmt.pix.width;
-    height = fmt.fmt.pix.height;
-    pixfmt = fmt.fmt.pix;
+    width  = pixfmt.width;
+    height = pixfmt.height;
 
 #warning maybe I should implement this inside v4l VIDIOC_S_CROP
     setupCroppingScaling(_cropRect, scale);
@@ -303,7 +310,7 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us 
     struct v4l2_buffer buf;
     unsigned int i;
 
-    if( read( camera_fd, buffers->start, buffers->length) < 0 )
+    if( read( camera_fd, buffer, pixfmt.sizeimage) < 0 )
     {
         perror ("camera read");
         return false;
