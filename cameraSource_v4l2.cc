@@ -123,13 +123,13 @@ static unsigned int getPixfmtCost(uint32_t pixfmt, bool bWantColor)
             V4L2_PIX_FMT_GREY, /*  8  Greyscale     */
         };
 
-    for(unsigned int i=0; i<sizeof(pixfmts) / sizeof(pixfmts[0]); i++)
-    {
-        // return the cost if there's a match. We add a cost penalty for color modes when we wanted
-        // grayscale and vice-versa
+    // return the cost if there's a match. We add a cost penalty for color modes when we wanted
+    // grayscale and vice-versa
+    for(unsigned int i=0; i<sizeof(pixfmts_color) / sizeof(pixfmts_color[0]); i++)
         if(pixfmts_color[i] == pixfmt) return i + ( bWantColor ? 0 : 10000);
+
+    for(unsigned int i=0; i<sizeof(pixfmts_gray) / sizeof(pixfmts_gray[0]); i++)
         if(pixfmts_gray [i] == pixfmt) return i + (!bWantColor ? 0 : 10000);
-    }
 
     return -1;
 }
