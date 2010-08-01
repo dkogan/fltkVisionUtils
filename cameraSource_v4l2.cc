@@ -31,11 +31,11 @@ static int ioctl_persistent( int fd, unsigned long request, void* arg)
     return r;
 }
 
-static unsigned int getPixfmtCost(uint32_t pixfmt)
+static unsigned int getPixfmtCost(uint32_t pixfmt, bool bWantColor)
 {
     // pixel formats in order of decreasing desireability. Sorta arbitrary. I favor colors, higher
     // bitrates and lower compression
-    static uint32_t pixfmts[] =
+    static uint32_t pixfmts_color[] =
         {
             /* RGB formats */
             V4L2_PIX_FMT_BGR32, /* 32  BGR-8-8-8-8   */
@@ -114,15 +114,22 @@ static unsigned int getPixfmtCost(uint32_t pixfmt)
             V4L2_PIX_FMT_PJPG, /* Pixart 73xx JPEG */
             V4L2_PIX_FMT_OV511, /* ov511 JPEG */
             V4L2_PIX_FMT_OV518, /* ov518 JPEG */
+        };
 
+    static uint32_t pixfmts_gray[] =
+        {
             /* Grey formats */
             V4L2_PIX_FMT_Y16, /* 16  Greyscale     */
             V4L2_PIX_FMT_GREY, /*  8  Greyscale     */
         };
 
     for(unsigned int i=0; i<sizeof(pixfmts) / sizeof(pixfmts[0]); i++)
-        if(pixfmts[i] == pixfmt)
-            return i;
+    {
+        // return the cost if there's a match. We add a cost penalty for color modes when we wanted
+        // grayscale and vice-versa
+        if(pixfmts_color[i] == pixfmt) return i + ( bWantColor ? 0 : 10000);
+        if(pixfmts_gray [i] == pixfmt) return i + (!bWantColor ? 0 : 10000);
+    }
 
     return -1;
 }
@@ -205,7 +212,7 @@ do {                                            \
             return;
         }
 
-        unsigned int cost = getPixfmtCost(fmtdesc.pixelformat);
+        unsigned int cost = getPixfmtCost(fmtdesc.pixelformat, userColorMode==FRAMESOURCE_COLOR);
         if(cost < bestPixfmtCost)
         {
             bestPixfmtCost = cost;
