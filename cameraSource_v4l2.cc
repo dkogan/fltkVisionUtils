@@ -150,15 +150,15 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         return;
     }
 
-#define ioctl_try(fd, request, arg)             \
-do {                                            \
-    if(ioctl_persistent(fd,request,arg) < 0)    \
-    {                                           \
-        perror( "Couldn't "#request );          \
-        uninit();                               \
-        return;                                 \
-    }                                           \
-} while(0)
+#define ioctl_try(fd, request, arg)                     \
+    do {                                                \
+        if(ioctl_persistent(fd,request,arg) < 0)        \
+        {                                               \
+            perror( "Couldn't "#request );              \
+            uninit();                                   \
+            return;                                     \
+        }                                               \
+    } while(0)
 
     struct v4l2_capability cap;
     ioctl_try(camera_fd, VIDIOC_QUERYCAP, &cap);
