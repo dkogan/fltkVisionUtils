@@ -58,6 +58,7 @@ bool StaticImageSource::_getNextFrame  (IplImage* buffer, uint64_t* timestamp_us
     if(!(*this))
         return false;
 
+#warning I should do the cropping/scaling once at the start, instead of every time I give a frame
     applyCroppingScaling(image, buffer);
     makeTimestamp(timestamp_us);
 
