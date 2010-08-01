@@ -134,13 +134,69 @@ static unsigned int getPixfmtCost(uint32_t pixfmt, bool bWantColor)
     return -1;
 }
 
+static enum PixelFormat pixfmt_V4L2_to_swscale(uint32_t v4l2Pixfmt)
+{
+    switch(v4l2Pixfmt)
+    {
+        /* RGB formats */
+    case V4L2_PIX_FMT_BGR32:   return PIX_FMT_BGR32;  /* 32  BGR-8-8-8-8   */
+    case V4L2_PIX_FMT_RGB32:   return PIX_FMT_RGB32;  /* 32  RGB-8-8-8-8   */
+    case V4L2_PIX_FMT_BGR24:   return PIX_FMT_BGR24;  /* 24  BGR-8-8-8     */
+    case V4L2_PIX_FMT_RGB24:   return PIX_FMT_RGB24;  /* 24  RGB-8-8-8     */
+    case V4L2_PIX_FMT_RGB444:  return PIX_FMT_NONE;   /* 16  xxxxrrrr ggggbbbb */
+    case V4L2_PIX_FMT_RGB555:  return PIX_FMT_RGB555; /* 16  RGB-5-5-5     */
+    case V4L2_PIX_FMT_RGB565:  return PIX_FMT_RGB565; /* 16  RGB-5-6-5     */
+    case V4L2_PIX_FMT_RGB555X: return PIX_FMT_NONE;   /* 16  RGB-5-5-5 BE  */
+    case V4L2_PIX_FMT_RGB565X: return PIX_FMT_NONE;   /* 16  RGB-5-6-5 BE  */
+    case V4L2_PIX_FMT_RGB332:  return PIX_FMT_NONE;   /*  8  RGB-3-3-2     */
+
+        /* Palette formats */
+    case V4L2_PIX_FMT_PAL8:    return PIX_FMT_PAL8;   /*  8  8-bit palette */
+
+        /* Luminance+Chrominance formats */
+    case V4L2_PIX_FMT_YUV32:   return PIX_FMT_NONE;      /* 32  YUV-8-8-8-8   */
+    case V4L2_PIX_FMT_YUV444:  return PIX_FMT_NONE;      /* 16  xxxxyyyy uuuuvvvv */
+    case V4L2_PIX_FMT_YUV555:  return PIX_FMT_NONE;      /* 16  YUV-5-5-5     */
+    case V4L2_PIX_FMT_YUV565:  return PIX_FMT_NONE;      /* 16  YUV-5-6-5     */
+    case V4L2_PIX_FMT_YUYV:    return PIX_FMT_YUYV422;   /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_YYUV:    return PIX_FMT_NONE;      /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_YVYU:    return PIX_FMT_NONE;      /* 16  YVU 4:2:2     */
+    case V4L2_PIX_FMT_UYVY:    return PIX_FMT_UYVY422;   /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_VYUY:    return PIX_FMT_NONE;      /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_YUV422P: return PIX_FMT_YUV422P;   /* 16  YVU422 planar */
+    case V4L2_PIX_FMT_YUV411P: return PIX_FMT_YUV411P;   /* 16  YVU411 planar */
+    case V4L2_PIX_FMT_YVU420:  return PIX_FMT_NONE;      /* 12  YVU 4:2:0     */
+    case V4L2_PIX_FMT_Y41P:    return PIX_FMT_UYYVYY411; /* 12  YUV 4:1:1     */
+    case V4L2_PIX_FMT_YUV420:  return PIX_FMT_YUV420P;   /* 12  YUV 4:2:0     */
+    case V4L2_PIX_FMT_YVU410:  return PIX_FMT_NONE;      /*  9  YVU 4:1:0     */
+    case V4L2_PIX_FMT_YUV410:  return PIX_FMT_YUV410P;   /*  9  YUV 4:1:0     */
+    case V4L2_PIX_FMT_HI240:   return PIX_FMT_NONE;      /*  8  8-bit color   */
+    case V4L2_PIX_FMT_HM12:    return PIX_FMT_NONE;      /*  8  YUV 4:2:0 16x16 macroblocks */
+
+        /* two planes -- one Y: one Cr + Cb interleaved  */
+    case V4L2_PIX_FMT_NV12: return PIX_FMT_NV12;    /* 12  Y/CbCr 4:2:0  */
+    case V4L2_PIX_FMT_NV21: return PIX_FMT_NV21;    /* 12  Y/CrCb 4:2:0  */
+    case V4L2_PIX_FMT_NV16: return PIX_FMT_YUV422P; /* 16  Y/CbCr 4:2:2  */
+    case V4L2_PIX_FMT_NV61: return PIX_FMT_NONE;    /* 16  Y/CrCb 4:2:2  */
+
+        /* Grey formats */
+    case V4L2_PIX_FMT_Y16:  return PIX_FMT_GRAY16LE;  /* 16  Greyscale     */
+    case V4L2_PIX_FMT_GREY: return PIX_FMT_GRAY8;     /*  8  Greyscale     */
+
+    default: ;
+    };
+
+    return PIX_FMT_NONE;
+}
+
 CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                                      const char* device,
                                      CvRect _cropRect,
                                      double scale)
     : FrameSource(_userColorMode),
       camera_fd(-1),
-      buffer(NULL)
+      buffer(NULL),
+      scaleContext(NULL)
 {
     camera_fd = open( device, O_RDWR, 0);
     if( camera_fd < 0)
@@ -191,7 +247,7 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
 
     // Now find the best pixel format
     unsigned int        bestPixfmtCost = INT_MAX;
-    uint32_t            bestPixfmt;
+    uint32_t            bestPixfmt     = 0;
     struct v4l2_fmtdesc fmtdesc;
     memset(&fmtdesc, 0, sizeof(fmtdesc));
 
@@ -253,7 +309,7 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     if(pixfmt.field != V4L2_FIELD_NONE)
     {
         fprintf(stderr, "V4L2 interlacing not yet supported\n");
-        unint();
+        uninit();
         return;
     }
 
@@ -269,6 +325,26 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     if( buffer == NULL)
     {
         fprintf( stderr, "Out of memory\n");
+        uninit();
+        return;
+    }
+
+    enum PixelFormat swscalePixfmt = pixfmt_V4L2_to_swscale(pixfmt.pixelformat);
+    if(swscalePixfmt == PIX_FMT_NONE)
+    {
+        fprintf(stderr, "V4L2 pixel format not supported by libswscale, so I don't support it yet\n");
+        uninit();
+        return;
+    }
+
+#warning shouldnt need setupCroppingScaling since Im doing this anyway
+    scaleContext = sws_getContext(pixfmt.width, pixfmt.height, swscalePixfmt,
+                                  pixfmt.width, pixfmt.height,
+                                  userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
+                                  SWS_POINT, NULL, NULL, NULL);
+    if(scaleContext == NULL)
+    {
+        fprintf(stderr, "libswscale doesn't supported my pixelformat...\n");
         uninit();
         return;
     }
@@ -294,6 +370,12 @@ void CameraSource_V4L2::uninit(void)
         close( camera_fd );
         camera_fd = -1;
     }
+
+    if(scaleContext)
+    {
+        sws_freeContext(scaleContext);
+        scaleContext = NULL;
+    }
 }
 
 CameraSource_V4L2::~CameraSource_V4L2()
@@ -301,11 +383,12 @@ CameraSource_V4L2::~CameraSource_V4L2()
     uninit();
 }
 
-bool CameraSource_V4L2::_getNextFrame  (IplImage* image, uint64_t* timestamp_us = NULL)
+bool CameraSource_V4L2::_getNextFrame  (IplImage* image, uint64_t* timestamp_us)
 {
+    return _getLatestFrame(image, timestamp_us);
 }
 
-bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us = NULL)
+bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
     struct v4l2_buffer buf;
     unsigned int i;
@@ -316,28 +399,33 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us 
         return false;
     }
 
-    process_image( buffers->start);
+    int stride = pixfmt.bytesperline;
+    sws_scale(scaleContext,
+              &buffer, &stride, 0, pixfmt.height,
+              (unsigned char**)&image->imageData, &image->widthStep);
 
     return true;
 }
 
 bool CameraSource_V4L2::_stopStream(void)
 {
-    enum v4l2_buf_type type;
+//     enum v4l2_buf_type type;
 
-    if(DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_OFF))
-    {
-        purgeBuffer();
-        return true;
-    }
-    return false;
+//     if(DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_OFF))
+//     {
+//         purgeBuffer();
+//         return true;
+//     }
+//     return false;
+    return true;
 }
 
 bool CameraSource_V4L2::_resumeStream(void)
 {
-    unsigned int i;
-    enum v4l2_buf_type type;
+//     unsigned int i;
+//     enum v4l2_buf_type type;
 
-    purgeBuffer();
-    return DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_ON);
+//     purgeBuffer();
+//     return DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_ON);
+    return true;
 }

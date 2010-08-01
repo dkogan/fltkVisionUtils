@@ -7,13 +7,17 @@
 #include <string>
 #include "frameSource.hh"
 
+extern "C"
+{
+#include <libswscale/swscale.h>
+}
+
 class CameraSource_V4L2 : public FrameSource
 {
-    int      camera_fd;
-
+    int             camera_fd;
     v4l2_pix_format pixfmt;
-
     unsigned char*  buffer;
+    SwsContext*     scaleContext;
 
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
