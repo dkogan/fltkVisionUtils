@@ -12,7 +12,7 @@ using namespace std;
 #include "cvFltkWidget.hh"
 #include "ffmpegInterface.hh"
 
-#include "cameraSource.hh"
+#include "cameraSource_IIDC.hh"
 #include "IIDC_featuresWidget.hh"
 
 #define SOURCE_PERIOD_US 1000000
@@ -62,8 +62,8 @@ int main(int argc, char* argv[])
                                    cvRect(0, 0, 320, 480), 1.5);
     else
     {
-        source = new CameraSource(FRAMESOURCE_COLOR);
-        cout << ((CameraSource*)source)->getDescription();
+        source = new CameraSource_IIDC(FRAMESOURCE_COLOR);
+        cout << ((CameraSource_IIDC*)source)->getDescription();
     }
 
     if(! *source)
@@ -87,10 +87,10 @@ int main(int argc, char* argv[])
     widgetImage = new CvFltkWidget(0, 0, source->w(), source->h(),
                                    WIDGET_COLOR);
 
-    if(dynamic_cast<CameraSource*>(source) != NULL)
+    if(dynamic_cast<CameraSource_IIDC*>(source) != NULL)
     {
         IIDC_featuresWidget* features __attribute__((unused)) =
-            new IIDC_featuresWidget(*(CameraSource*)source,
+            new IIDC_featuresWidget(*(CameraSource_IIDC*)source,
                                     0, source->h(),
                                     800, 100, NULL, true);
     }

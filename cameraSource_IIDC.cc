@@ -3,14 +3,14 @@
 #include <limits.h>
 #include <iostream>
 #include <sstream>
-#include "cameraSource.hh"
+#include "cameraSource_IIDC.hh"
 using namespace std;
 
 // These describe the whole camera bus, not just a single camera. Thus we keep only one copy by
 // declaring them static members
-dc1394_t*            CameraSource::dc1394Context    = NULL;
-dc1394camera_list_t* CameraSource::cameraList       = NULL;
-unsigned int         CameraSource::numInitedCameras = 0;
+dc1394_t*            CameraSource_IIDC::dc1394Context    = NULL;
+dc1394camera_list_t* CameraSource_IIDC::cameraList       = NULL;
+unsigned int         CameraSource_IIDC::numInitedCameras = 0;
 
 // hardware camera settings:
 // The resolutions that I know about. These are listed in order from least to most desireable
@@ -136,10 +136,10 @@ static colormode_t getColormodeWorth(dc1394video_mode_t mode, bool wantColor)
     }
 }
 
-CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
-                           bool resetbus, uint64_t guid,
-                           CvRect _cropRect,
-                           double scale)
+CameraSource_IIDC::CameraSource_IIDC(FrameSource_UserColorChoice _userColorMode,
+                                     bool resetbus, uint64_t guid,
+                                     CvRect _cropRect,
+                                     double scale)
     : FrameSource(_userColorMode), inited(false), camera(NULL), cameraFrame(NULL)
 {
     if(!uninitedCamerasLeft())
@@ -345,7 +345,7 @@ CameraSource::CameraSource(FrameSource_UserColorChoice _userColorMode,
     cerr << "init done" << endl;
 }
 
-CameraSource::~CameraSource(void)
+CameraSource_IIDC::~CameraSource_IIDC(void)
 {
     cleanupThreads();
 
@@ -369,7 +369,7 @@ CameraSource::~CameraSource(void)
 }
 
 // _getNextFrame() blocks until a frame is available. true is returned on success.
-bool CameraSource::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
+bool CameraSource_IIDC::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -391,7 +391,7 @@ bool CameraSource::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 // _getLatestFrame() checks the frame buffer. If there are no frames in it, it blocks until a
 // frame is available. If there are frames, the buffer is purged and the most recent frame is
 // returned. true is returned on success.
-bool CameraSource::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
+bool CameraSource_IIDC::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
     beginPeek();
 
@@ -419,7 +419,7 @@ bool CameraSource::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
     return _getNextFrame(image, timestamp_us);
 }
 
-bool CameraSource::purgeBuffer(void)
+bool CameraSource_IIDC::purgeBuffer(void)
 {
     dc1394error_t err;
     do
@@ -450,7 +450,7 @@ bool CameraSource::purgeBuffer(void)
     return true;
 }
 
-void CameraSource::beginPeek(void)
+void CameraSource_IIDC::beginPeek(void)
 {
     if(cameraFrame != NULL)
     {
@@ -461,7 +461,7 @@ void CameraSource::beginPeek(void)
     }
 }
 
-unsigned char* CameraSource::finishPeek(uint64_t* timestamp_us)
+unsigned char* CameraSource_IIDC::finishPeek(uint64_t* timestamp_us)
 {
     if(timestamp_us != NULL)
         *timestamp_us = cameraFrame->timestamp;
@@ -469,7 +469,7 @@ unsigned char* CameraSource::finishPeek(uint64_t* timestamp_us)
     return cameraFrame->image;
 }
 
-bool CameraSource::finishGet(IplImage* image)
+bool CameraSource_IIDC::finishGet(IplImage* image)
 {
     // These convert the data to my desired colorspace from the raw format of the camera. These
     // functions have a few drawbacks:
@@ -534,7 +534,7 @@ bool CameraSource::finishGet(IplImage* image)
     return true;
 }
 
-void CameraSource::unpeekFrame(void)
+void CameraSource_IIDC::unpeekFrame(void)
 {
     if(cameraFrame == NULL)
         return;
