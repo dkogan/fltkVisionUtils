@@ -10,6 +10,7 @@
 extern "C"
 {
 #include <libswscale/swscale.h>
+#include <libavcodec/avcodec.h>
 }
 
 class CameraSource_V4L2 : public FrameSource
@@ -18,6 +19,9 @@ class CameraSource_V4L2 : public FrameSource
     v4l2_pix_format pixfmt;
     unsigned char*  buffer;
     SwsContext*     scaleContext;
+
+    AVCodecContext* codecContext;
+    AVFrame*        ffmpegFrame;
 
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
@@ -32,6 +36,8 @@ public:
 private:
     void uninit(void);
 
+    bool setupSwsContext(enum PixelFormat swscalePixfmt);
+    bool findDecoder(void);
 
     // These functions implement the FrameSource virtuals, and are the main differentiators between
     // the various frame sources, along with the constructor and destructor

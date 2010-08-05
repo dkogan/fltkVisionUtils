@@ -189,6 +189,68 @@ static enum PixelFormat pixfmt_V4L2_to_swscale(uint32_t v4l2Pixfmt)
     return PIX_FMT_NONE;
 }
 
+bool CameraSource_V4L2::findDecoder(void)
+{
+    enum PixelFormat swscalePixfmt = pixfmt_V4L2_to_swscale(pixfmt.pixelformat);
+
+    if(swscalePixfmt == PIX_FMT_NONE)
+    {
+        // swscale can't interpret the pixel format directly. Can avcodec do it and THEN feed
+        // swscale?
+        if(pixfmt.pixelformat == V4L2_PIX_FMT_JPEG)
+        {
+            avcodec_init();
+            avcodec_register_all();
+
+            AVCodec* pCodec = avcodec_find_decoder(CODEC_ID_MJPEG);
+            if(pCodec == NULL)
+            {
+                fprintf(stderr, "ffmpeg: couldn't find decoder\n");
+                return false;
+            }
+
+            codecContext = avcodec_alloc_context();
+            ffmpegFrame  = avcodec_alloc_frame();
+
+            if(avcodec_open(codecContext, pCodec) < 0)
+            {
+                fprintf(stderr, "ffmpeg: couldn't open codec\n");
+                return false;
+            }
+
+            // I have now set up the decoder and need to set up the scaler. Sadly libavcodec doesn't
+            // give me the output pixel format until we've decoded at least one frame so I can't set
+            // up the scaler here.
+            return true;
+        }
+    }
+
+    // at this point we should have the scaler pixel format selected, whether it comes from avcodec
+    // or not
+    if(swscalePixfmt != PIX_FMT_NONE)
+        return setupSwsContext(swscalePixfmt);
+
+    // no decoders found
+    return false;
+}
+
+bool CameraSource_V4L2::setupSwsContext(enum PixelFormat swscalePixfmt)
+{
+#warning shouldnt need setupCroppingScaling since Im doing this anyway
+    scaleContext = sws_getContext(pixfmt.width, pixfmt.height, swscalePixfmt,
+                                  pixfmt.width, pixfmt.height,
+                                  userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
+                                  SWS_POINT, NULL, NULL, NULL);
+    if(scaleContext == NULL)
+    {
+        fprintf(stderr, "libswscale doesn't supported my pixelformat...\n");
+        uninit();
+        return false;
+    }
+
+    return true;
+}
+
 CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                                      const char* device,
                                      CvRect _cropRect,
@@ -196,7 +258,9 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     : FrameSource(_userColorMode),
       camera_fd(-1),
       buffer(NULL),
-      scaleContext(NULL)
+      scaleContext(NULL),
+      codecContext(NULL),
+      ffmpegFrame(NULL)
 {
     camera_fd = open( device, O_RDWR, 0);
     if( camera_fd < 0)
@@ -321,7 +385,12 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         return;
     }
 
-    buffer = new unsigned char[pixfmt.sizeimage];
+    // When allocating the memory buffer, I leave room for padding. FFMPEG documentation
+    // (avcodec.h):
+    //  * @warning The input buffer must be \c FF_INPUT_BUFFER_PADDING_SIZE larger than
+    //  * the actual read bytes because some optimized bitstream readers read 32 or 64
+    //  * bits at once and could read over the end.
+    buffer = new unsigned char[pixfmt.sizeimage + FF_INPUT_BUFFER_PADDING_SIZE];
     if( buffer == NULL)
     {
         fprintf( stderr, "Out of memory\n");
@@ -329,22 +398,9 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         return;
     }
 
-    enum PixelFormat swscalePixfmt = pixfmt_V4L2_to_swscale(pixfmt.pixelformat);
-    if(swscalePixfmt == PIX_FMT_NONE)
+    if(!findDecoder())
     {
-        fprintf(stderr, "V4L2 pixel format not supported by libswscale, so I don't support it yet\n");
-        uninit();
-        return;
-    }
-
-#warning shouldnt need setupCroppingScaling since Im doing this anyway
-    scaleContext = sws_getContext(pixfmt.width, pixfmt.height, swscalePixfmt,
-                                  pixfmt.width, pixfmt.height,
-                                  userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
-                                  SWS_POINT, NULL, NULL, NULL);
-    if(scaleContext == NULL)
-    {
-        fprintf(stderr, "libswscale doesn't supported my pixelformat...\n");
+        fprintf(stderr, "no decoder found\n");
         uninit();
         return;
     }
@@ -376,6 +432,19 @@ void CameraSource_V4L2::uninit(void)
         sws_freeContext(scaleContext);
         scaleContext = NULL;
     }
+
+    if(ffmpegFrame)
+    {
+        av_free(ffmpegFrame);
+        ffmpegFrame = NULL;
+    }
+
+    if(codecContext)
+    {
+        avcodec_close(codecContext);
+        av_free(codecContext);
+        codecContext = NULL;
+    }
 }
 
 CameraSource_V4L2::~CameraSource_V4L2()
@@ -390,20 +459,53 @@ bool CameraSource_V4L2::_getNextFrame  (IplImage* image, uint64_t* timestamp_us)
 
 bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
-    struct v4l2_buffer buf;
-    unsigned int i;
-
     if( read( camera_fd, buffer, pixfmt.sizeimage) < 0 )
     {
         perror ("camera read");
         return false;
     }
 
-    int stride = pixfmt.bytesperline;
-    sws_scale(scaleContext,
-              &buffer, &stride, 0, pixfmt.height,
-              (unsigned char**)&image->imageData, &image->widthStep);
+    IplImage* cvbuffer;
+    if(preCropScaleBuffer == NULL) cvbuffer = image;
+    else                           cvbuffer = preCropScaleBuffer;
 
+    unsigned char** scaleSource         = &buffer;
+    int             pixfmt_bytesperline = pixfmt.bytesperline; // needed to match the pointer type
+    int*            scaleStride         = &pixfmt_bytesperline;
+
+    if(codecContext)
+    {
+        int frameFinished;
+        int decodeResult = avcodec_decode_video(codecContext, ffmpegFrame, &frameFinished,
+                                                buffer, pixfmt.sizeimage);
+        if(decodeResult < 0 || frameFinished == 0)
+        {
+            fprintf(stderr, "error decoding ffmpeg frame\n");
+            return false;
+        }
+
+        scaleSource = ffmpegFrame->data;
+        scaleStride = ffmpegFrame->linesize;
+
+        if(scaleContext == NULL)
+            // set up the scaler to transform FROM the decoded result
+            if(!setupSwsContext(codecContext->pix_fmt))
+                return false;
+    }
+
+
+    if(scaleContext)
+    {
+        sws_scale(scaleContext,
+                  scaleSource, scaleStride, 0, pixfmt.height,
+                  (unsigned char**)&image->imageData, &image->widthStep);
+    }
+
+    if(preCropScaleBuffer != NULL)
+    {
+#warning this isnt very efficient. The cropping and scaling should be a part of the conversion functions above
+        applyCroppingScaling(preCropScaleBuffer, image);
+    }
     return true;
 }
 
