@@ -13,6 +13,9 @@ extern "C"
 #include <libavcodec/avcodec.h>
 }
 
+
+// This is a videoforlinux2 frame source. It is highly immature and may not work. It has only been
+// tested on the handful of cameras I have
 class CameraSource_V4L2 : public FrameSource
 {
     int             camera_fd;
