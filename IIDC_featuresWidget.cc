@@ -291,7 +291,10 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
     switch(mode)
     {
     case MAN_RELATIVE:
-        dc1394_feature_set_value(camera, feature->id, (uint32_t)feature->setting->value());
+        if(feature->id == DC1394_FEATURE_TEMPERATURE)
+            dc1394_feature_temperature_set_value(camera, (uint32_t)feature->setting->value());
+        else
+            dc1394_feature_set_value(camera, feature->id, (uint32_t)feature->setting->value());
         return;
 
     case MAN_ABSOLUTE:
