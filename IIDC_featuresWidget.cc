@@ -12,6 +12,12 @@ using namespace std;
 #define SETTING_WIDTH  200
 #define UNITS_WIDTH    70
 
+
+#define FOREACH(itrtype, itrname, container) \
+    for(itrtype itrname = container.begin(); \
+        itrname != container.end();          \
+        itrname++)
+
 static void settingChanged(Fl_Widget* widget, void* cookie)
 {
     ((IIDC_featuresWidget*)cookie)->settingsChanged(widget);
@@ -168,9 +174,7 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
 
     // Now that I added all of the widgets, I know how wide the widest labels need to be, and can
     // resize everything accordingly
-    for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
-        itr != featureUIs.end();
-        itr++)
+    FOREACH(vector<featureUI_t*>::iterator, itr, featureUIs)
     {
         Fl_Box* featureLabel = (*itr)->featureLabel;
         featureLabel->size(widestFeatureLabel, FEATURE_HEIGHT);
@@ -210,9 +214,7 @@ void IIDC_featuresWidget::getNaturalSize(int* ww, int* hh)
 
 IIDC_featuresWidget::~IIDC_featuresWidget()
 {
-    for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
-        itr != featureUIs.end();
-        itr++)
+    FOREACH(vector<featureUI_t*>::iterator, itr, featureUIs)
     {
         delete *itr;
     }
@@ -220,9 +222,7 @@ IIDC_featuresWidget::~IIDC_featuresWidget()
 
 void IIDC_featuresWidget::syncControls(void)
 {
-    for(vector<featureUI_t*>::iterator itr = featureUIs.begin();
-        itr != featureUIs.end();
-        itr++)
+    FOREACH(vector<featureUI_t*>::iterator, itr, featureUIs)
     {
         dc1394feature_info_t feature;
         feature.id = (*itr)->id;
