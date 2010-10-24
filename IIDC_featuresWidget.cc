@@ -5,12 +5,12 @@
 #include <iostream>
 using namespace std;
 
-#define FEATURE_HEIGHT 20
-#define PACK_SPACING   10
-#define LABEL_SPACE    120
-#define MODE_BOX_WIDTH 180
-#define SETTING_WIDTH  200
-#define UNITS_WIDTH    70
+#define FEATURE_HEIGHT     20
+#define PACK_SPACING       10
+#define LABEL_SPACE        120
+#define MODE_BOX_WIDTH     180
+#define SETTING_WIDTH      200
+#define UNITS_WIDTH        70
 
 #define SYNC_CONTROLS_PERIOD_US 100000
 
