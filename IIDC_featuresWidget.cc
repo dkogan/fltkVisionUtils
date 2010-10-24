@@ -109,6 +109,8 @@ static void* syncControlsThread(void *pArg)
         widget->syncControls();
         Fl::unlock();
     }
+
+    return NULL;
 }
 
 void IIDC_featuresWidget::cleanupThreads(void)
