@@ -281,33 +281,9 @@ void IIDC_featuresWidget::syncControls(void)
             activateSettings((*itr)->setting);
 
             if(feature.absolute_capable == DC1394_TRUE && feature.abs_control == DC1394_ON)
-            {
                 (*itr)->modes->value( (*itr)->choiceIndices[MAN_ABSOLUTE] );
-
-                double range = feature.abs_max - feature.abs_min;
-                double minstep = range / 10000.0;
-                FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
-                {
-                    (*itrslider)->bounds(feature.abs_min, feature.abs_max);
-                    (*itrslider)->value(feature.abs_value);
-                    (*itrslider)->precision(ceil(-log(minstep) / log(10)));
-                }
-
-                // show the units
-                (*itr)->setting[numSliders - 1]->size(SETTING_WIDTH/numSliders - widestUnitLabel, FEATURE_HEIGHT);
-                (*itr)->unitsWidget->show();
-                continue;
-            }
             else
-            {
                 (*itr)->modes->value( (*itr)->choiceIndices[MAN_RELATIVE] );
-                FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
-                {
-                    (*itrslider)->bounds(feature.min, feature.max);
-                    (*itrslider)->value(feature.value);
-                    (*itrslider)->precision(0); // integers
-                }
-            }
         }
         else
         {
@@ -316,12 +292,36 @@ void IIDC_featuresWidget::syncControls(void)
             continue;
         }
 
-        // we get here only if we do not need to show the absolute units. Hide that widget
-        FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+        if(feature.absolute_capable == DC1394_TRUE && feature.abs_control == DC1394_ON)
         {
-            (*itrslider)->size(SETTING_WIDTH / numSliders, FEATURE_HEIGHT);
+            double range = feature.abs_max - feature.abs_min;
+            double minstep = range / 10000.0;
+            FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+            {
+                (*itrslider)->bounds(feature.abs_min, feature.abs_max);
+                (*itrslider)->value(feature.abs_value);
+                (*itrslider)->precision(ceil(-log(minstep) / log(10)));
+            }
+
+            // show the units
+            (*itr)->setting[numSliders - 1]->size(SETTING_WIDTH/numSliders - widestUnitLabel, FEATURE_HEIGHT);
+            (*itr)->unitsWidget->show();
         }
-        (*itr)->unitsWidget->hide();
+        else
+        {
+            FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+            {
+                (*itrslider)->bounds(feature.min, feature.max);
+                (*itrslider)->value(feature.value);
+                (*itrslider)->precision(0); // integers
+            }
+
+            FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+            {
+                (*itrslider)->size(SETTING_WIDTH / numSliders, FEATURE_HEIGHT);
+            }
+            (*itr)->unitsWidget->hide();
+        }
     }
 }
 
