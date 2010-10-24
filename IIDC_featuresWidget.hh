@@ -23,7 +23,7 @@ class IIDC_featuresWidget : public Fl_Pack
         dc1394feature_t           id;
         Fl_Box*                   featureLabel;
         Fl_Choice*                modes;
-        Fl_Value_Slider*          setting;
+        vector<Fl_Value_Slider*>  setting;
         Fl_Box*                   unitsWidget;
         vector<modeSelection_t>   modeChoices;
         map<modeSelection_t, int> choiceIndices;

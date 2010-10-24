@@ -144,9 +144,21 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
             if(featureSet.feature[i].absolute_capable == DC1394_TRUE)
                 addModeUI(modes, modeStrings, MAN_ABSOLUTE);
 
-            Fl_Value_Slider* setting = new Fl_Value_Slider(Xslider, Y, SETTING_WIDTH, FEATURE_HEIGHT);
-            setting->type(FL_HOR_SLIDER);
-            setting->callback(&::settingChanged, this);
+
+            // currently I have general support for multiple-slider features, but white balance is
+            // the only one that actually has multiple sliders
+            int numSliders = 1;
+            if(featureSet.feature[i].id == DC1394_FEATURE_WHITE_BALANCE)
+                numSliders = 2;
+
+            for(int j=0; j<numSliders; j++)
+            {
+                Fl_Value_Slider* setting = new Fl_Value_Slider(Xslider + j*(SETTING_WIDTH / numSliders), Y,
+                                                               SETTING_WIDTH / numSliders, FEATURE_HEIGHT);
+                setting->type(FL_HOR_SLIDER);
+                setting->callback(&::settingChanged, this);
+                featureUIs.back()->setting.push_back( setting );
+            }
 
             Fl_Box* unitsWidget = new Fl_Box(Xslider, Y, UNITS_WIDTH, FEATURE_HEIGHT,
                                              absUnits[ featureSet.feature[i].id ]);
@@ -157,7 +169,6 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
             featureUIs.back()->id           = featureSet.feature[i].id;
             featureUIs.back()->featureLabel = featureLabel;
             featureUIs.back()->modes        = modes;
-            featureUIs.back()->setting      = setting;
             featureUIs.back()->unitsWidget  = unitsWidget;
 
             // I pass "this" to the widget callbacks, but I would like to have another "user
@@ -182,8 +193,16 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
         Fl_Choice* modes = (*itr)->modes;
         modes->position(X + widestFeatureLabel, Y);
 
-        Fl_Value_Slider* setting = (*itr)->setting;
-        setting->position(X + widestFeatureLabel + MODE_BOX_WIDTH, Y);
+        int numSliders = (*itr)->setting.size();
+        int sliderIndex = 0;
+
+        FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+        {
+            (*itrslider)->position(X + widestFeatureLabel + MODE_BOX_WIDTH +
+                                   sliderIndex * (SETTING_WIDTH/numSliders),
+                                   Y);
+            sliderIndex++;
+        }
 
         // I hide the units widget until I know that I need it
         Fl_Box* unitsWidget = (*itr)->unitsWidget;
@@ -220,10 +239,24 @@ IIDC_featuresWidget::~IIDC_featuresWidget()
     }
 }
 
+static inline void activateSettings(vector<Fl_Value_Slider*>& sliders)
+{
+    FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, sliders)
+        (*itrslider)->activate();
+}
+
+static inline void deactivateSettings(vector<Fl_Value_Slider*>& sliders)
+{
+    FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, sliders)
+        (*itrslider)->deactivate();
+}
+
 void IIDC_featuresWidget::syncControls(void)
 {
     FOREACH(vector<featureUI_t*>::iterator, itr, featureUIs)
     {
+        int numSliders = (*itr)->setting.size();
+
         dc1394feature_info_t feature;
         feature.id = (*itr)->id;
         dc1394_feature_get(camera, &feature);
@@ -231,43 +264,49 @@ void IIDC_featuresWidget::syncControls(void)
         if(feature.on_off_capable && feature.is_on == DC1394_OFF)
         {
             (*itr)->modes->value( (*itr)->choiceIndices[OFF] );
-            (*itr)->setting->deactivate();
+            deactivateSettings((*itr)->setting);
         }
         else if(feature.current_mode == DC1394_FEATURE_MODE_AUTO)
         {
             (*itr)->modes->value( (*itr)->choiceIndices[AUTO] );
-            (*itr)->setting->deactivate();
+            deactivateSettings((*itr)->setting);
         }
         else if(feature.current_mode == DC1394_FEATURE_MODE_ONE_PUSH_AUTO)
         {
             (*itr)->modes->value( (*itr)->choiceIndices[AUTO_SINGLE] );
-            (*itr)->setting->deactivate();
+            deactivateSettings((*itr)->setting);
         }
         else if(feature.current_mode == DC1394_FEATURE_MODE_MANUAL)
         {
-            (*itr)->setting->activate();
+            activateSettings((*itr)->setting);
 
             if(feature.absolute_capable == DC1394_TRUE && feature.abs_control == DC1394_ON)
             {
                 (*itr)->modes->value( (*itr)->choiceIndices[MAN_ABSOLUTE] );
-                (*itr)->setting->bounds(feature.abs_min, feature.abs_max);
-                (*itr)->setting->value(feature.abs_value);
 
                 double range = feature.abs_max - feature.abs_min;
                 double minstep = range / 10000.0;
-                (*itr)->setting->precision(ceil(-log(minstep) / log(10)));
+                FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+                {
+                    (*itrslider)->bounds(feature.abs_min, feature.abs_max);
+                    (*itrslider)->value(feature.abs_value);
+                    (*itrslider)->precision(ceil(-log(minstep) / log(10)));
+                }
 
                 // show the units
-                (*itr)->setting->size(SETTING_WIDTH - widestUnitLabel, FEATURE_HEIGHT);
+                (*itr)->setting[numSliders - 1]->size(SETTING_WIDTH/numSliders - widestUnitLabel, FEATURE_HEIGHT);
                 (*itr)->unitsWidget->show();
                 continue;
             }
             else
             {
                 (*itr)->modes->value( (*itr)->choiceIndices[MAN_RELATIVE] );
-                (*itr)->setting->bounds(feature.min, feature.max);
-                (*itr)->setting->value(feature.value);
-                (*itr)->setting->precision(0); // integers
+                FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+                {
+                    (*itrslider)->bounds(feature.min, feature.max);
+                    (*itrslider)->value(feature.value);
+                    (*itrslider)->precision(0); // integers
+                }
             }
         }
         else
@@ -278,7 +317,10 @@ void IIDC_featuresWidget::syncControls(void)
         }
 
         // we get here only if we do not need to show the absolute units. Hide that widget
-        (*itr)->setting->size(SETTING_WIDTH, FEATURE_HEIGHT);
+        FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
+        {
+            (*itrslider)->size(SETTING_WIDTH / numSliders, FEATURE_HEIGHT);
+        }
         (*itr)->unitsWidget->hide();
     }
 }
@@ -288,13 +330,16 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
     featureUI_t* feature = (featureUI_t*)widget->parent()->user_data();
     modeSelection_t mode = feature->modeChoices[ feature->modes->value() ];
 
+    // Only the white balance has more than one controllable slider, so I hardcode the [0] for
+    // everything else. I don't have an IIDC camera with manually-controllable white balance, but I
+    // should call dc1394_feature_whitebalance_set_value() to set its value
     switch(mode)
     {
     case MAN_RELATIVE:
         if(feature->id == DC1394_FEATURE_TEMPERATURE)
-            dc1394_feature_temperature_set_value(camera, (uint32_t)feature->setting->value());
+            dc1394_feature_temperature_set_value(camera, (uint32_t)feature->setting[0]->value());
         else
-            dc1394_feature_set_value(camera, feature->id, (uint32_t)feature->setting->value());
+            dc1394_feature_set_value(camera, feature->id, (uint32_t)feature->setting[0]->value());
         return;
 
     case MAN_ABSOLUTE:
@@ -305,7 +350,7 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
             cerr << "IIDC_featuresWidget: setting changed while not in absolute mode" << endl;
             return;
         }
-        dc1394_feature_set_absolute_value(camera, feature->id, (float)feature->setting->value());
+        dc1394_feature_set_absolute_value(camera, feature->id, (float)feature->setting[0]->value());
         return;
 
     default: ;
