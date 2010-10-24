@@ -12,6 +12,7 @@ using namespace std;
 #define SETTING_WIDTH  200
 #define UNITS_WIDTH    70
 
+#define SYNC_CONTROLS_PERIOD_US 100000
 
 #define FOREACH(itrtype, itrname, container) \
     for(itrtype itrname = container.begin(); \
@@ -93,11 +94,39 @@ void IIDC_featuresWidget::initMappings(map<modeSelection_t, const char*>&       
     modeStrings[MAN_ABSOLUTE] = "Manual in absolute coordinates";
 }
 
+static void* syncControlsThread(void *pArg)
+{
+    IIDC_featuresWidget* widget = (IIDC_featuresWidget*)pArg;
+
+    while(1)
+    {
+        struct timespec delay;
+        delay.tv_sec  = SYNC_CONTROLS_PERIOD_US / 1000000;
+        delay.tv_nsec = (SYNC_CONTROLS_PERIOD_US - delay.tv_sec*1000000) * 1000;
+        nanosleep(&delay, NULL);
+
+        Fl::lock();
+        widget->syncControls();
+        Fl::unlock();
+    }
+}
+
+void IIDC_featuresWidget::cleanupThreads(void)
+{
+    if(syncControlsThread_id != 0)
+    {
+        pthread_cancel(syncControlsThread_id);
+        pthread_join(syncControlsThread_id, NULL);
+        syncControlsThread_id = 0;
+    }
+}
+
 IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
                                          int X,int Y,int W,int H,const char*l,
                                          bool doResizeNatural)
     : Fl_Pack(X, Y, W, H, l), camera(_camera),
-      widestFeatureLabel(0), widestUnitLabel(0)
+      widestFeatureLabel(0), widestUnitLabel(0),
+      syncControlsThread_id(0)
 {
     int ww, hh;
 
@@ -221,8 +250,11 @@ IIDC_featuresWidget::IIDC_featuresWidget(dc1394camera_t *_camera,
     }
     parent()->init_sizes();
 
-
-    syncControls();
+    if(pthread_create(&syncControlsThread_id, NULL, &syncControlsThread, this) != 0)
+    {
+        fprintf(stderr, "IIDC_featuresWidget couldn't spawn syncControls thread\n");
+        syncControlsThread_id = 0;
+    }
 }
 
 void IIDC_featuresWidget::getNaturalSize(int* ww, int* hh)
@@ -233,6 +265,8 @@ void IIDC_featuresWidget::getNaturalSize(int* ww, int* hh)
 
 IIDC_featuresWidget::~IIDC_featuresWidget()
 {
+    cleanupThreads();
+
     FOREACH(vector<featureUI_t*>::iterator, itr, featureUIs)
     {
         delete *itr;
@@ -396,6 +430,4 @@ void IIDC_featuresWidget::modeChanged(Fl_Widget* widget)
         cerr << "IIDC_featuresWidget::modeChanged(): unhandled switch..." << endl;
         break;
     }
-
-    syncControls();
 }

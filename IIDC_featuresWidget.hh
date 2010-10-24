@@ -7,6 +7,7 @@
 #include <FL/Fl_Value_Slider.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Pack.H>
+#include <pthread.h>
 #include <vector>
 #include <map>
 using namespace std;
@@ -30,6 +31,10 @@ class IIDC_featuresWidget : public Fl_Pack
     };
     vector<featureUI_t*>          featureUIs;
 
+    pthread_t                     syncControlsThread_id;
+
+
+
     void addModeUI(Fl_Choice* modes,
                    map<modeSelection_t, const char*>& modeStrings,
                    modeSelection_t modeChoice);
@@ -37,6 +42,9 @@ class IIDC_featuresWidget : public Fl_Pack
                       map<dc1394feature_mode_t, modeSelection_t>& modeMapping,
                       map<dc1394feature_t, const char*>&          featureNames,
                       map<dc1394feature_t, const char*>&          absUnits);
+
+    void cleanupThreads(void);
+
 
 public:
     IIDC_featuresWidget(dc1394camera_t *_camera,
