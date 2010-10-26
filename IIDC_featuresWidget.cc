@@ -347,16 +347,21 @@ void IIDC_featuresWidget::syncControls(void)
         {
             FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
             {
-                (*itrslider)->bounds(feature.min, feature.max);
-                (*itrslider)->value(feature.value);
                 (*itrslider)->precision(0); // integers
-            }
-
-            FOREACH(vector<Fl_Value_Slider*>::iterator, itrslider, (*itr)->setting)
-            {
+                (*itrslider)->bounds(feature.min, feature.max);
                 (*itrslider)->size(SETTING_WIDTH / numSliders, FEATURE_HEIGHT);
             }
             (*itr)->unitsWidget->hide();
+
+            if(feature.id == DC1394_FEATURE_WHITE_BALANCE)
+            {
+                (*itr)->setting[0]->value(feature.BU_value);
+                (*itr)->setting[1]->value(feature.RV_value);
+            }
+            else
+            {
+                (*itr)->setting[0]->value(feature.value);
+            }
         }
     }
 }
@@ -366,14 +371,15 @@ void IIDC_featuresWidget::settingsChanged(Fl_Widget* widget)
     featureUI_t* feature = (featureUI_t*)widget->parent()->user_data();
     modeSelection_t mode = feature->modeChoices[ feature->modes->value() ];
 
-    // Only the white balance has more than one controllable slider, so I hardcode the [0] for
-    // everything else. I don't have an IIDC camera with manually-controllable white balance, but I
-    // should call dc1394_feature_whitebalance_set_value() to set its value
     switch(mode)
     {
     case MAN_RELATIVE:
         if(feature->id == DC1394_FEATURE_TEMPERATURE)
             dc1394_feature_temperature_set_value(camera, (uint32_t)feature->setting[0]->value());
+        else if(feature->id == DC1394_FEATURE_WHITE_BALANCE)
+            dc1394_feature_whitebalance_set_value(camera,
+                                                  (uint32_t)feature->setting[0]->value(),
+                                                  (uint32_t)feature->setting[1]->value());
         else
             dc1394_feature_set_value(camera, feature->id, (uint32_t)feature->setting[0]->value());
         return;
