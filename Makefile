@@ -1,14 +1,15 @@
-# selects opencv 2.1 or 2.0
-OPENCV_VERSION = 200
+# debian places the headers and libraries in a different (much more sensible) location than the
+# upstream opencv builds. This variable selects this
+OPENCV_DEBIAN_PACKAGES = 1
 
 CXXFLAGS += -g -O3 -Wall -Wextra -pedantic -MMD
-CXXFLAGS += -DOPENCV_VERSION=$(OPENCV_VERSION)
 LDFLAGS  += -g
 LDLIBS   += -lX11 -lXft -lXinerama
 
-ifeq ($(OPENCV_VERSION), 210)
+ifeq ($(OPENCV_DEBIAN_PACKAGES), 0)
   OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
 else
+  CXXFLAGS += -DOPENCV_DEBIAN_PACKAGES
   OPENCV_LIBS = -lcv -lhighgui
 endif
 
