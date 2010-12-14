@@ -10,6 +10,7 @@ ifeq ($(OPENCV_DEBIAN_PACKAGES), 0)
   OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
 else
   CXXFLAGS += -DOPENCV_DEBIAN_PACKAGES
+  CFLAGS   += -DOPENCV_DEBIAN_PACKAGES
   OPENCV_LIBS = -lcv -lhighgui
 endif
 
