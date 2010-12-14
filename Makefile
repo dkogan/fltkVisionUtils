@@ -25,7 +25,7 @@ LIBRARY_OBJECTS = $(patsubst %.cc, %.o, $(LIBRARY_SOURCES))
 fltkVisionUtils.a: $(LIBRARY_OBJECTS)
 	ar rcvu $@ $^
 
-sample: $(LIBRARY_OBJECTS) sample.o
+sample: sample.o fltkVisionUtils.a
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 
