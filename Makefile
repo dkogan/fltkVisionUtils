@@ -2,6 +2,9 @@
 # upstream opencv builds. This variable selects this
 OPENCV_DEBIAN_PACKAGES = 1
 
+# needed for newer ffmpeg
+CXXFLAGS=-D__STDC_CONSTANT_MACROS
+
 CXXFLAGS += -g -O3 -Wall -Wextra -pedantic -MMD
 LDFLAGS  += -g
 LDLIBS   += -lX11 -lXft -lXinerama
