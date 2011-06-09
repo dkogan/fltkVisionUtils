@@ -19,6 +19,8 @@
 
 #include "cameraSource_v4l2.hh"
 
+// The v4l2 driver is very immature. It has been tested a bit and basically
+// works, but it has a LOT of things that are incomplete and need attention
 static int ioctl_persistent( int fd, unsigned long request, void* arg)
 {
     int r;
@@ -465,6 +467,7 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
         return false;
     }
 
+#warning finish implementing this part of the v4l2 driver
     IplImage* cvbuffer;
     if(preCropScaleBuffer == NULL) cvbuffer = image;
     else                           cvbuffer = preCropScaleBuffer;
