@@ -14,7 +14,7 @@ ifeq ($(OPENCV_DEBIAN_PACKAGES), 0)
 else
   CXXFLAGS += -DOPENCV_DEBIAN_PACKAGES
   CFLAGS   += -DOPENCV_DEBIAN_PACKAGES
-  OPENCV_LIBS = -lcv -lhighgui
+  OPENCV_LIBS = -lcv -lcxcore -lhighgui
 endif
 
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
