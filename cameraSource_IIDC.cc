@@ -523,6 +523,8 @@ bool CameraSource_IIDC::finishGet(IplImage* image)
                                       );
     }
 
+    assert(err == DC1394_SUCCESS);
+
     if(preCropScaleBuffer != NULL)
     {
 #warning this isnt very efficient. The cropping and scaling should be a part of the conversion functions above
