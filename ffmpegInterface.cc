@@ -369,7 +369,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
         cerr << "ffmpeg: couldn't create sws context" << endl;
         return false;
     }
-  
+
     m_bOpen = m_bOK = true;
     return true;
 }
