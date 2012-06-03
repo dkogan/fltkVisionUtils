@@ -15,6 +15,8 @@ using namespace std;
 #include "cameraSource_IIDC.hh"
 #include "IIDC_featuresWidget.hh"
 
+#include <opencv2/imgproc/imgproc_c.h>
+
 #define SOURCE_PERIOD_US 1000000
 
 static CvFltkWidget* widgetImage;

@@ -1,5 +1,7 @@
 #include "staticImageSource.hh"
 #include <iostream>
+
+#include <opencv2/highgui/highgui_c.h>
 using namespace std;
 
 StaticImageSource::StaticImageSource(const char* file, FrameSource_UserColorChoice _userColorMode,

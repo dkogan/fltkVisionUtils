@@ -5,7 +5,7 @@
 #include <FL/fl_draw.H>
 #include <FL/Fl_RGB_Image.H>
 
-#include "cvlib.hh"
+#include <opencv2/core/core_c.h>
 
 #include <string.h>
 

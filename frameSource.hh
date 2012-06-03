@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "threadUtils.hh"
-#include "cvlib.hh"
+#include <opencv2/core/types_c.h>
 
 // user interface color choice. RGB8 or MONO8
 enum FrameSource_UserColorChoice  { FRAMESOURCE_COLOR, FRAMESOURCE_GRAYSCALE };

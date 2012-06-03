@@ -1,6 +1,8 @@
 #include <time.h>
 #include <iostream>
 #include "frameSource.hh"
+
+#include <opencv2/imgproc/imgproc_c.h>
 using namespace std;
 
 FrameSource::FrameSource (FrameSource_UserColorChoice _userColorMode)
