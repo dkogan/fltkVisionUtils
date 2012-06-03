@@ -3,26 +3,57 @@ CXXFLAGS=-D__STDC_CONSTANT_MACROS
 
 CXXFLAGS += -g -O3 -Wall -Wextra -pedantic -MMD
 LDFLAGS  += -g
-LDLIBS   += -lX11 -lXft -lXinerama
-
-OPENCV_LIBS = -lopencv_core -lopencv_highgui
-
+OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
 LDLIBS += -lfltk $(OPENCV_LIBS) -lpthread -ldc1394 $(FFMPEG_LIBS)
 
-all: fltkVisionUtils.a sample
 
-# all non-sample .cc files
-LIBRARY_SOURCES = $(shell ls *.cc | grep -v -i sample)
-LIBRARY_OBJECTS = $(patsubst %.cc, %.o, $(LIBRARY_SOURCES))
-fltkVisionUtils.a: $(LIBRARY_OBJECTS)
+API_VERSION := 1
+VERSION     := $(shell perl -ne 's/.*\((.*?)\).*/$$1/; print; exit' debian/changelog)
+SO_VERSION  := $(API_VERSION).$(VERSION)
+
+TARGET_SO := libvisionio.so.$(SO_VERSION)
+TARGET_A  := libvisionio.a
+
+all: $(TARGET_A) sample
+
+
+LIB_OBJECTS = $(patsubst %.cc,%.o,$(filter-out sample,$(wildcard *.cc)))
+
+$(TARGET_SO): $(LIB_OBJECTS:%.o=%-fpic.o)
+	$(CXX) $(LDLIBS) -shared  $^ -Wl,-soname -Wl,libvisionio.so.$(API_VERSION) -o $@
+
+%-fpic.o: CXXFLAGS += -fPIC
+%-fpic.o: %.cc
+	$(CXX) -fPIC $(CXXFLAGS) -c -o $@ $<
+
+$(TARGET_A): $(LIB_OBJECTS)
 	ar rcvu $@ $^
 
-sample: sample.o fltkVisionUtils.a
+sample: sample.o $(TARGET_A)
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -lopencv_imgproc -o $@
 
 
+ifdef DESTDIR
+
+install: all $(TARGET_SO)
+	mkdir -p $(DESTDIR)/usr/lib/
+	install -m 0644 $(TARGET_A) $(TARGET_SO) $(DESTDIR)/usr/lib/
+	cd $(DESTDIR)/usr/lib/ && \
+	ln -fs $(TARGET_SO) libvisionio.so.$(API_VERSION) && \
+	ln -fs $(TARGET_SO) libvisionio.so && \
+	cd -
+	mkdir -p $(DESTDIR)/usr/include/
+	install -m 0644 *.hh $(DESTDIR)/usr/include/
+else
+install:
+	@echo "make install is here ONLY for the debian package. Do NOT run it yourself" && false
+endif
+
+
 clean:
-	rm -f *.o *.a *.d sample
+	rm -f *.o *.a *.so* *.d sample
+
+.PHONY: all
 
 -include *.d

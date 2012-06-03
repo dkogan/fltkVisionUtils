@@ -1,0 +1,46 @@
+Source: libvisionio
+Priority: extra
+Maintainer: Dima Kogan <dima@secretsauce.net>
+Build-Depends: debhelper (>= 7.0.50~), libopencv-core-dev,
+ libopencv-highgui-dev, libopencv-imgproc-dev, libfltk1.3-dev, libswscale-dev,
+ libavcodec-dev, libavformat-dev, libavutil-dev, linux-libc-dev,
+ libdc1394-22-dev
+Standards-Version: 3.9.2
+Section: libs
+Homepage: https://github.com/dkogan/fltkVisionUtils
+Vcs-Git: git://github.com/dkogan/fltkVisionUtils.git
+Vcs-Browser: https://github.com/dkogan/fltkVisionUtils
+
+Package: libvisionio1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Library to connect OpenCV, FFMPEG, FLTK, libdc1394, v4l
+ General purpose library to allow rapid development of computer vision
+ applications. Supports FLTK applications that grab frames with
+ libdc1394/v4l/ffmpeg and process the data with OpencV
+
+Package: libvisionio-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}, libvisionio1 (= ${binary:Version}),
+ libopencv-highgui-dev, libopencv-imgproc-dev, libfltk1.3-dev, libswscale-dev,
+ libavcodec-dev, libavformat-dev, libavutil-dev, linux-libc-dev,
+ libdc1394-22-dev
+Description: Library to connect OpenCV, FFMPEG, FLTK, libdc1394, v4l
+ General purpose library to allow rapid development of computer vision
+ applications. Supports FLTK applications that grab frames with
+ libdc1394/v4l/ffmpeg and process the data with OpencV
+ .
+ Development files
+
+Package: libvisionio1-dbg
+Section: debug
+Architecture: any
+Depends: ${misc:Depends}, libvisionio1
+Description: Library to connect OpenCV, FFMPEG, FLTK, libdc1394, v4l
+ General purpose library to allow rapid development of computer vision
+ applications. Supports FLTK applications that grab frames with
+ libdc1394/v4l/ffmpeg and process the data with OpencV
+ .
+ Debugging package

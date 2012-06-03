@@ -1,2 +1,2 @@
-This library is released into the public domain. You do still have to satisfy the license of its
-dependencies (FLTK, openCV, FFMPEG).
+This library is distributed under the terms of the GNU LGPL
+<http://www.gnu.org/licenses/lgpl.html>.

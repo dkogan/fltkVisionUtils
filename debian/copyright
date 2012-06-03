@@ -1,0 +1,8 @@
+Format: http://dep.debian.net/deps/dep5
+Upstream-Name: libvisionio
+Source: <https://github.com/dkogan/fltkVisionUtils>
+
+Files: *
+Copyright: 2010-2012 Dima Kogan <dima@secretsauce.net>
+License: LGPL
+ See /usr/share/common-licenses/LGPL for the full text
