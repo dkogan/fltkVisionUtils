@@ -201,7 +201,6 @@ bool CameraSource_V4L2::findDecoder(void)
         // swscale?
         if(pixfmt.pixelformat == V4L2_PIX_FMT_JPEG)
         {
-            avcodec_init();
             avcodec_register_all();
 
             AVCodec* pCodec = avcodec_find_decoder(CODEC_ID_MJPEG);
@@ -211,10 +210,10 @@ bool CameraSource_V4L2::findDecoder(void)
                 return false;
             }
 
-            codecContext = avcodec_alloc_context();
+            codecContext = avcodec_alloc_context3(NULL);
             ffmpegFrame  = avcodec_alloc_frame();
 
-            if(avcodec_open(codecContext, pCodec) < 0)
+            if(avcodec_open2(codecContext, pCodec, NULL) < 0)
             {
                 fprintf(stderr, "ffmpeg: couldn't open codec\n");
                 return false;
@@ -399,6 +398,7 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         uninit();
         return;
     }
+    av_init_packet(&ffmpegPacket);
 
     if(!findDecoder())
     {
@@ -479,8 +479,11 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
     if(codecContext)
     {
         int frameFinished;
-        int decodeResult = avcodec_decode_video(codecContext, ffmpegFrame, &frameFinished,
-                                                buffer, pixfmt.sizeimage);
+
+        ffmpegPacket.data = buffer;
+        ffmpegPacket.size = pixfmt.sizeimage;
+        int decodeResult  = avcodec_decode_video2(codecContext, ffmpegFrame, &frameFinished,
+                                                 &ffmpegPacket);
         if(decodeResult < 0 || frameFinished == 0)
         {
             fprintf(stderr, "error decoding ffmpeg frame\n");

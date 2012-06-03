@@ -72,7 +72,7 @@ void FFmpegDecoder::free(void)
     FFmpegTalker::free();
 
     if(m_pFormatCtx)
-        av_close_input_file(m_pFormatCtx);
+        avformat_close_input(&m_pFormatCtx);
     reset();
 }
 void FFmpegEncoder::free(void)
@@ -108,7 +108,7 @@ void FFmpegEncoder::close(void)
     if(m_bOpen)
     {
         av_write_trailer(m_pFormatCtx);
-        url_fclose(m_pFormatCtx->pb);
+        avio_close(m_pFormatCtx->pb);
     }
     free();
 }
@@ -129,7 +129,7 @@ bool FFmpegDecoder::open(const char* filename,
     }
     m_bOK = false;
 
-    if(av_open_input_file(&m_pFormatCtx, filename, NULL, 0, NULL) != 0)
+    if(avformat_open_input(&m_pFormatCtx, filename, NULL, NULL) != 0)
     {
         cerr << "ffmpeg: couldn't open input file" << endl;
         return false;
@@ -147,7 +147,7 @@ bool FFmpegDecoder::open(const char* filename,
     m_videoStream = -1;
     for(unsigned int i=0; i<m_pFormatCtx->nb_streams; i++)
     {
-        if(m_pFormatCtx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO)
+        if(m_pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
         {
             m_videoStream = i;
             break;
@@ -167,7 +167,7 @@ bool FFmpegDecoder::open(const char* filename,
         return false;
     }
 
-    if(avcodec_open(m_pCodecCtx, pCodec) < 0)
+    if(avcodec_open2(m_pCodecCtx, pCodec, NULL) < 0)
     {
         cerr << "ffmpeg: couldn't open codec" << endl;
         return false;
@@ -202,8 +202,8 @@ bool FFmpegDecoder::readFrame(IplImage* image)
     {
         if(packet.stream_index == m_videoStream)
         {
-            if(avcodec_decode_video(m_pCodecCtx, m_pFrameYUV, &frameFinished,
-                                    packet.data, packet.size) < 0)
+            if(avcodec_decode_video2(m_pCodecCtx, m_pFrameYUV, &frameFinished,
+                                     &packet) < 0)
             {
                 cerr << "ffmpeg error avcodec_decode_video()" << endl;
                 return false;
@@ -270,7 +270,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
     }
     m_bOK = false;
 
-    m_pOutputFormat = guess_format(NULL, "blah.avi", NULL);
+    m_pOutputFormat = av_guess_format(NULL, "blah.avi", NULL);
     if(!m_pOutputFormat)
     {
         cerr << "ffmpeg: guess_format couldn't figure it out" << endl;
@@ -288,7 +288,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
     m_pFormatCtx->oformat = m_pOutputFormat;
     strncpy(m_pFormatCtx->filename, filename, sizeof(m_pFormatCtx->filename));
 
-    m_pStream = av_new_stream(m_pFormatCtx, 0);
+    m_pStream = avformat_new_stream(m_pFormatCtx, NULL);
     if(m_pStream == NULL)
     {
         cerr << "ffmpeg: av_new_stream failed" << endl;
@@ -296,7 +296,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
     }
 
     m_pCodecCtx                = m_pStream->codec;
-    m_pCodecCtx->codec_type    = CODEC_TYPE_VIDEO;
+    m_pCodecCtx->codec_type    = AVMEDIA_TYPE_VIDEO;
     m_pCodecCtx->codec_id      = OUTPUT_CODEC;
     m_pCodecCtx->bit_rate      = 1000000;
     m_pCodecCtx->flags         = OUTPUT_FLAGS;
@@ -328,7 +328,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
         return false;
     }
 
-    if(avcodec_open(m_pCodecCtx, pCodec) < 0)
+    if(avcodec_open2(m_pCodecCtx, pCodec, NULL) < 0)
     {
         cerr << "ffmpeg: couldn't open codec" << endl;
         return false;
@@ -352,13 +352,13 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
                    m_pCodecCtx->width, m_pCodecCtx->height);
 
     // open the file
-    if(url_fopen(&m_pFormatCtx->pb, filename, URL_WRONLY) < 0)
+    if(avio_open(&m_pFormatCtx->pb, filename, URL_WRONLY) < 0)
     {
         cerr << "ffmpeg: couldn't open file " << filename << endl;
         return false;
     }
 
-    av_write_header(m_pFormatCtx);
+    avformat_write_header(m_pFormatCtx, NULL);
 
     m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height,
                                sourceColormode == FRAMESOURCE_GRAYSCALE ? PIX_FMT_GRAY8 : PIX_FMT_RGB24,

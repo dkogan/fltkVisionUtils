@@ -25,6 +25,7 @@ class CameraSource_V4L2 : public FrameSource
 
     AVCodecContext* codecContext;
     AVFrame*        ffmpegFrame;
+    AVPacket        ffmpegPacket;
 
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
