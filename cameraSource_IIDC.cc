@@ -341,8 +341,6 @@ CameraSource_IIDC::CameraSource_IIDC(FrameSource_UserColorChoice _userColorMode,
     setupCroppingScaling(_cropRect, scale);
 
     isRunningNow.setTrue();
-
-    cerr << "init done" << endl;
 }
 
 CameraSource_IIDC::~CameraSource_IIDC(void)

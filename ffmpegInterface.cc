@@ -47,12 +47,10 @@ void FFmpegDecoder::reset(void)
 
 FFmpegTalker::~FFmpegTalker()
 {
-    cerr << "FFmpegTalker::~FFmpegTalker" << endl;
     free();
 }
 void FFmpegTalker::free(void)
 {
-    cerr << "FFmpegTalker::free(void)" << endl;
     if(m_pFrameYUV)    av_free(m_pFrameYUV);
 
     if(m_pSWSCtx)      sws_freeContext(m_pSWSCtx);
@@ -61,14 +59,12 @@ void FFmpegTalker::free(void)
     {
         if(m_pCodecCtx->codec != NULL)
         {
-            cerr << "avcodec_close" << endl;
             avcodec_close(m_pCodecCtx);
         }
     }
 }
 void FFmpegDecoder::free(void)
 {
-    cerr << "FFmpegDecoder::free(void)" << endl;
     FFmpegTalker::free();
 
     if(m_pFormatCtx)
@@ -77,8 +73,6 @@ void FFmpegDecoder::free(void)
 }
 void FFmpegEncoder::free(void)
 {
-    cerr << "FFmpegEncoder::free(void)" << endl;
-
     FFmpegTalker::free();
 
     if(m_bufferYUV)
@@ -97,14 +91,11 @@ void FFmpegEncoder::free(void)
 
 void FFmpegDecoder::close(void)
 {
-    cerr << "FFmpegDecoder::close(void)" << endl;
     free();
-
     isRunningNow.reset();
 }
 void FFmpegEncoder::close(void)
 {
-    cerr << "FFmpegEncoder::close(void)" << endl;
     if(m_bOpen)
     {
         av_write_trailer(m_pFormatCtx);

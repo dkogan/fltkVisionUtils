@@ -60,7 +60,6 @@ public:
     }
     ~FFmpegDecoder()
     {
-        cerr << "~FFmpegDecoder" << endl;
         cleanupThreads();
         close();
     }
@@ -138,7 +137,6 @@ public:
     }
     ~FFmpegEncoder()
     {
-        cerr << "~FFmpegEncoder" << endl;
         close();
     }
 
