@@ -21,7 +21,7 @@ all: $(TARGET_A) sample
 LIB_OBJECTS = $(patsubst %.cc,%.o,$(filter-out sample,$(wildcard *.cc)))
 
 $(TARGET_SO): $(LIB_OBJECTS:%.o=%-fpic.o)
-	$(CXX) $(LDLIBS) -shared  $^ -Wl,-soname -Wl,libvisionio.so.$(API_VERSION) -Wl,--copy-dt-needed-entries -o $@
+	$(CXX) -shared  $^ $(LDLIBS) -Wl,-soname -Wl,libvisionio.so.$(API_VERSION) -Wl,--copy-dt-needed-entries -o $@
 
 %-fpic.o: CXXFLAGS += -fPIC
 %-fpic.o: %.cc
