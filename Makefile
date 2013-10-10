@@ -12,16 +12,20 @@ API_VERSION := 1
 VERSION     := $(shell perl -ne 's/.*\((.*?)\).*/$$1/; print; exit' debian/changelog)
 SO_VERSION  := $(API_VERSION).$(VERSION)
 
-TARGET_SO := libvisionio.so.$(SO_VERSION)
-TARGET_A  := libvisionio.a
+TARGET_SO_BARE  := libvisionio.so
+TARGET_SO	:= libvisionio.so.$(SO_VERSION)
+TARGET_A	:= libvisionio.a
 
-all: $(TARGET_A) $(TARGET_SO) sample
+all: $(TARGET_A) $(TARGET_SO) $(TARGET_SO_BARE) sample
 
 
 LIB_OBJECTS = $(patsubst %.cc,%.o,$(filter-out sample,$(wildcard *.cc)))
 
 $(TARGET_SO): $(LIB_OBJECTS:%.o=%-fpic.o)
 	$(CXX) -shared  $^ $(LDLIBS) -Wl,-soname -Wl,libvisionio.so.$(API_VERSION) -Wl,--copy-dt-needed-entries -o $@
+
+$(TARGET_SO_BARE): $(TARGET_SO)
+	ln -fs $^ $@
 
 %-fpic.o: CXXFLAGS += -fPIC
 %-fpic.o: %.cc
