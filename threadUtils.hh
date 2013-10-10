@@ -25,7 +25,6 @@ public:
     {
         if(inited)
         {
-            unlock();
             if(pthread_mutex_destroy(&mutex) != 0)
                 std::cerr << "Couldn't destroy mutex" << std::endl;
 
