@@ -123,15 +123,16 @@ class FFmpegEncoder : public FFmpegTalker
     int              m_bufferYUVSize;
     uint8_t*         m_bufferEncoded;
     int              m_bufferEncodedSize;
+    int              m_nChannels;
 
     void reset(void);
 
 public:
     FFmpegEncoder()
-        : FFmpegTalker()
+        : FFmpegTalker(), m_nChannels(-1)
     {}
     FFmpegEncoder(const char* filename, int width, int height, int fps, enum FrameSource_UserColorChoice sourceColormode)
-        : FFmpegTalker()
+      : FFmpegTalker(), m_nChannels(-1)
     {
         open(filename, width, height, fps, sourceColormode);
     }
@@ -141,7 +142,7 @@ public:
     }
 
     bool open(const char* filename, int width, int height, int fps, enum FrameSource_UserColorChoice sourceColormode);
-    bool writeFrameGrayscale(IplImage* image);
+    bool writeFrame(IplImage* image);
     void close(void);
     void free(void);
 

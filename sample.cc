@@ -32,7 +32,7 @@ bool gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us
         cerr << "Couldn't encode frame!" << endl;
         return false;
     }
-    videoEncoder.writeFrameGrayscale(*widgetImage);
+    videoEncoder.writeFrame(*widgetImage);
     if(!videoEncoder)
     {
         cerr << "Couldn't encode frame!" << endl;

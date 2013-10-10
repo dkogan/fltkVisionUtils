@@ -1,9 +1,7 @@
 #include <assert.h>
 #include "ffmpegInterface.hh"
 
-// I want to encode grayscale video, but the lossless codecs do not support grayscale data. I thus
-// use YUV420P with 0 for the U and V channels
-#define OUTPUT_PIX_FMT      PIX_FMT_YUV420P
+#define OUTPUT_PIX_FMT      PIX_FMT_RGB32 /* pixel format always uses color. ffv1 doesn't support grayscale */
 #define OUTPUT_CODEC        CODEC_ID_FFV1
 #define OUTPUT_GOP_SIZE     0
 #define OUTPUT_MAX_B_FRAMES 0
@@ -100,6 +98,7 @@ void FFmpegEncoder::close(void)
     {
         av_write_trailer(m_pFormatCtx);
         avio_close(m_pFormatCtx->pb);
+        m_nChannels = -1;
     }
     free();
 }
@@ -346,6 +345,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
 
     avformat_write_header(m_pFormatCtx, NULL);
 
+    m_nChannels = sourceColormode == FRAMESOURCE_GRAYSCALE ? 1 : 3;
     m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height,
                                sourceColormode == FRAMESOURCE_GRAYSCALE ? PIX_FMT_GRAY8 : PIX_FMT_RGB24,
                                m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
@@ -360,13 +360,15 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
     return true;
 }
 
-bool FFmpegEncoder::writeFrameGrayscale(IplImage* image)
+bool FFmpegEncoder::writeFrame(IplImage* image)
 {
     if(!m_bOpen || !m_bOK)
         return false;
 
     assert(image->width  == m_pCodecCtx->width &&
            image->height == m_pCodecCtx->height);
+    assert( image->nChannels == m_nChannels );
+    assert( image->depth == IPL_DEPTH_8U );
 
     sws_scale(m_pSWSCtx,
               (unsigned char**)&image->imageData, &image->widthStep,
