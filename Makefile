@@ -12,19 +12,23 @@ API_VERSION := 1
 VERSION     := $(shell perl -ne 's/.*\((.*?)\).*/$$1/; print; exit' debian/changelog)
 SO_VERSION  := $(API_VERSION).$(VERSION)
 
-TARGET_SO_BARE  := libvisionio.so
-TARGET_SO	:= libvisionio.so.$(SO_VERSION)
+TARGET_SO_BARE   := libvisionio.so
+TARGET_SO_FULL   := $(TARGET_SO_BARE).$(SO_VERSION)
+TARGET_SO_SONAME := $(TARGET_SO_BARE).$(API_VERSION)
 TARGET_A	:= libvisionio.a
 
-all: $(TARGET_A) $(TARGET_SO) $(TARGET_SO_BARE) sample
+
+
+
+all: $(TARGET_A) $(TARGET_SO_FULL) $(TARGET_SO_BARE) $(TARGET_SO_SONAME) sample
 
 
 LIB_OBJECTS = $(patsubst %.cc,%.o,$(filter-out sample,$(wildcard *.cc)))
 
-$(TARGET_SO): $(LIB_OBJECTS:%.o=%-fpic.o)
+$(TARGET_SO_FULL): $(LIB_OBJECTS:%.o=%-fpic.o)
 	$(CXX) -shared  $^ $(LDLIBS) -Wl,-soname -Wl,libvisionio.so.$(API_VERSION) -Wl,--copy-dt-needed-entries -o $@
 
-$(TARGET_SO_BARE): $(TARGET_SO)
+$(TARGET_SO_BARE) $(TARGET_SO_SONAME): $(TARGET_SO_FULL)
 	ln -fs $^ $@
 
 %-fpic.o: CXXFLAGS += -fPIC
@@ -40,12 +44,10 @@ sample: sample.o $(TARGET_A)
 
 ifdef DESTDIR
 
-install: all $(TARGET_SO)
+install: all $(TARGET_SO_FULL)
 	mkdir -p $(DESTDIR)/usr/lib/
-	install -m 0644 $(TARGET_A) $(TARGET_SO) $(DESTDIR)/usr/lib/
+	install -m 0644 $(TARGET_A) $(TARGET_SO_FULL) $(TARGET_SO_BARE) $(TARGET_SO_SONAME) $(DESTDIR)/usr/lib/
 	cd $(DESTDIR)/usr/lib/ && \
-	ln -fs $(TARGET_SO) libvisionio.so.$(API_VERSION) && \
-	ln -fs $(TARGET_SO) libvisionio.so && \
 	cd -
 	mkdir -p $(DESTDIR)/usr/include/
 	install -m 0644 *.hh $(DESTDIR)/usr/include/
