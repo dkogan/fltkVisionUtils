@@ -15,7 +15,7 @@ SO_VERSION  := $(API_VERSION).$(VERSION)
 TARGET_SO := libvisionio.so.$(SO_VERSION)
 TARGET_A  := libvisionio.a
 
-all: $(TARGET_A) sample
+all: $(TARGET_A) $(TARGET_SO) sample
 
 
 LIB_OBJECTS = $(patsubst %.cc,%.o,$(filter-out sample,$(wildcard *.cc)))
