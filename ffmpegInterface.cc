@@ -307,7 +307,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
 
         while( (pCodec = av_codec_next(pCodec)) != NULL )
         {
-            if (pCodec->encode)
+            if (pCodec->encode2)
                 cerr << pCodec->id << ": " << pCodec->name << endl;
         }
         return false;
@@ -328,16 +328,17 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
     m_bufferYUVSize = avpicture_get_size(m_pCodecCtx->pix_fmt, m_pCodecCtx->width, m_pCodecCtx->height);
     m_bufferYUV     = (uint8_t*)av_malloc(m_bufferYUVSize * sizeof(uint8_t));
 
-    // I'm assuming the size of the encoded frame is going to be at most as big as the size or the
-    // incoming raw data
-    m_bufferEncodedSize = m_bufferYUVSize;
-    m_bufferEncoded     = (uint8_t*)av_malloc(m_bufferEncodedSize * sizeof(uint8_t));
+    // The ffv1 encoder uses this much data. It seems like too much, but I just
+    // give it what it wants
+    m_bufferEncodedSize = m_pCodecCtx->width * m_pCodecCtx->height *
+      ((8 * 2 + 1 + 1) * 4) / 8 + FF_MIN_BUFFER_SIZE;
+    m_bufferEncoded     = (uint8_t*)av_malloc(m_bufferEncodedSize);
 
     avpicture_fill((AVPicture *)m_pFrameYUV, m_bufferYUV, m_pCodecCtx->pix_fmt,
                    m_pCodecCtx->width, m_pCodecCtx->height);
 
     // open the file
-    if(avio_open(&m_pFormatCtx->pb, filename, URL_WRONLY) < 0)
+    if(avio_open(&m_pFormatCtx->pb, filename, AVIO_FLAG_WRITE) < 0)
     {
         cerr << "ffmpeg: couldn't open file " << filename << endl;
         return false;
@@ -375,20 +376,25 @@ bool FFmpegEncoder::writeFrame(IplImage* image)
               0, m_pCodecCtx->height,
               m_pFrameYUV->data, m_pFrameYUV->linesize);
 
-    int outsize = avcodec_encode_video(m_pCodecCtx, m_bufferEncoded, m_bufferEncodedSize, m_pFrameYUV);
-    if(outsize <= 0)
-    {
-        cerr << "ffmpeg: couldn't write grayscale frame" << endl;
-        return false;
-    }
 
     AVPacket packet;
     av_init_packet(&packet);
     packet.stream_index = m_pStream->index;
     packet.data         = m_bufferEncoded;
-    packet.size         = outsize;
-    av_write_frame(m_pFormatCtx, &packet);
+    packet.size         = m_bufferEncodedSize;
 
-    av_free_packet(&packet);
+    int got_packet_ptr;
+
+    int outsize = avcodec_encode_video2(m_pCodecCtx,
+                                        &packet,
+                                        m_pFrameYUV,
+                                        &got_packet_ptr);
+    if(outsize != 0 || got_packet_ptr == 0)
+    {
+        cerr << "ffmpeg: couldn't write frame. Error: " << outsize << endl;
+        return false;
+    }
+
+    av_write_frame(m_pFormatCtx, &packet);
     return true;
 }

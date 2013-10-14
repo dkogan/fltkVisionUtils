@@ -19,6 +19,13 @@
 
 #include "cameraSource_v4l2.hh"
 
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+}
+
 // The v4l2 driver is very immature. It has been tested a bit and basically
 // works, but it has a LOT of things that are incomplete and need attention
 static int ioctl_persistent( int fd, unsigned long request, void* arg)
