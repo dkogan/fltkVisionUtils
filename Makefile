@@ -8,7 +8,7 @@ FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
 LDLIBS += -lfltk $(OPENCV_LIBS) -lpthread -ldc1394 $(FFMPEG_LIBS)
 
 
-API_VERSION := 1
+API_VERSION := 2
 VERSION     := $(shell perl -ne 's/.*\((.*?)\).*/$$1/; print; exit' debian/changelog)
 SO_VERSION  := $(API_VERSION).$(VERSION)
 

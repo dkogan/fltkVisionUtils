@@ -1,3 +1,9 @@
+libvisionio (0.02) unstable; urgency=low
+
+  * New upstream
+
+ -- Dima Kogan <dima@secretsauce.net>  Sun, 13 Apr 2014 15:40:14 -0700
+
 libvisionio (0.01) unstable; urgency=low
 
   * Initial release
