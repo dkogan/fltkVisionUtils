@@ -1,7 +1,7 @@
 Source: libvisionio
 Priority: extra
 Maintainer: Dima Kogan <dima@secretsauce.net>
-Build-Depends: debhelper (>= 7.0.50~), libopencv-core-dev,
+Build-Depends: debhelper (>= 9), libopencv-core-dev,
  libopencv-highgui-dev, libopencv-imgproc-dev, libfltk1.3-dev, libswscale-dev,
  libavcodec-dev, libavformat-dev, libavutil-dev, linux-libc-dev,
  libdc1394-22-dev
