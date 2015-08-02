@@ -19,6 +19,8 @@
 
 #include "cameraSource_v4l2.hh"
 
+
+
 extern "C"
 {
 #include <libavcodec/avcodec.h>
@@ -210,7 +212,7 @@ bool CameraSource_V4L2::findDecoder(void)
         {
             avcodec_register_all();
 
-            AVCodec* pCodec = avcodec_find_decoder(CODEC_ID_MJPEG);
+            AVCodec* pCodec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
             if(pCodec == NULL)
             {
                 fprintf(stderr, "ffmpeg: couldn't find decoder\n");
@@ -218,7 +220,7 @@ bool CameraSource_V4L2::findDecoder(void)
             }
 
             codecContext = avcodec_alloc_context3(NULL);
-            ffmpegFrame  = avcodec_alloc_frame();
+            ffmpegFrame  = av_frame_alloc();
 
             if(avcodec_open2(codecContext, pCodec, NULL) < 0)
             {

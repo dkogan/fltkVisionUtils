@@ -163,7 +163,7 @@ bool FFmpegDecoder::open(const char* filename,
         return false;
     }
 
-    m_pFrameYUV = avcodec_alloc_frame();
+    m_pFrameYUV = av_frame_alloc();
 
     m_bOpen = m_bOK = true;
 
@@ -319,7 +319,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
         return false;
     }
 
-    m_pFrameYUV = avcodec_alloc_frame();
+    m_pFrameYUV = av_frame_alloc();
     if(m_pFrameYUV == NULL)
     {
         cerr << "ffmpeg: couldn't alloc frame" << endl;
