@@ -300,37 +300,41 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         return;
     }
 
-    if( !(cap.capabilities & V4L2_CAP_READWRITE))
+    if( !(cap.capabilities & V4L2_CAP_READWRITE) &&
+        !(cap.capabilities & V4L2_CAP_STREAMING))
     {
-        fprintf( stderr, "%s does not support read i/o\n", device);
+        fprintf( stderr, "%s supports neither readwrite nor streaming i/o\n", device);
         uninit();
         return;
     }
 
-    // if the camera can crop its output, reset the cropping window
-    struct v4l2_cropcap cropcap;
-    memset(&cropcap, 0, sizeof(cropcap));
-    cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if( ioctl_persistent( camera_fd, VIDIOC_CROPCAP, &cropcap) == 0)
-    {
-        struct v4l2_crop crop;
-        crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        crop.c = cropcap.defrect;
-        ioctl_try( camera_fd, VIDIOC_S_CROP, &crop);
-    }
+    // use read() if possible
+    streaming = !(bool)(cap.capabilities & V4L2_CAP_READWRITE);
+
+
+
+    // // if the camera can crop its output, reset the cropping window
+    // struct v4l2_cropcap cropcap;
+    // memset(&cropcap, 0, sizeof(cropcap));
+    // cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    // if( ioctl_persistent( camera_fd, VIDIOC_CROPCAP, &cropcap) == 0)
+    // {
+    //     struct v4l2_crop crop;
+    //     crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    //     crop.c = cropcap.defrect;
+    //     ioctl_try( camera_fd, VIDIOC_S_CROP, &crop);
+    // }
 
     // Now find the best pixel format
     unsigned int        bestPixfmtCost = INT_MAX;
     uint32_t            bestPixfmt     = 0;
-    struct v4l2_fmtdesc fmtdesc;
-    memset(&fmtdesc, 0, sizeof(fmtdesc));
+    struct v4l2_fmtdesc fmtdesc = {};
 
     while(true)
     {
         fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-        int res = ioctl_persistent( camera_fd, VIDIOC_ENUM_FMT, &fmtdesc);
-        if(res < 0)
+        if(ioctl_persistent( camera_fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0)
         {
             if(errno == EINVAL)
                 // no more formats left
@@ -366,8 +370,8 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     // passed-in parameters to whatever it is actually capable of
     memset(&fmt, 0, sizeof(fmt));
     fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width       = 1000000; // request an unreasonable resolution. The driver
-    fmt.fmt.pix.height      = 1000000; // will reduce this to whatever it actually can do
+    fmt.fmt.pix.width       = 640; // request an unreasonable resolution. The driver
+    fmt.fmt.pix.height      = 480; // will reduce this to whatever it actually can do
     fmt.fmt.pix.pixelformat = bestPixfmt;
     fmt.fmt.pix.field       = V4L2_FIELD_NONE; // don't want interlacing ideally
 
@@ -395,18 +399,67 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         return;
     }
 
-    // When allocating the memory buffer, I leave room for padding. FFMPEG documentation
-    // (avcodec.h):
-    //  * @warning The input buffer must be \c FF_INPUT_BUFFER_PADDING_SIZE larger than
-    //  * the actual read bytes because some optimized bitstream readers read 32 or 64
-    //  * bits at once and could read over the end.
-    buffer = new unsigned char[pixfmt.sizeimage + FF_INPUT_BUFFER_PADDING_SIZE];
-    if( buffer == NULL)
+
+
+    if( streaming )
     {
-        fprintf( stderr, "Out of memory\n");
-        uninit();
-        return;
+        struct v4l2_requestbuffers rb = {};
+        rb.count  = NB_BUFFER;
+        rb.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        rb.memory = V4L2_MEMORY_MMAP;
+        ioctl_try (camera_fd, VIDIOC_REQBUFS, &rb);
+
+        for (int i = 0; i < NB_BUFFER; i++)
+        {
+            struct v4l2_buffer buf = {};
+            buf.index  = i;
+            buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            ioctl_try(camera_fd, VIDIOC_QUERYBUF, &buf);
+            mmapped[i] = mmap(0,
+                              buf.length, PROT_READ, MAP_SHARED, camera_fd,
+                              buf.m.offset);
+            if(mmapped[i] == MAP_FAILED)
+            {
+                perror("Couldn't mmap video buffers");
+                uninit();
+                return;
+            }
+
+            memset(&buf, 0, sizeof(buf));
+            buf.index = i;
+            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            buf.memory = V4L2_MEMORY_MMAP;
+            if(ioctl_try(camera_fd, VIDIOC_QBUF, &buf) < 0)
+            {
+                perror("Failed to queue buffer\n");
+                uninit();
+                return;
+            }
+        }
+
+        if(!_resumeStream())
+        {
+            uninit();
+            return;
+        }
     }
+    else
+    {
+        // When allocating the memory buffer, I leave room for padding. FFMPEG documentation
+        // (avcodec.h):
+        //  * @warning The input buffer must be \c FF_INPUT_BUFFER_PADDING_SIZE larger than
+        //  * the actual read bytes because some optimized bitstream readers read 32 or 64
+        //  * bits at once and could read over the end.
+        buffer = new unsigned char[pixfmt.sizeimage + FF_INPUT_BUFFER_PADDING_SIZE];
+        if( buffer == NULL)
+        {
+            fprintf( stderr, "Out of memory\n");
+            uninit();
+            return;
+        }
+    }
+
     av_init_packet(&ffmpegPacket);
 
     if(!findDecoder())
@@ -426,6 +479,7 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
 
 void CameraSource_V4L2::uninit(void)
 {
+    #warning uninit all the extra crap
     if(buffer)
     {
         delete[] buffer;
@@ -470,33 +524,64 @@ bool CameraSource_V4L2::_getNextFrame  (IplImage* image, uint64_t* timestamp_us)
 
 bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 {
-    if( read( camera_fd, buffer, pixfmt.sizeimage) < 0 )
+    bool result = false;
+    int len;
+    IplImage* cvbuffer;
+    unsigned char** scaleSource;
+    int             pixfmt_bytesperline;
+    int*            scaleStride;
+
+    struct v4l2_buffer v4l2_buf = {};
+
+    unsigned char* buffer_here;
+
+    if( !streaming )
     {
-        perror ("camera read");
-        return false;
+        len = pixfmt.sizeimage;
+
+        if( read( camera_fd, buffer, len) < 0 )
+        {
+            perror ("camera read");
+            goto done;
+        }
+
+        buffer_here = buffer;
+    }
+    else
+    {
+        v4l2_buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        v4l2_buf.memory = V4L2_MEMORY_MMAP;
+        if(ioctl (camera_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
+        {
+            perror("Error VIDIOC_DQBUF");
+            goto done;
+        }
+
+        buffer_here = (unsigned char*)mmapped[v4l2_buf.index];
+        len         = v4l2_buf.bytesused;
     }
 
+
 #warning finish implementing this part of the v4l2 driver
-    IplImage* cvbuffer;
     if(preCropScaleBuffer == NULL) cvbuffer = image;
     else                           cvbuffer = preCropScaleBuffer;
 
-    unsigned char** scaleSource         = &buffer;
-    int             pixfmt_bytesperline = pixfmt.bytesperline; // needed to match the pointer type
-    int*            scaleStride         = &pixfmt_bytesperline;
+    scaleSource         = &buffer_here;
+    pixfmt_bytesperline = pixfmt.bytesperline; // needed to match the pointer type
+    scaleStride         = &pixfmt_bytesperline;
 
     if(codecContext)
     {
         int frameFinished;
 
-        ffmpegPacket.data = buffer;
-        ffmpegPacket.size = pixfmt.sizeimage;
+        ffmpegPacket.data = buffer_here;
+        ffmpegPacket.size = len;
         int decodeResult  = avcodec_decode_video2(codecContext, ffmpegFrame, &frameFinished,
                                                  &ffmpegPacket);
         if(decodeResult < 0 || frameFinished == 0)
         {
             fprintf(stderr, "error decoding ffmpeg frame\n");
-            return false;
+            goto done;
         }
 
         scaleSource = ffmpegFrame->data;
@@ -505,7 +590,7 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
         if(scaleContext == NULL)
             // set up the scaler to transform FROM the decoded result
             if(!setupSwsContext(codecContext->pix_fmt))
-                return false;
+                goto done;
     }
 
 
@@ -521,28 +606,38 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 #warning this isnt very efficient. The cropping and scaling should be a part of the conversion functions above
         applyCroppingScaling(preCropScaleBuffer, image);
     }
+    result = true;
+
+
+ done:
+
+    if(streaming && ioctl(camera_fd, VIDIOC_QBUF, &v4l2_buf) < 0)
+    {
+        perror("Error VIDIOC_QBUF");
+        return false;
+    }
+    return result;
+}
+
+static bool startstop(int fd, bool start)
+{
+    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    unsigned long request = start ? VIDIOC_STREAMON : VIDIOC_STREAMOFF;
+    if(ioctl(fd, request, &type) < 0)
+    {
+        if(start) perror("Unable to start capture");
+        else      perror("Unable to stop capture");
+        return false;
+    }
     return true;
 }
 
 bool CameraSource_V4L2::_stopStream(void)
 {
-//     enum v4l2_buf_type type;
-
-//     if(DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_OFF))
-//     {
-//         purgeBuffer();
-//         return true;
-//     }
-//     return false;
-    return true;
+    return startstop(camera_fd, false);
 }
 
 bool CameraSource_V4L2::_resumeStream(void)
 {
-//     unsigned int i;
-//     enum v4l2_buf_type type;
-
-//     purgeBuffer();
-//     return DC1394_SUCCESS == dc1394_video_set_transmission(camera, DC1394_ON);
-    return true;
+    return startstop(camera_fd, true);
 }

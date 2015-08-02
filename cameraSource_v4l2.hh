@@ -7,6 +7,10 @@
 #include <string>
 #include "frameSource.hh"
 
+
+#define NB_BUFFER 16
+
+
 extern "C"
 {
 #include <libswscale/swscale.h>
@@ -18,14 +22,20 @@ extern "C"
 // tested on the handful of cameras I have
 class CameraSource_V4L2 : public FrameSource
 {
-    int             camera_fd;
-    v4l2_pix_format pixfmt;
+    int                        camera_fd;
+    v4l2_pix_format            pixfmt;
+    bool                       streaming;
+
+    // used if streaming
+    void* mmapped[NB_BUFFER];
+
     unsigned char*  buffer;
     SwsContext*     scaleContext;
 
     AVCodecContext* codecContext;
     AVFrame*        ffmpegFrame;
     AVPacket        ffmpegPacket;
+
 
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
