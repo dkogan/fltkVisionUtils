@@ -1,8 +1,12 @@
-# needed for newer ffmpeg
-CXXFLAGS=-D__STDC_CONSTANT_MACROS
+# if any -O... is explicitly requested, use that; otherwise, do -O3
+ifeq (,$(filter -O%,$(CXXFLAGS)))
+  FLAGS_OPTIMIZATION := -O3 -ffast-math
+endif
 
-CXXFLAGS += -g -O3 -Wall -Wextra -pedantic -MMD
-LDFLAGS  += -g
+# needed for newer ffmpeg
+CXXFLAGS += -D__STDC_CONSTANT_MACROS
+
+CXXFLAGS += -g $(FLAGS_OPTIMIZATION) -Wall -Wextra -MMD -Wno-missing-field-initializers
 OPENCV_LIBS = -lopencv_core -lopencv_imgproc -lopencv_highgui
 FFMPEG_LIBS = -lavformat -lavcodec -lswscale -lavutil
 LDLIBS += -lfltk $(OPENCV_LIBS) -lpthread -ldc1394 $(FFMPEG_LIBS)
