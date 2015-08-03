@@ -61,6 +61,8 @@ public:
     // and ready to use
     virtual operator bool() = 0;
 
+    // blocking frame accessors
+    //
     // getNextFrame() returns the next frame in the buffer.
     // getLatestFrame() purges the buffer and returns the most recent frame available
     // For non-realtime data sources, such as video files, getNextFrame() and getLatestFrame() are
@@ -85,6 +87,12 @@ public:
     void startSourceThread(FrameSourceCallback_t* callback, uint64_t frameWait_us,
                            IplImage* buffer);
     void sourceThread(void);
+
+    // Another way to drive the application is to keep everything synchronous
+    // using a select() or poll() in the main loop to look at ALL the file
+    // descriptors that may need attention. Here I return such a file
+    // descriptor. If unavailable, returns -1
+    virtual int getFD(void);
 
     unsigned int w() { return width;  }
     unsigned int h() { return height; }

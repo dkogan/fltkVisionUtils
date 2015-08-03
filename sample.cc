@@ -13,19 +13,25 @@ using namespace std;
 #include "ffmpegInterface.hh"
 
 #include "cameraSource_IIDC.hh"
+#include "cameraSource_v4l2.hh"
 #include "IIDC_featuresWidget.hh"
 
 #include <opencv2/imgproc/imgproc_c.h>
 
-#define SOURCE_PERIOD_US 1000000
 
 
-static const bool do_encode_video = false;
+
+static const bool do_encode_video  = false;
+static const int  source_period_us = 500000; // <0 menas use synchronous poll-based I/O
+
+
+
 
 
 static CvFltkWidget* widgetImage;
 static FFmpegEncoder videoEncoder;
 static CvMat         edges;
+static FrameSource*  source;
 
 static void newFrameArrived(bool dolock)
 {
@@ -55,6 +61,8 @@ static void newFrameArrived(bool dolock)
         Fl::unlock();
 }
 
+// asynchronous timer-based callback. This is the next frame available after a
+// preset delay
 static bool gotNewFrame(IplImage* buffer      __attribute__((unused)),
                         uint64_t timestamp_us __attribute__((unused)))
 {
@@ -64,6 +72,14 @@ static bool gotNewFrame(IplImage* buffer      __attribute__((unused)),
     return true;
 }
 
+// synchronous callback; happens when there's a frame available to read
+static void syncronous_calback(FL_SOCKET fd __attribute__((unused)),
+                               void *data   __attribute__((unused)))
+{
+    source->getNextFrame(*widgetImage);
+    newFrameArrived(false); // synchronous callback, so no unlocking needed
+}
+
 int main(int argc, char* argv[])
 {
     Fl::lock();
@@ -71,14 +87,13 @@ int main(int argc, char* argv[])
 
     // open the first source. If there's an argument, assume it's an input video. Otherwise, try
     // reading a camera
-    FrameSource* source;
     if(argc >= 2)
         source = new FFmpegDecoder(argv[1], FRAMESOURCE_COLOR, true,
                                    cvRect(0, 0, 320, 480), 1.5);
     else
     {
-        source = new CameraSource_IIDC(FRAMESOURCE_COLOR);
-        cout << ((CameraSource_IIDC*)source)->getDescription();
+        source = new CameraSource_V4L2(FRAMESOURCE_COLOR, "/dev/video0");
+        // cout << ((CameraSource_V4L2*)source)->getDescription();
     }
 
     if(! *source)
@@ -113,13 +128,28 @@ int main(int argc, char* argv[])
                                     800, 100, NULL, true);
     }
 
+
+
+
     window.resizable(window);
     window.end();
     window.show();
 
-    // I'm starting a new camera-reading thread and storing the frame directly into the widget
-    // buffer
-    source->startSourceThread(&gotNewFrame, SOURCE_PERIOD_US, *widgetImage);
+    if( source_period_us < 0 )
+    {
+        int camera_fd = source->getFD();
+        if( camera_fd >= 0 )
+            Fl::add_fd(camera_fd, FL_READ, &syncronous_calback);
+        else
+        {
+            fprintf(stderr, "poll-based i/o requested, but this frame source does not support it\n");
+            return 1;
+        }
+    }
+    else
+        // I'm starting a new camera-reading thread and storing the frame directly into the widget
+        // buffer
+        source->startSourceThread(&gotNewFrame, source_period_us, *widgetImage);
 
     while (Fl::wait())
     {

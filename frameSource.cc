@@ -186,3 +186,10 @@ void FrameSource::sourceThread(void)
             return;
     }
 }
+
+int FrameSource::getFD(void)
+{
+    // If no specialized getFD() exists, then this is unavailable and I simply
+    // return -1
+    return -1;
+}

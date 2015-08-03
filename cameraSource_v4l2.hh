@@ -70,4 +70,10 @@ private:
     {
         return _resumeStream();
     }
+
+
+    int getFD(void)
+    {
+        return camera_fd;
+    }
 };
