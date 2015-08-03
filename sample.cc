@@ -19,35 +19,48 @@ using namespace std;
 
 #define SOURCE_PERIOD_US 1000000
 
+
+static const bool do_encode_video = false;
+
+
 static CvFltkWidget* widgetImage;
 static FFmpegEncoder videoEncoder;
 static CvMat         edges;
 
-bool gotNewFrame(IplImage* buffer __attribute__((unused)), uint64_t timestamp_us __attribute__((unused)))
+static void newFrameArrived(bool dolock)
 {
-    // the buffer passed in here is the same buffer that I specified when starting the source
-    // thread. In this case this is the widget's buffer
-    if(!videoEncoder)
+    if(do_encode_video)
     {
-        cerr << "Couldn't encode frame!" << endl;
-        return false;
-    }
-    videoEncoder.writeFrame(*widgetImage);
-    if(!videoEncoder)
-    {
-        cerr << "Couldn't encode frame!" << endl;
-        return false;
+        if( !videoEncoder ||
+            !videoEncoder.writeFrame(*widgetImage) ||
+            !videoEncoder )
+        {
+            cerr << "Couldn't encode frame!" << endl;
+            return;
+        }
     }
 
-    Fl::lock();
+
+    if(dolock)
+        Fl::lock();
+
     cvSetImageCOI(*widgetImage, 1);
     cvCopy(*widgetImage, &edges);
     cvCanny(&edges, &edges, 20, 50);
     cvCopy(&edges, *widgetImage);
     cvSetImageCOI(*widgetImage, 0);
     widgetImage->redrawNewFrame();
-    Fl::unlock();
 
+    if(dolock)
+        Fl::unlock();
+}
+
+static bool gotNewFrame(IplImage* buffer      __attribute__((unused)),
+                        uint64_t timestamp_us __attribute__((unused)))
+{
+    // the buffer passed in here is the same buffer that I specified when
+    // starting the source thread. In this case this is the widget's buffer
+    newFrameArrived(true);
     return true;
 }
 
@@ -78,11 +91,14 @@ int main(int argc, char* argv[])
     cvInitMatHeader(&edges, source->h(), source->w(), CV_8UC1);
     cvCreateData(&edges);
 
-    videoEncoder.open("capture.avi", source->w(), source->h(), 15, FRAMESOURCE_COLOR);
-    if(!videoEncoder)
+    if(do_encode_video)
     {
-        cerr << "Couldn't initialize the video encoder" << endl;
-        return 0;
+        videoEncoder.open("capture.avi", source->w(), source->h(), 15, FRAMESOURCE_COLOR);
+        if(!videoEncoder)
+        {
+            cerr << "Couldn't initialize the video encoder" << endl;
+            return 0;
+        }
     }
 
     Fl_Window window(source->w(), source->h() + 400);
@@ -113,7 +129,8 @@ int main(int argc, char* argv[])
 
     delete source;
 
-    videoEncoder.close();
+    if(do_encode_video)
+        videoEncoder.close();
 
     cvReleaseData(&edges);
 
