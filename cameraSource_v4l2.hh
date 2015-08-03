@@ -1,5 +1,4 @@
-#ifndef __CAMERA_SOURCE_HH__
-#define __CAMERA_SOURCE_HH__
+#pragma once
 
 #include <asm/types.h>
 #include <linux/videodev2.h>
@@ -72,5 +71,3 @@ private:
         return _resumeStream();
     }
 };
-
-#endif

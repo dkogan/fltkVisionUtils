@@ -1,5 +1,4 @@
-#ifndef __CAMERA_SOURCE_HH__
-#define __CAMERA_SOURCE_HH__
+#pragma once
 
 #include <string>
 #include <dc1394/dc1394.h>
@@ -86,5 +85,3 @@ private:
         return _resumeStream();
     }
 };
-
-#endif
