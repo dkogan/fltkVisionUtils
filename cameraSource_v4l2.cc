@@ -261,6 +261,37 @@ bool CameraSource_V4L2::setupSwsContext(enum PixelFormat swscalePixfmt)
     return true;
 }
 
+static uint32_t findBestPixelFormat(int fd, FrameSource_UserColorChoice userColorMode)
+{
+    uint32_t            bestPixfmt     = 0;
+    unsigned int        bestPixfmtCost = INT_MAX;
+    struct v4l2_fmtdesc fmtdesc        = {};
+    while(true)
+    {
+        fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+        if(ioctl_persistent( fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0)
+        {
+            if(errno == EINVAL)
+                // no more formats left
+                return bestPixfmt;
+
+            // some bad error occurred
+            perror("Error enumerating V4L2 formats");
+            return -1;
+        }
+
+        unsigned int cost = getPixfmtCost(fmtdesc.pixelformat, userColorMode==FRAMESOURCE_COLOR);
+        if(cost < bestPixfmtCost)
+        {
+            bestPixfmtCost = cost;
+            bestPixfmt = fmtdesc.pixelformat;
+        }
+
+        fmtdesc.index++;
+    }
+}
+
 CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                                      const char* device,
                                      CvRect _cropRect,
@@ -326,34 +357,11 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     // }
 
     // Now find the best pixel format
-    unsigned int        bestPixfmtCost = INT_MAX;
-    uint32_t            bestPixfmt     = 0;
-    struct v4l2_fmtdesc fmtdesc = {};
-
-    while(true)
+    uint32_t bestPixfmt = findBestPixelFormat(camera_fd, userColorMode);
+    if(bestPixfmt < 0)
     {
-        fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-        if(ioctl_persistent( camera_fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0)
-        {
-            if(errno == EINVAL)
-                // no more formats left
-                break;
-
-            // some bad error occurred
-            perror("Error enumerating V4L2 formats");
-            uninit();
-            return;
-        }
-
-        unsigned int cost = getPixfmtCost(fmtdesc.pixelformat, userColorMode==FRAMESOURCE_COLOR);
-        if(cost < bestPixfmtCost)
-        {
-            bestPixfmtCost = cost;
-            bestPixfmt = fmtdesc.pixelformat;
-        }
-
-        fmtdesc.index++;
+        uninit();
+        return;
     }
 
     // I get the current image format
