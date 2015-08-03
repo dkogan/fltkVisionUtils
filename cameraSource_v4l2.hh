@@ -8,7 +8,7 @@
 #include "frameSource.hh"
 
 
-#define NB_BUFFER 16
+#define NUM_STREAMING_BUFFERS_REQUESTED 16
 
 
 extern "C"
@@ -27,9 +27,13 @@ class CameraSource_V4L2 : public FrameSource
     bool                       streaming;
 
     // used if streaming
-    void* mmapped[NB_BUFFER];
+    int num_streaming_buffers; // could be fewer than NUM_STREAMING_BUFFERS_REQUESTED
+    void* mmapped[NUM_STREAMING_BUFFERS_REQUESTED];
+    int buf_length[NUM_STREAMING_BUFFERS_REQUESTED];
 
-    unsigned char*  buffer;
+    unsigned char* buffer;
+    int            buffer_bytes_allocated;
+
     SwsContext*     scaleContext;
 
     AVCodecContext* codecContext;

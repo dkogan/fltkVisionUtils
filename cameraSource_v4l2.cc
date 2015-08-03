@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <poll.h>
 
 #include <asm/types.h>
 #include <linux/videodev2.h>
@@ -261,7 +262,7 @@ bool CameraSource_V4L2::setupSwsContext(enum PixelFormat swscalePixfmt)
     return true;
 }
 
-static uint32_t findBestPixelFormat(int fd, FrameSource_UserColorChoice userColorMode)
+static bool findBestPixelFormat(uint32_t* pixfmt, int fd, FrameSource_UserColorChoice userColorMode)
 {
     uint32_t            bestPixfmt     = 0;
     unsigned int        bestPixfmtCost = INT_MAX;
@@ -273,12 +274,15 @@ static uint32_t findBestPixelFormat(int fd, FrameSource_UserColorChoice userColo
         if(ioctl_persistent( fd, VIDIOC_ENUM_FMT, &fmtdesc) < 0)
         {
             if(errno == EINVAL)
+            {
                 // no more formats left
-                return bestPixfmt;
+                *pixfmt = bestPixfmt;
+                return true;
+            }
 
             // some bad error occurred
             perror("Error enumerating V4L2 formats");
-            return -1;
+            return false;
         }
 
         unsigned int cost = getPixfmtCost(fmtdesc.pixelformat, userColorMode==FRAMESOURCE_COLOR);
@@ -299,10 +303,14 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     : FrameSource(_userColorMode),
       camera_fd(-1),
       buffer(NULL),
+      buffer_bytes_allocated(0),
       scaleContext(NULL),
       codecContext(NULL),
       ffmpegFrame(NULL)
 {
+    memset(mmapped, 0, sizeof(mmapped));
+    memset(buf_length, 0, sizeof(buf_length));
+
     camera_fd = open( device, O_RDWR, 0);
     if( camera_fd < 0)
     {
@@ -342,47 +350,22 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     // use read() if possible
     streaming = !(bool)(cap.capabilities & V4L2_CAP_READWRITE);
 
-
-
-    // // if the camera can crop its output, reset the cropping window
-    // struct v4l2_cropcap cropcap;
-    // memset(&cropcap, 0, sizeof(cropcap));
-    // cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    // if( ioctl_persistent( camera_fd, VIDIOC_CROPCAP, &cropcap) == 0)
-    // {
-    //     struct v4l2_crop crop;
-    //     crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    //     crop.c = cropcap.defrect;
-    //     ioctl_try( camera_fd, VIDIOC_S_CROP, &crop);
-    // }
-
     // Now find the best pixel format
-    uint32_t bestPixfmt = findBestPixelFormat(camera_fd, userColorMode);
-    if(bestPixfmt < 0)
+    uint32_t bestPixfmt;
+    if(!findBestPixelFormat(&bestPixfmt, camera_fd, userColorMode))
     {
-        uninit();
-        return;
-    }
-
-    // I get the current image format
-    struct v4l2_format fmt;
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if( ioctl_persistent( camera_fd, VIDIOC_G_FMT, &fmt) < 0 )
-    {
-        perror( "VIDIOC_G_FMT");
         uninit();
         return;
     }
 
     // I now set the image format to an upper bound of what I want. The driver will change the
     // passed-in parameters to whatever it is actually capable of
-    memset(&fmt, 0, sizeof(fmt));
+    struct v4l2_format fmt = {};
     fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width       = 640; // request an unreasonable resolution. The driver
-    fmt.fmt.pix.height      = 480; // will reduce this to whatever it actually can do
+    fmt.fmt.pix.width       = 10000; // request an unreasonable resolution. The driver
+    fmt.fmt.pix.height      = 10000; // will reduce this to whatever it actually can do
     fmt.fmt.pix.pixelformat = bestPixfmt;
     fmt.fmt.pix.field       = V4L2_FIELD_NONE; // don't want interlacing ideally
-
     if( ioctl_persistent( camera_fd, VIDIOC_S_FMT, &fmt) < 0 )
     {
         perror( "VIDIOC_S_FMT");
@@ -409,21 +392,49 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
 
 
 
+    // My camera does not support cropping, so I haven't tested this
+    // functionality. Should be relatively simple to make it work.
+    // http://linuxtv.org/downloads/v4l-dvb-apis/crop.html
+    //
+    // // if the camera can crop its output, reset the cropping window
+    // struct v4l2_cropcap cropcap = {};
+    // cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    // fprintf(stderr, "%d\n", __LINE__);
+    // if( ioctl_persistent( camera_fd, VIDIOC_CROPCAP, &cropcap) == 0)
+    // {
+    //     fprintf(stderr, "%d\n", __LINE__);
+    //     struct v4l2_crop crop;
+    //     crop.type     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    //     crop.c.left   = crop.c.top = 0;
+    //     crop.c.width  = 640;
+    //     crop.c.height = 480;
+    //     ioctl_try( camera_fd, VIDIOC_G_CROP, &crop);
+    //     fprintf(stderr, "%d\n", __LINE__);
+    // }
+
     if( streaming )
     {
         struct v4l2_requestbuffers rb = {};
-        rb.count  = NB_BUFFER;
+        rb.count  = NUM_STREAMING_BUFFERS_REQUESTED;
         rb.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         rb.memory = V4L2_MEMORY_MMAP;
         ioctl_try (camera_fd, VIDIOC_REQBUFS, &rb);
 
-        for (int i = 0; i < NB_BUFFER; i++)
+        num_streaming_buffers = rb.count;
+        if( num_streaming_buffers <= 0 )
+        {
+            perror("Couldn't get the buffers I asked for");
+            uninit();
+            return;
+        }
+        for (int i = 0; i < num_streaming_buffers; i++)
         {
             struct v4l2_buffer buf = {};
             buf.index  = i;
-            buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            buf.memory = V4L2_MEMORY_MMAP;
+            buf.type   = rb.type;
+            buf.memory = rb.memory;
             ioctl_try(camera_fd, VIDIOC_QUERYBUF, &buf);
+            buf_length[i] = buf.length;
             mmapped[i] = mmap(0,
                               buf.length, PROT_READ, MAP_SHARED, camera_fd,
                               buf.m.offset);
@@ -434,10 +445,6 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                 return;
             }
 
-            memset(&buf, 0, sizeof(buf));
-            buf.index = i;
-            buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            buf.memory = V4L2_MEMORY_MMAP;
             if(ioctl_try(camera_fd, VIDIOC_QBUF, &buf) < 0)
             {
                 perror("Failed to queue buffer\n");
@@ -459,13 +466,15 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         //  * @warning The input buffer must be \c FF_INPUT_BUFFER_PADDING_SIZE larger than
         //  * the actual read bytes because some optimized bitstream readers read 32 or 64
         //  * bits at once and could read over the end.
-        buffer = new unsigned char[pixfmt.sizeimage + FF_INPUT_BUFFER_PADDING_SIZE];
+        int bytes_alloc = pixfmt.sizeimage + FF_INPUT_BUFFER_PADDING_SIZE;
+        buffer = new unsigned char[bytes_alloc];
         if( buffer == NULL)
         {
             fprintf( stderr, "Out of memory\n");
             uninit();
             return;
         }
+        buffer_bytes_allocated = bytes_alloc;
     }
 
     av_init_packet(&ffmpegPacket);
@@ -480,7 +489,6 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
     width  = pixfmt.width;
     height = pixfmt.height;
 
-#warning maybe I should implement this inside v4l VIDIOC_S_CROP
     setupCroppingScaling(_cropRect, scale);
     isRunningNow.setTrue();
 }
@@ -493,6 +501,14 @@ void CameraSource_V4L2::uninit(void)
         delete[] buffer;
         buffer = NULL;
     }
+
+    for(unsigned int i=0; i<sizeof(mmapped)/sizeof(mmapped[0]);i++)
+        if(mmapped[i])
+        {
+            munmap(mmapped[i], buf_length[i]);
+            mmapped[i]    = NULL;
+            buf_length[i] = 0;
+        }
 
     if( camera_fd > 0 )
     {
@@ -525,12 +541,7 @@ CameraSource_V4L2::~CameraSource_V4L2()
     uninit();
 }
 
-bool CameraSource_V4L2::_getNextFrame  (IplImage* image, uint64_t* timestamp_us)
-{
-    return _getLatestFrame(image, timestamp_us);
-}
-
-bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
+bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 {
     bool result = false;
     int len;
@@ -559,7 +570,7 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
     {
         v4l2_buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         v4l2_buf.memory = V4L2_MEMORY_MMAP;
-        if(ioctl (camera_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
+        if(ioctl_persistent(camera_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
         {
             perror("Error VIDIOC_DQBUF");
             goto done;
@@ -619,7 +630,7 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
 
  done:
 
-    if(streaming && ioctl(camera_fd, VIDIOC_QBUF, &v4l2_buf) < 0)
+    if(streaming && ioctl_persistent(camera_fd, VIDIOC_QBUF, &v4l2_buf) < 0)
     {
         perror("Error VIDIOC_QBUF");
         return false;
@@ -627,11 +638,64 @@ bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
     return result;
 }
 
+bool CameraSource_V4L2::_getLatestFrame(IplImage* image, uint64_t* timestamp_us)
+{
+    // logic I want:
+    //
+    // if(have frames) { flush(); }
+    // _getNextFrame()
+
+
+    while(1)
+    {
+        struct pollfd fd;
+        fd.fd     = camera_fd;
+        fd.events = POLLIN;
+        int num_have_data = poll(&fd, 1, 0);
+        if( num_have_data < 0 )
+        {
+            perror("poll() failed reading the camera!!!");
+            return false;
+        }
+
+        // if no data is available, get the next frame that comes in
+        if( num_have_data == 0 )
+            return _getNextFrame(image, timestamp_us);
+
+        // There are frames to read, so I flush the queues
+        if( !streaming )
+        {
+            // I try to read a bunch of data and throw it away. I know it won't
+            // block because poll() said so. Then I poll() again until it says
+            // there's nothing left
+            read(camera_fd, buffer, buffer_bytes_allocated);
+        }
+        else
+        {
+            // I DQBUF/QBUF a frame and throw it away. I know it won't block
+            // because poll() said so. Then I poll() again until it says there's
+            // nothing left
+            struct v4l2_buffer v4l2_buf = {};
+
+            v4l2_buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            v4l2_buf.memory = V4L2_MEMORY_MMAP;
+            if(ioctl_persistent(camera_fd, VIDIOC_DQBUF, &v4l2_buf) < 0 ||
+               ioctl_persistent(camera_fd, VIDIOC_QBUF,  &v4l2_buf) < 0)
+            {
+                perror("Error flushing a buffer");
+                return false;
+            }
+        }
+    }
+    return _getNextFrame(image, timestamp_us);
+}
+
+
 static bool startstop(int fd, bool start)
 {
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     unsigned long request = start ? VIDIOC_STREAMON : VIDIOC_STREAMOFF;
-    if(ioctl(fd, request, &type) < 0)
+    if(ioctl_persistent(fd, request, &type) < 0)
     {
         if(start) perror("Unable to start capture");
         else      perror("Unable to stop capture");
