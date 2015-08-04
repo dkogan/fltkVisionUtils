@@ -22,7 +22,7 @@ using namespace std;
 
 
 static const bool do_encode_video  = false;
-static const int  source_period_us = 500000; // <0 menas use synchronous poll-based I/O
+static const int  source_period_us = 500000; // <0 means use synchronous poll-based I/O
 
 
 
@@ -92,8 +92,16 @@ int main(int argc, char* argv[])
                                    cvRect(0, 0, 320, 480), 1.5);
     else
     {
-        source = new CameraSource_V4L2(FRAMESOURCE_COLOR, "/dev/video0");
-        // cout << ((CameraSource_V4L2*)source)->getDescription();
+        struct v4l2_settings settings[] =
+            {
+                // manual exposure
+                {V4L2_CID_EXPOSURE_AUTO_PRIORITY, 1},
+                {V4L2_CID_EXPOSURE_AUTO,          1},   // 0-3
+                {V4L2_CID_EXPOSURE_ABSOLUTE,      300}, // 3-2047
+                {-1, -1} };
+
+        source = new CameraSource_V4L2(FRAMESOURCE_COLOR, "/dev/video0",
+                                       640, 480, settings);
     }
 
     if(! *source)

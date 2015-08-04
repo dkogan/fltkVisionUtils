@@ -298,6 +298,8 @@ static bool findBestPixelFormat(uint32_t* pixfmt, int fd, FrameSource_UserColorC
 
 CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                                      const char* device,
+                                     int requested_width, int requested_height,
+                                     const struct v4l2_settings* settings,
                                      CvRect _cropRect,
                                      double scale)
     : FrameSource(_userColorMode),
@@ -360,10 +362,15 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
 
     // I now set the image format to an upper bound of what I want. The driver will change the
     // passed-in parameters to whatever it is actually capable of
+    //
+    // The requested dimensions can be unreasonaly large to let the driver pick
+    // the highest resolution possible
+    if( requested_width  <= 0 ) requested_width  = 100000;
+    if( requested_height <= 0 ) requested_height = 100000;
     struct v4l2_format fmt = {};
     fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width       = 10000; // request an unreasonable resolution. The driver
-    fmt.fmt.pix.height      = 10000; // will reduce this to whatever it actually can do
+    fmt.fmt.pix.width       = requested_width;
+    fmt.fmt.pix.height      = requested_height;
     fmt.fmt.pix.pixelformat = bestPixfmt;
     fmt.fmt.pix.field       = V4L2_FIELD_NONE; // don't want interlacing ideally
     if( ioctl_persistent( camera_fd, VIDIOC_S_FMT, &fmt) < 0 )
@@ -388,6 +395,14 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         fprintf(stderr, "bytesperline < width. This can't be right. Driver bug?\n");
         uninit();
         return;
+    }
+
+    for(; settings != NULL && settings->control >= 0; settings++)
+    {
+        struct v4l2_control control;
+        control.id    = settings->control;
+        control.value = settings->value;
+        ioctl_try(camera_fd, VIDIOC_S_CTRL, &control);
     }
 
 

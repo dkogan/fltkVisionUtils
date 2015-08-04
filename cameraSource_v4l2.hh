@@ -17,6 +17,12 @@ extern "C"
 }
 
 
+struct v4l2_settings
+{
+    int control;
+    int value;
+};
+
 // This is a videoforlinux2 frame source. It is highly immature and may not work. It has only been
 // tested on the handful of cameras I have
 class CameraSource_V4L2 : public FrameSource
@@ -42,7 +48,9 @@ class CameraSource_V4L2 : public FrameSource
 
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
-                      const char* device,
+                      const char* device = "/dev/video0",
+                      int requested_width = -1, int requested_height = -1, // -1 = "as large as possible"
+                      const struct v4l2_settings* settings = NULL, // last element of settings[] must be {<0, ...}
                       CvRect _cropRect = cvRect(-1, -1, -1, -1),
                       double scale = 1.0);
 
