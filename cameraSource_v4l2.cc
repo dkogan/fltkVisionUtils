@@ -593,6 +593,22 @@ bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 
         buffer_here = (unsigned char*)mmapped[v4l2_buf.index];
         len         = v4l2_buf.bytesused;
+
+        // fps detector:
+        // static int iframe = 0;
+        // static int64_t tprev = 0;
+        // if(++iframe == 10)
+        // {
+        //     int     s  = v4l2_buf.timestamp.tv_sec;
+        //     int     us = v4l2_buf.timestamp.tv_usec;
+        //     int64_t t  = s*1000000L + us;
+        //     if(tprev != 0)
+        //         printf("fps: %f seconds\n",
+        //                1.0 / ((double)(t - tprev)/1e7));
+        //     tprev = t;
+        //     iframe = 0;
+        // }
+
     }
 
 
