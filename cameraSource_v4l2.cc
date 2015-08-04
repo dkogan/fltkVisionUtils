@@ -589,7 +589,8 @@ bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
         }
 
         buffer_here = buffer;
-        *timestamp_us = 0;
+        if(timestamp_us != NULL)
+            *timestamp_us = 0;
     }
     else
     {
@@ -606,7 +607,8 @@ bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 
         int     s  = v4l2_buf.timestamp.tv_sec;
         int     us = v4l2_buf.timestamp.tv_usec;
-        *timestamp_us = (uint64_t)s*1000000UL + (uint64_t)us;
+        if(timestamp_us != NULL)
+            *timestamp_us = (uint64_t)s*1000000UL + (uint64_t)us;
 
         // fps detector:
         // static int iframe = 0;
