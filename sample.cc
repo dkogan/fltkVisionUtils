@@ -73,8 +73,8 @@ static bool gotNewFrame(IplImage* buffer      __attribute__((unused)),
 }
 
 // synchronous callback; happens when there's a frame available to read
-static void syncronous_calback(FL_SOCKET fd __attribute__((unused)),
-                               void *data   __attribute__((unused)))
+static void syncronous_callback(FL_SOCKET fd __attribute__((unused)),
+                                void *data   __attribute__((unused)))
 {
     source->getNextFrame(*widgetImage);
     newFrameArrived(false); // synchronous callback, so no unlocking needed
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     {
         int camera_fd = source->getFD();
         if( camera_fd >= 0 )
-            Fl::add_fd(camera_fd, FL_READ, &syncronous_calback);
+            Fl::add_fd(camera_fd, FL_READ, &syncronous_callback);
         else
         {
             fprintf(stderr, "poll-based i/o requested, but this frame source does not support it\n");
