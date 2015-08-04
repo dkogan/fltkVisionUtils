@@ -22,7 +22,7 @@ using namespace std;
 
 
 static const bool do_encode_video  = false;
-static const int  source_period_us = 500000; // <0 means use synchronous poll-based I/O
+static const int  source_period_us = -1;; // <0 means use synchronous poll-based I/O
 
 
 
