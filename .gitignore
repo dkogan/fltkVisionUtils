@@ -1,0 +1,9 @@
+*.d
+*.o
+*~
+sample
+cscope*
+capture.avi
+debian/*.log
+*.ii
+*.s
