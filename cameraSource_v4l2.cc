@@ -299,6 +299,7 @@ static bool findBestPixelFormat(uint32_t* pixfmt, int fd, FrameSource_UserColorC
 CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                                      const char* device,
                                      int requested_width, int requested_height,
+                                     int requested_fps,
                                      const struct v4l2_settings* settings,
                                      CvRect _cropRect,
                                      double scale)
@@ -403,6 +404,15 @@ CameraSource_V4L2::CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
         control.id    = settings->control;
         control.value = settings->value;
         ioctl_try(camera_fd, VIDIOC_S_CTRL, &control);
+    }
+
+    if( requested_fps > 0 )
+    {
+        struct v4l2_streamparm parm = {};
+        parm.type                   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        parm.parm.capture.timeperframe.numerator   = 1;
+        parm.parm.capture.timeperframe.denominator = requested_fps;
+        ioctl_try(camera_fd, VIDIOC_S_PARM, &parm);
     }
 
 

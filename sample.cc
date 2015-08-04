@@ -101,7 +101,9 @@ int main(int argc, char* argv[])
                 {-1, -1} };
 
         source = new CameraSource_V4L2(FRAMESOURCE_COLOR, "/dev/video0",
-                                       640, 480, settings);
+                                       640, 480,
+                                       10,
+                                       settings);
     }
 
     if(! *source)

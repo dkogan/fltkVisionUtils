@@ -49,7 +49,8 @@ class CameraSource_V4L2 : public FrameSource
 public:
     CameraSource_V4L2(FrameSource_UserColorChoice _userColorMode,
                       const char* device = "/dev/video0",
-                      int requested_width = -1, int requested_height = -1, // -1 = "as large as possible"
+                      int requested_width = -1, int requested_height = -1, // <=0 = "as large as possible"
+                      int requested_fps = -1, // <=0 = "default"
                       const struct v4l2_settings* settings = NULL, // last element of settings[] must be {<0, ...}
                       CvRect _cropRect = cvRect(-1, -1, -1, -1),
                       double scale = 1.0);
