@@ -45,7 +45,13 @@ void FrameSource::applyCroppingScaling(IplImage* src, IplImage* dst)
         cvSetImageROI(src, cropRect);
 
 #warning can swscale do this faster? I dont completely trust opencv to do this optimally
-    cvResize(src, dst, CV_INTER_CUBIC);
+
+    // opencv should detect this case, but it doesn't. Manually checking results
+    // in a measurable performance gain
+    if( cropRect.width == dst->width && cropRect.height == dst->height )
+        cvCopy(src,dst);
+    else
+        cvResize(src, dst, CV_INTER_CUBIC);
 
     cvResetImageROI(src);
 }
