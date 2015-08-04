@@ -570,7 +570,6 @@ bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
 {
     bool result = false;
     int len;
-    IplImage* cvbuffer;
     unsigned char** scaleSource;
     int             pixfmt_bytesperline;
     int*            scaleStride;
@@ -622,7 +621,7 @@ bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
     }
 
 
-#warning finish implementing this part of the v4l2 driver
+    IplImage* cvbuffer;
     if(preCropScaleBuffer == NULL) cvbuffer = image;
     else                           cvbuffer = preCropScaleBuffer;
 
@@ -658,14 +657,12 @@ bool CameraSource_V4L2::_getNextFrame(IplImage* image, uint64_t* timestamp_us)
     {
         sws_scale(scaleContext,
                   scaleSource, scaleStride, 0, pixfmt.height,
-                  (unsigned char**)&image->imageData, &image->widthStep);
+                  (unsigned char**)&cvbuffer->imageData, &cvbuffer->widthStep);
     }
 
     if(preCropScaleBuffer != NULL)
-    {
-#warning this isnt very efficient. The cropping and scaling should be a part of the conversion functions above
         applyCroppingScaling(preCropScaleBuffer, image);
-    }
+
     result = true;
 
 
