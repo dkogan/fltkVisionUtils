@@ -3,6 +3,15 @@ ifeq (,$(filter -O%,$(CXXFLAGS)))
   FLAGS_OPTIMIZATION := -O3 -ffast-math
 endif
 
+# This can't possibly belong here. I'll move it out later. If we're
+# cross-building and no CC is set, use the one for crossing
+ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
+ifeq ($(origin CC),default)
+CC  := $(DEB_HOST_GNU_TYPE)-cc
+CXX := $(DEB_HOST_GNU_TYPE)-c++
+endif
+endif
+
 # needed for newer ffmpeg
 CXXFLAGS += -D__STDC_CONSTANT_MACROS
 
