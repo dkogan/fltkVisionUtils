@@ -1,3 +1,10 @@
+libvisionio (0.07) unstable; urgency=medium
+
+  * changed name of definition to make libav happy
+  * Added some cross-building logic to the Makefile
+
+ -- Dima Kogan <dima@secretsauce.net>  Wed, 05 Aug 2015 13:55:06 -0700
+
 libvisionio (0.06) unstable; urgency=medium
 
   * v4l2 driver reports timestamps
