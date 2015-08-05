@@ -2,7 +2,7 @@
 #include "ffmpegInterface.hh"
 
 #define OUTPUT_PIX_FMT      PIX_FMT_RGB32 /* pixel format always uses color. ffv1 doesn't support grayscale */
-#define OUTPUT_CODEC        CODEC_ID_FFV1
+#define OUTPUT_CODEC        AV_CODEC_ID_FFV1
 #define OUTPUT_GOP_SIZE     0
 #define OUTPUT_MAX_B_FRAMES 0
 #define OUTPUT_FLAGS        0
