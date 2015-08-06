@@ -34,6 +34,7 @@ TARGET_A	:= libvisionio.a
 
 
 all: $(TARGET_A) $(TARGET_SO_FULL) $(TARGET_SO_BARE) $(TARGET_SO_SONAME) sample
+.PHONY: all
 
 
 LIB_OBJECTS = $(patsubst %.cc,%.o,$(filter-out sample,$(wildcard *.cc)))
@@ -73,6 +74,11 @@ endif
 clean:
 	rm -f *.o *.a *.so* *.d sample
 
-.PHONY: all
+
+# cross-building stuff
+cross_%: %;
+cross_%: CXX=arm-linux-gnueabihf-g++
+cross: cross_all
+.PHONY: cross cross_%
 
 -include *.d
