@@ -62,7 +62,7 @@ public:
 private:
     void uninit(void);
 
-    bool setupSwsContext(enum PixelFormat swscalePixfmt);
+    bool setupSwsContext(enum AVPixelFormat swscalePixfmt);
     bool findDecoder(void);
 
     // These functions implement the FrameSource virtuals, and are the main differentiators between

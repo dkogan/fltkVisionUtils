@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "ffmpegInterface.hh"
 
-#define OUTPUT_PIX_FMT      PIX_FMT_RGB32 /* pixel format always uses color. ffv1 doesn't support grayscale */
+#define OUTPUT_PIX_FMT      AV_PIX_FMT_RGB32 /* pixel format always uses color. ffv1 doesn't support grayscale */
 #define OUTPUT_CODEC        AV_CODEC_ID_FFV1
 #define OUTPUT_GOP_SIZE     0
 #define OUTPUT_MAX_B_FRAMES 0
@@ -209,7 +209,7 @@ bool FFmpegDecoder::readFrame(IplImage* image)
                     // to the constructor
                     m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
                                                m_pCodecCtx->width, m_pCodecCtx->height,
-                                               userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
+                                               userColorMode == FRAMESOURCE_COLOR ? AV_PIX_FMT_RGB24 : AV_PIX_FMT_GRAY8,
                                                SWS_POINT, NULL, NULL, NULL);
                     if(m_pSWSCtx == NULL)
                     {
@@ -348,7 +348,7 @@ bool FFmpegEncoder::open(const char* filename, int width, int height, int fps,
 
     m_nChannels = sourceColormode == FRAMESOURCE_GRAYSCALE ? 1 : 3;
     m_pSWSCtx = sws_getContext(m_pCodecCtx->width, m_pCodecCtx->height,
-                               sourceColormode == FRAMESOURCE_GRAYSCALE ? PIX_FMT_GRAY8 : PIX_FMT_RGB24,
+                               sourceColormode == FRAMESOURCE_GRAYSCALE ? AV_PIX_FMT_GRAY8 : AV_PIX_FMT_RGB24,
                                m_pCodecCtx->width, m_pCodecCtx->height, m_pCodecCtx->pix_fmt,
                                SWS_POINT, NULL, NULL, NULL);
     if(m_pSWSCtx == NULL)

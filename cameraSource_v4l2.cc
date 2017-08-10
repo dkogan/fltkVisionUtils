@@ -146,66 +146,66 @@ static unsigned int getPixfmtCost(uint32_t pixfmt, bool bWantColor)
     return -1;
 }
 
-static enum PixelFormat pixfmt_V4L2_to_swscale(uint32_t v4l2Pixfmt)
+static enum AVPixelFormat pixfmt_V4L2_to_swscale(uint32_t v4l2Pixfmt)
 {
     switch(v4l2Pixfmt)
     {
         /* RGB formats */
-    case V4L2_PIX_FMT_BGR32:   return PIX_FMT_BGR32;  /* 32  BGR-8-8-8-8   */
-    case V4L2_PIX_FMT_RGB32:   return PIX_FMT_RGB32;  /* 32  RGB-8-8-8-8   */
-    case V4L2_PIX_FMT_BGR24:   return PIX_FMT_BGR24;  /* 24  BGR-8-8-8     */
-    case V4L2_PIX_FMT_RGB24:   return PIX_FMT_RGB24;  /* 24  RGB-8-8-8     */
-    case V4L2_PIX_FMT_RGB444:  return PIX_FMT_NONE;   /* 16  xxxxrrrr ggggbbbb */
-    case V4L2_PIX_FMT_RGB555:  return PIX_FMT_RGB555; /* 16  RGB-5-5-5     */
-    case V4L2_PIX_FMT_RGB565:  return PIX_FMT_RGB565; /* 16  RGB-5-6-5     */
-    case V4L2_PIX_FMT_RGB555X: return PIX_FMT_NONE;   /* 16  RGB-5-5-5 BE  */
-    case V4L2_PIX_FMT_RGB565X: return PIX_FMT_NONE;   /* 16  RGB-5-6-5 BE  */
-    case V4L2_PIX_FMT_RGB332:  return PIX_FMT_NONE;   /*  8  RGB-3-3-2     */
+    case V4L2_PIX_FMT_BGR32:   return AV_PIX_FMT_BGR32;  /* 32  BGR-8-8-8-8   */
+    case V4L2_PIX_FMT_RGB32:   return AV_PIX_FMT_RGB32;  /* 32  RGB-8-8-8-8   */
+    case V4L2_PIX_FMT_BGR24:   return AV_PIX_FMT_BGR24;  /* 24  BGR-8-8-8     */
+    case V4L2_PIX_FMT_RGB24:   return AV_PIX_FMT_RGB24;  /* 24  RGB-8-8-8     */
+    case V4L2_PIX_FMT_RGB444:  return AV_PIX_FMT_NONE;   /* 16  xxxxrrrr ggggbbbb */
+    case V4L2_PIX_FMT_RGB555:  return AV_PIX_FMT_RGB555; /* 16  RGB-5-5-5     */
+    case V4L2_PIX_FMT_RGB565:  return AV_PIX_FMT_RGB565; /* 16  RGB-5-6-5     */
+    case V4L2_PIX_FMT_RGB555X: return AV_PIX_FMT_NONE;   /* 16  RGB-5-5-5 BE  */
+    case V4L2_PIX_FMT_RGB565X: return AV_PIX_FMT_NONE;   /* 16  RGB-5-6-5 BE  */
+    case V4L2_PIX_FMT_RGB332:  return AV_PIX_FMT_NONE;   /*  8  RGB-3-3-2     */
 
         /* Palette formats */
-    case V4L2_PIX_FMT_PAL8:    return PIX_FMT_PAL8;   /*  8  8-bit palette */
+    case V4L2_PIX_FMT_PAL8:    return AV_PIX_FMT_PAL8;   /*  8  8-bit palette */
 
         /* Luminance+Chrominance formats */
-    case V4L2_PIX_FMT_YUV32:   return PIX_FMT_NONE;      /* 32  YUV-8-8-8-8   */
-    case V4L2_PIX_FMT_YUV444:  return PIX_FMT_NONE;      /* 16  xxxxyyyy uuuuvvvv */
-    case V4L2_PIX_FMT_YUV555:  return PIX_FMT_NONE;      /* 16  YUV-5-5-5     */
-    case V4L2_PIX_FMT_YUV565:  return PIX_FMT_NONE;      /* 16  YUV-5-6-5     */
-    case V4L2_PIX_FMT_YUYV:    return PIX_FMT_YUYV422;   /* 16  YUV 4:2:2     */
-    case V4L2_PIX_FMT_YYUV:    return PIX_FMT_NONE;      /* 16  YUV 4:2:2     */
-    case V4L2_PIX_FMT_YVYU:    return PIX_FMT_NONE;      /* 16  YVU 4:2:2     */
-    case V4L2_PIX_FMT_UYVY:    return PIX_FMT_UYVY422;   /* 16  YUV 4:2:2     */
-    case V4L2_PIX_FMT_VYUY:    return PIX_FMT_NONE;      /* 16  YUV 4:2:2     */
-    case V4L2_PIX_FMT_YUV422P: return PIX_FMT_YUV422P;   /* 16  YVU422 planar */
-    case V4L2_PIX_FMT_YUV411P: return PIX_FMT_YUV411P;   /* 16  YVU411 planar */
-    case V4L2_PIX_FMT_YVU420:  return PIX_FMT_NONE;      /* 12  YVU 4:2:0     */
-    case V4L2_PIX_FMT_Y41P:    return PIX_FMT_UYYVYY411; /* 12  YUV 4:1:1     */
-    case V4L2_PIX_FMT_YUV420:  return PIX_FMT_YUV420P;   /* 12  YUV 4:2:0     */
-    case V4L2_PIX_FMT_YVU410:  return PIX_FMT_NONE;      /*  9  YVU 4:1:0     */
-    case V4L2_PIX_FMT_YUV410:  return PIX_FMT_YUV410P;   /*  9  YUV 4:1:0     */
-    case V4L2_PIX_FMT_HI240:   return PIX_FMT_NONE;      /*  8  8-bit color   */
-    case V4L2_PIX_FMT_HM12:    return PIX_FMT_NONE;      /*  8  YUV 4:2:0 16x16 macroblocks */
+    case V4L2_PIX_FMT_YUV32:   return AV_PIX_FMT_NONE;      /* 32  YUV-8-8-8-8   */
+    case V4L2_PIX_FMT_YUV444:  return AV_PIX_FMT_NONE;      /* 16  xxxxyyyy uuuuvvvv */
+    case V4L2_PIX_FMT_YUV555:  return AV_PIX_FMT_NONE;      /* 16  YUV-5-5-5     */
+    case V4L2_PIX_FMT_YUV565:  return AV_PIX_FMT_NONE;      /* 16  YUV-5-6-5     */
+    case V4L2_PIX_FMT_YUYV:    return AV_PIX_FMT_YUYV422;   /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_YYUV:    return AV_PIX_FMT_NONE;      /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_YVYU:    return AV_PIX_FMT_NONE;      /* 16  YVU 4:2:2     */
+    case V4L2_PIX_FMT_UYVY:    return AV_PIX_FMT_UYVY422;   /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_VYUY:    return AV_PIX_FMT_NONE;      /* 16  YUV 4:2:2     */
+    case V4L2_PIX_FMT_YUV422P: return AV_PIX_FMT_YUV422P;   /* 16  YVU422 planar */
+    case V4L2_PIX_FMT_YUV411P: return AV_PIX_FMT_YUV411P;   /* 16  YVU411 planar */
+    case V4L2_PIX_FMT_YVU420:  return AV_PIX_FMT_NONE;      /* 12  YVU 4:2:0     */
+    case V4L2_PIX_FMT_Y41P:    return AV_PIX_FMT_UYYVYY411; /* 12  YUV 4:1:1     */
+    case V4L2_PIX_FMT_YUV420:  return AV_PIX_FMT_YUV420P;   /* 12  YUV 4:2:0     */
+    case V4L2_PIX_FMT_YVU410:  return AV_PIX_FMT_NONE;      /*  9  YVU 4:1:0     */
+    case V4L2_PIX_FMT_YUV410:  return AV_PIX_FMT_YUV410P;   /*  9  YUV 4:1:0     */
+    case V4L2_PIX_FMT_HI240:   return AV_PIX_FMT_NONE;      /*  8  8-bit color   */
+    case V4L2_PIX_FMT_HM12:    return AV_PIX_FMT_NONE;      /*  8  YUV 4:2:0 16x16 macroblocks */
 
         /* two planes -- one Y: one Cr + Cb interleaved  */
-    case V4L2_PIX_FMT_NV12: return PIX_FMT_NV12;    /* 12  Y/CbCr 4:2:0  */
-    case V4L2_PIX_FMT_NV21: return PIX_FMT_NV21;    /* 12  Y/CrCb 4:2:0  */
-    case V4L2_PIX_FMT_NV16: return PIX_FMT_YUV422P; /* 16  Y/CbCr 4:2:2  */
-    case V4L2_PIX_FMT_NV61: return PIX_FMT_NONE;    /* 16  Y/CrCb 4:2:2  */
+    case V4L2_PIX_FMT_NV12: return AV_PIX_FMT_NV12;    /* 12  Y/CbCr 4:2:0  */
+    case V4L2_PIX_FMT_NV21: return AV_PIX_FMT_NV21;    /* 12  Y/CrCb 4:2:0  */
+    case V4L2_PIX_FMT_NV16: return AV_PIX_FMT_YUV422P; /* 16  Y/CbCr 4:2:2  */
+    case V4L2_PIX_FMT_NV61: return AV_PIX_FMT_NONE;    /* 16  Y/CrCb 4:2:2  */
 
         /* Grey formats */
-    case V4L2_PIX_FMT_Y16:  return PIX_FMT_GRAY16LE;  /* 16  Greyscale     */
-    case V4L2_PIX_FMT_GREY: return PIX_FMT_GRAY8;     /*  8  Greyscale     */
+    case V4L2_PIX_FMT_Y16:  return AV_PIX_FMT_GRAY16LE;  /* 16  Greyscale     */
+    case V4L2_PIX_FMT_GREY: return AV_PIX_FMT_GRAY8;     /*  8  Greyscale     */
 
     default: ;
     };
 
-    return PIX_FMT_NONE;
+    return AV_PIX_FMT_NONE;
 }
 
 bool CameraSource_V4L2::findDecoder(void)
 {
-    enum PixelFormat swscalePixfmt = pixfmt_V4L2_to_swscale(pixfmt.pixelformat);
+    enum AVPixelFormat swscalePixfmt = pixfmt_V4L2_to_swscale(pixfmt.pixelformat);
 
-    if(swscalePixfmt == PIX_FMT_NONE)
+    if(swscalePixfmt == AV_PIX_FMT_NONE)
     {
         // swscale can't interpret the pixel format directly. Can avcodec do it and THEN feed
         // swscale?
@@ -238,19 +238,19 @@ bool CameraSource_V4L2::findDecoder(void)
 
     // at this point we should have the scaler pixel format selected, whether it comes from avcodec
     // or not
-    if(swscalePixfmt != PIX_FMT_NONE)
+    if(swscalePixfmt != AV_PIX_FMT_NONE)
         return setupSwsContext(swscalePixfmt);
 
     // no decoders found
     return false;
 }
 
-bool CameraSource_V4L2::setupSwsContext(enum PixelFormat swscalePixfmt)
+bool CameraSource_V4L2::setupSwsContext(enum AVPixelFormat swscalePixfmt)
 {
 #warning shouldnt need setupCroppingScaling since Im doing this anyway
     scaleContext = sws_getContext(pixfmt.width, pixfmt.height, swscalePixfmt,
                                   pixfmt.width, pixfmt.height,
-                                  userColorMode == FRAMESOURCE_COLOR ? PIX_FMT_RGB24 : PIX_FMT_GRAY8,
+                                  userColorMode == FRAMESOURCE_COLOR ? AV_PIX_FMT_RGB24 : AV_PIX_FMT_GRAY8,
                                   SWS_POINT, NULL, NULL, NULL);
     if(scaleContext == NULL)
     {
